@@ -1,0 +1,9 @@
+calendars:
+  A_SHARE:
+    timezone: Asia/Shanghai
+    trading_days_source: external_data
+  HK_CONNECT:
+    timezone: Asia/Hong_Kong
+    trading_days_source: external_data
+
+current_validation_market: A_SHARE

@@ -1,0 +1,26 @@
+account:
+  name: Trading Experiment
+  capital_limit: 30000
+  base_currency: CNY
+  trading_allowed: false
+
+risk:
+  max_planned_loss_per_trade: 500
+  micro_live_initial_loss_limit: 300
+  max_monthly_loss: 1500
+  max_total_drawdown: 3000
+  max_positions: 1
+
+instrument_scope:
+  allowed:
+    - A_SHARE_STOCK
+    - HK_CONNECT_STOCK
+  current_version_scope:
+    - A_SHARE_STOCK
+
+forbidden:
+  - use_core_asset_capital
+  - average_down
+  - discretionary_intraday_trade
+  - event_driven_trade_without_validated_setup
+  - increase_capital_limit

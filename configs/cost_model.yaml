@@ -1,0 +1,9 @@
+cost_models:
+  A_SHARE_STOCK:
+    round_trip_cost: 0.002
+    min_slippage_bps: 5
+  HK_CONNECT_STOCK:
+    round_trip_cost: 0.004
+    min_slippage_bps: 10
+
+current_setup_cost_model: A_SHARE_STOCK

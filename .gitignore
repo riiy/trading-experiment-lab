@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.DS_Store
+
+# local data outputs
+/data/raw/**
+/data/processed/**
+/data/signals/**
+/data/trades/**
+/data/account_sim/**
+/data/reports/**
+!/data/**/.gitkeep

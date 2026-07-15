@@ -1,0 +1,22 @@
+Trading_Experiment:
+  status: research_active_no_trade
+  capital_limit: 30000
+  max_planned_loss_per_trade: 500
+  instrument_scope:
+    - A_SHARE_STOCK
+    - HK_CONNECT_STOCK
+  current_setup: STOCK_RS_PULLBACK_v1
+  trading_allowed: false
+
+setups:
+  - id: STOCK_RS_PULLBACK_v1
+    status: pre_registration_planned
+    market_scope: A_SHARE_ONLY
+    trading_allowed: false
+    account_simulation_allowed: false
+    decision: PRE_REGISTRATION_NOT_FROZEN
+
+archived_paths:
+  - earnings_event
+  - major_contract_event
+  - etf_pullback
