@@ -20,6 +20,9 @@ dev = [
 qlib = [
   "pyqlib>=0.9.0",
 ]
+akshare = [
+  "akshare>=1.16.0",
+]
 
 [project.scripts]
 texperiment = "texperiment.cli:main"

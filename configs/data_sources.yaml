@@ -1,0 +1,21 @@
+a_share_daily:
+  canonical_output: data/processed/a_share_daily.parquet
+  default_adj_type: qfq
+  supported_providers:
+    - canonical
+    - akshare
+    - tushare
+    - baostock
+  required_columns:
+    - date
+    - code
+    - open
+    - high
+    - low
+    - close
+    - volume
+    - amount
+  notes:
+    - "STOCK_RS_PULLBACK_v1 uses qfq/前复权 prices for historical research."
+    - "Execution-level live tickets must use current unadjusted quoted prices later."
+    - "Provider raw exports must be saved under data/raw/market/a_share_daily before ingestion."
