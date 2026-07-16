@@ -65,6 +65,18 @@ uv run texperiment ingest-tdx-a-share-daily \
 
 导入过程按股票文件流式写入 Parquet，不会把全市场数据一次性汇总到内存。
 
+## 通达信文本导出
+
+通达信也可导出 GB18030 编码文本，文件名形如 `SZ#000001.txt`。导出目录可能同时包含股票、基金和无行情文件。使用以下命令只导入 A 股：
+
+```bash
+uv run texperiment ingest-tdx-export-a-share-daily \
+  --input data/raw/export \
+  --output data/processed/a_share_daily.parquet
+```
+
+解析器从首行读取名称和复权标记，从文件名读取市场与代码；成交量保持股，成交额保持人民币元。文件首行标记为 `前复权` 时输出 `adj_type=qfq`。`turnover_rate`、`adj_factor`、`industry` 等源文件没有提供的字段保持为空。
+
 ## 标准输出路径
 
 ```text

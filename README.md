@@ -83,6 +83,16 @@ uv run texperiment ingest-tdx-a-share-daily \
 
 TongdaXin `.day` files are unadjusted (`adj_type=none`). Use AkShare or another adjusted source for qfq historical research.
 
+Import TongdaXin GB18030 text exports with A-share and fund files mixed together:
+
+```bash
+uv run texperiment ingest-tdx-export-a-share-daily \
+  --input data/raw/export \
+  --output data/processed/a_share_daily.parquet
+```
+
+The importer keeps A-share codes only, reads names from export headers, and writes qfq rows when the header indicates 前复权.
+
 ## Core workflow
 
 ```text

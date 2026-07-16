@@ -3,6 +3,7 @@ from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, writ
 from texperiment.data.normalizer import normalize_daily_bars
 from texperiment.data.quality import DataQualityReport, validate_daily_bars
 from texperiment.data.tdx_source import ingest_tdx_a_share_daily, write_tdx_parquet
+from texperiment.data.tdx_export_source import read_tdx_export_file, write_tdx_export_parquet
 
 __all__ = [
     "ingest_a_share_daily",
@@ -15,4 +16,6 @@ __all__ = [
     "validate_daily_bars",
     "ingest_tdx_a_share_daily",
     "write_tdx_parquet",
+    "read_tdx_export_file",
+    "write_tdx_export_parquet",
 ]

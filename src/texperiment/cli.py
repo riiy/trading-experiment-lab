@@ -10,6 +10,7 @@ from texperiment.data.akshare_source import fetch_a_share_daily
 from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, write_parquet
 from texperiment.data.quality import validate_daily_bars
 from texperiment.data.tdx_source import write_tdx_parquet
+from texperiment.data.tdx_export_source import write_tdx_export_parquet
 from texperiment.guards.trading_permission import assert_trading_disabled
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -104,6 +105,23 @@ def cmd_ingest_tdx_a_share_daily(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_ingest_tdx_export_a_share_daily(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    output_path = _resolve(root, args.output)
+    report, ingest_report = write_tdx_export_parquet(
+        args.input,
+        output_path,
+        strict=not args.allow_quality_warnings,
+    )
+    print(f"ingest-tdx-export-a-share-daily: OK -> {output_path}")
+    print(f"files_seen: {ingest_report.files_seen}")
+    print(f"files_ingested: {ingest_report.files_ingested}")
+    print(f"files_skipped: {ingest_report.files_skipped}")
+    print(f"stock_count: {ingest_report.stock_count}")
+    print(_quality_report_to_json(report))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="texperiment")
     parser.add_argument("--root", default=str(ROOT), help="Project root directory")
@@ -145,6 +163,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--adj-type", default="none", choices=["none"])
     p.add_argument("--allow-quality-warnings", action="store_true")
     p.set_defaults(func=cmd_ingest_tdx_a_share_daily)
+
+    p = sub.add_parser("ingest-tdx-export-a-share-daily", help="Read TDX GB18030 text exports")
+    p.add_argument("--input", required=True, help="Directory containing market#code.txt exports")
+    p.add_argument("--output", default="data/processed/a_share_daily.parquet")
+    p.add_argument("--allow-quality-warnings", action="store_true")
+    p.set_defaults(func=cmd_ingest_tdx_export_a_share_daily)
 
     return parser
 

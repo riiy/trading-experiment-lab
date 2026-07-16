@@ -9,6 +9,8 @@ from texperiment.data.codecs import normalize_a_share_code
 from texperiment.data.normalizer import detect_provider, normalize_daily_bars
 from texperiment.data.quality import validate_daily_bars
 from texperiment.data.tdx_source import ingest_tdx_a_share_daily, write_tdx_parquet
+from texperiment.data.tdx_export_source import read_tdx_export_file, write_tdx_export_parquet
+from texperiment.data.schema import CANONICAL_DAILY_COLUMNS
 
 
 def test_normalize_a_share_code():
@@ -184,3 +186,33 @@ def test_ingest_tdx_day_file(tmp_path):
     )
     assert report.rows == 2
     assert len(pd.read_parquet(tmp_path / "processed" / "a_share_daily.parquet")) == 2
+
+
+def test_ingest_tdx_text_export_standardizes_gbk_header_and_skips_fund(tmp_path):
+    export = tmp_path / "export"
+    export.mkdir()
+    stock = export / "SZ#000001.txt"
+    stock.write_bytes(
+        "000001 平安银行 深市 前复权\n日期 开盘 最高 最低 收盘 成交量 成交额\n"
+        "2026-07-14,10,10.5,9.9,10.4,1000000,10400000\n"
+        "2026-07-15,10.5,11,10.4,10.8,2000000,21600000\n".encode("gb18030")
+    )
+    (export / "SZ#159919.txt").write_bytes(
+        "159919 沪深300ETF 深市 前复权\n日期 开盘 最高 最低 收盘 成交量 成交额\n"
+        "2026-07-15,4,4.1,3.9,4,100,400\n".encode("gb18030")
+    )
+
+    frame = read_tdx_export_file(stock)
+    assert frame["code"].tolist() == ["000001.SZ", "000001.SZ"]
+    assert frame["name"].tolist() == ["平安银行", "平安银行"]
+    assert frame["adj_type"].tolist() == ["qfq", "qfq"]
+    assert frame["volume"].tolist() == [1000000, 2000000]
+    assert frame["listing_days"].tolist() == [1, 2]
+    assert list(frame.columns) == CANONICAL_DAILY_COLUMNS
+
+    report, ingest = write_tdx_export_parquet(export, tmp_path / "out.parquet")
+    out = pd.read_parquet(tmp_path / "out.parquet")
+    assert ingest.files_ingested == 1
+    assert ingest.stock_count == 1
+    assert report.ok
+    assert set(out["code"]) == {"000001.SZ"}

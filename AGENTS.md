@@ -25,6 +25,8 @@
 - Use `uv run texperiment fetch-a-share-daily --start-date YYYYMMDD --end-date YYYYMMDD --output data/processed/a_share_daily.parquet --adj-type qfq` for direct full-market AkShare ingestion; this makes one request per stock and reports failed symbols.
 - Use `uv run texperiment ingest-tdx-a-share-daily --input /path/to/T0002/vipdoc --output data/processed/a_share_daily.parquet` for fast local TongdaXin `.day` ingestion; TDX data is unadjusted, so do not label it qfq.
 - TDX CLI writes one stock file at a time to Parquet to limit memory use; preserve this streaming path for full-market imports.
+- Use `uv run texperiment ingest-tdx-export-a-share-daily --input data/raw/export --output data/processed/a_share_daily.parquet` for TDX GB18030 text exports; these may mix A-share and fund files, so importer filters by A-share code prefixes and reads names from first line.
+- TDX text exports contain qfq prices when header says 前复权; volume and amount are already shares and CNY. Missing turnover, adjustment factor, and industry stay null.
 - AkShare symbol discovery retries exchange-list requests and falls back to `stock_zh_a_spot_em`; historical requests also retry, but `symbols_failed` still requires review before formal research.
 - Supported providers are `canonical`, `akshare`, `tushare`, and `baostock`; `auto` detects provider from input columns.
 - Canonical units are `volume` in shares and `amount` in CNY. Tushare input is converted from lots/thousand CNY; AkShare volume is converted from lots.
