@@ -26,48 +26,23 @@ raw provider export
 也可以用：
 
 ```bash
-texperiment ingest-a-share-daily --provider auto ...
+uv run texperiment ingest-a-share-daily --provider auto ...
 ```
 
 让系统自动识别。
 
-## AkShare 全市场拉取
+`ingest-a-share-daily` 当前读取 CSV 或 Parquet 文件；TDX `.txt` 导出不是该命令的通用输入格式。
 
-安装可选依赖：
+### TDX 文本导出
 
-```bash
-uv sync --extra dev --extra akshare
-```
+项目另有 TDX 文本解析器，支持 GB18030 编码、文件名 `SH#000001.txt` / `SZ#000001.txt` / `BJ#830000.txt`，并按代码前缀过滤 A 股文件。文件头包含“前复权”时写入 `adj_type=qfq`，否则写入 `adj_type=none`。TDX 股票文本批量写入函数目前未接入通用 CLI；沪深300指数可通过以下 CLI 命令导入：
 
 ```bash
-uv run texperiment fetch-a-share-daily \
-  --start-date 20200101 \
-  --end-date 20260716 \
-  --output data/processed/a_share_daily.parquet \
-  --adj-type qfq
+uv run texperiment ingest-tdx-export-index-daily \
+  --input data/raw/export/SH#000300.txt \
+  --output data/processed/index_daily.parquet \
+  --code 000300.SH
 ```
-
-股票列表和逐股历史请求均支持重试；失败股票会输出统计，正式研究前必须检查失败列表。
-
-## 通达信本地日线
-
-```bash
-uv run texperiment ingest-tdx-a-share-daily \
-  --input /path/to/T0002/vipdoc \
-  --output data/processed/a_share_daily.parquet
-```
-
-TDX `.day` 是未复权数据，输出 `adj_type=none`。导入过程按股票文件流式写入 Parquet。
-
-## 通达信文本导出
-
-```bash
-uv run texperiment ingest-tdx-export-a-share-daily \
-  --input data/raw/export \
-  --output data/processed/a_share_daily.parquet
-```
-
-文本导出使用 GB18030 编码，首行提供名称和复权标记。目录可混合基金文件，导入器按 A 股代码前缀过滤；前复权标记输出 `adj_type=qfq`。成交量单位为股，成交额单位为人民币元。缺失 `turnover_rate`、`adj_factor`、`industry` 保持为空。
 
 ## 标准输出路径
 
@@ -97,7 +72,7 @@ data/processed/a_share_daily.parquet
 | is_limit_up | 是否涨停，当前为近似推导 |
 | is_limit_down | 是否跌停，当前为近似推导 |
 | is_st | 是否 ST / *ST |
-| listing_days | 上市天数，可后续补充 |
+| listing_days | 上市天数；TDX 导入按文件首个有效日期计算，缺失时股票池按观察到的行数保守回退 |
 | industry | 行业分类，可后续补充 |
 | source | 数据来源 |
 | source_file | 原始文件路径 |
@@ -164,10 +139,10 @@ close / pre_close - 1 <= -9.8% → is_limit_down
 data/raw/market/a_share_daily/
 ```
 
-然后运行：
+然后运行（标准 CSV/Parquet 输入）：
 
 ```bash
-texperiment ingest-a-share-daily \
+uv run texperiment ingest-a-share-daily \
   --input data/raw/market/a_share_daily \
   --output data/processed/a_share_daily.parquet \
   --provider auto \
@@ -177,7 +152,7 @@ texperiment ingest-a-share-daily \
 检查标准化结果：
 
 ```bash
-texperiment data-check --path data/processed/a_share_daily.parquet
+uv run texperiment data-check --path data/processed/a_share_daily.parquet
 ```
 
 ## 数据质量闸门
@@ -196,7 +171,7 @@ texperiment data-check --path data/processed/a_share_daily.parquet
 质量检查失败时，默认直接报错。临时探索时可以使用：
 
 ```bash
-texperiment ingest-a-share-daily ... --allow-quality-warnings
+uv run texperiment ingest-a-share-daily ... --allow-quality-warnings
 ```
 
 但正式验证不允许带质量警告进入。
@@ -217,10 +192,10 @@ A股日线原始文件读取
 未完成：
 
 ```text
-上市天数自动计算
+上市日期表驱动的精确上市天数
 ST 历史状态精确表
 行业分类接入
-精确涨跌停规则
+按板块、ST 状态区分的精确涨跌停规则
 复权因子独立管理
 分红送转除权审计
 港股通日线接入

@@ -26,7 +26,7 @@ data/processed/a_share_daily.parquet
 | 字段 | 用途 |
 |---|---|
 | `name` | 用于辅助识别 ST / *ST / 退市风险 |
-| `listing_days` | 上市天数；按该股票首条有效成交日期到实际 `as_of` 的日历天数计算 |
+| `listing_days` | 上市天数；缺失时用该股票已观察到的交易日数量保守估算 |
 | `avg_amount_20d` | 近20日平均成交额；缺失时用 `amount` 滚动计算 |
 | `is_st` | ST 标记 |
 | `is_suspended` | 停牌标记 |
@@ -88,17 +88,12 @@ uv run texperiment build-a-share-universe \
 | `reject_reasons` | 未通过原因，分号分隔 |
 | `avg_amount_20d` | 近20日平均成交额 |
 | `one_lot_value` | 一手金额 |
-| `effective_as_of` | 实际采用的最近交易日；请求日期为周末或节假日时自动回退 |
-| `st_metadata_available` | 是否存在可用于 ST 判断的名称或 ST 标记 |
-| `board` | 根据证券代码推导的板块 |
-| `limit_rate` | 当前板块和 ST 状态对应涨跌停比例 |
 
 ## reject_reasons 口径
 
 | 原因 | 含义 |
 |---|---|
 | `st_or_star_st` | ST、*ST 或退市风险名称 |
-| `missing_st_metadata` | 缺少可靠名称或 ST 标记，拒绝默认放行 |
 | `listing_days_lt_min` | 上市天数不足 |
 | `suspended_or_no_trade` | 停牌或无成交 |
 | `limit_up_or_limit_down` | 涨停或跌停 |
@@ -123,10 +118,11 @@ CLI输出 parquet
 仍需后续增强：
 
 ```text
-历史 ST 状态表（当前股票池使用导出文件当前名称）
-精确上市日期表（当前使用首条有效成交日期）
+精确历史ST状态表
+精确上市日期表
+按主板/创业板/科创板/北交所区分涨跌停制度
 行业分类接入
 风险事件表接入
 ```
 
-Parquet 输入使用分批读取，保留每只股票首条日期、最近 20 日成交额和截至日期最新行，避免一次性加载全市场数据。涨跌停判断按主板、创业板、科创板、北交所及 ST 区分；新股特殊上市阶段和历史 ST 状态仍不在当前边界内。
+当前实现足够支持第一版 `STOCK_RS_PULLBACK_v1` 的股票池预筛选，但后续正式验证前仍应补强历史 ST 和涨跌停精确口径。

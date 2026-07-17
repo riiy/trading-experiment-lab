@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-import pyarrow.parquet as pq
 
 
 @dataclass(frozen=True)
@@ -19,7 +18,6 @@ class AShareUniverseConfig:
     exclude_st: bool = True
     exclude_suspended: bool = True
     exclude_limit_up_down: bool = True
-    require_st_metadata: bool = True
 
     @classmethod
     def from_setup_config(cls, setup_config: dict[str, Any]) -> "AShareUniverseConfig":
@@ -58,62 +56,6 @@ def build_a_share_universe(
     """
     cfg = config or AShareUniverseConfig()
     annotated = annotate_a_share_universe(daily_bars, as_of_date=as_of_date, config=cfg)
-    if include_rejected:
-        return annotated.reset_index(drop=True)
-    return annotated.loc[annotated["is_tradable_universe"]].reset_index(drop=True)
-
-
-def build_a_share_universe_from_parquet(
-    path: str | Path,
-    *,
-    as_of_date: str | pd.Timestamp | None = None,
-    config: AShareUniverseConfig | None = None,
-    include_rejected: bool = False,
-    batch_size: int = 250_000,
-) -> pd.DataFrame:
-    """Build universe using bounded-memory Parquet batches.
-
-    State retained per code is first valid date, latest row, and last 20 amounts.
-    """
-    parquet = pq.ParquetFile(path)
-    requested = pd.Timestamp(as_of_date).normalize() if as_of_date is not None else None
-    states: dict[str, dict[str, Any]] = {}
-    for batch in parquet.iter_batches(batch_size=batch_size):
-        frame = _prepare_daily_bars(batch.to_pandas())
-        if requested is not None:
-            frame = frame.loc[frame["date"] <= requested]
-        if frame.empty:
-            continue
-        for code, group in frame.groupby("code", sort=False):
-            group = group.sort_values("date")
-            valid = group.loc[group["close"].notna() & (group["close"] > 0)]
-            if valid.empty:
-                continue
-            state = states.setdefault(
-                code,
-                {"first_trade_date": valid["date"].min(), "amounts": []},
-            )
-            state["first_trade_date"] = min(state["first_trade_date"], valid["date"].min())
-            state["amounts"].extend(
-                zip(valid["date"].tolist(), pd.to_numeric(valid["amount"], errors="coerce").tolist())
-            )
-            state["amounts"] = sorted(
-                ((date, amount) for date, amount in state["amounts"] if pd.notna(amount)),
-                key=lambda item: item[0],
-            )[-20:]
-            candidate = valid.iloc[-1]
-            if "latest" not in state or candidate["date"] >= state["latest"]["date"]:
-                state["latest"] = candidate.to_dict()
-
-    if not states:
-        return _empty_universe_frame(pd.DataFrame())
-    snapshot = pd.DataFrame([state["latest"] | {
-        "first_trade_date": state["first_trade_date"],
-        "avg_amount_20d": sum(amount for _, amount in state["amounts"]) / 20 if len(state["amounts"]) == 20 else pd.NA,
-    } for state in states.values()])
-    effective_as_of = snapshot["date"].max()
-    annotated = annotate_a_share_universe(snapshot, config=config)
-    annotated["effective_as_of"] = effective_as_of
     if include_rejected:
         return annotated.reset_index(drop=True)
     return annotated.loc[annotated["is_tradable_universe"]].reset_index(drop=True)
@@ -174,11 +116,8 @@ def annotate_a_share_universe(
             return _empty_universe_frame(daily_bars)
 
     out = out.sort_values(["code", "date"]).reset_index(drop=True)
-    out["st_metadata_available"] = _st_metadata_available(out)
     out["is_st"] = _derive_bool_column(out, "is_st", default=False) | _derive_st_from_name(out)
     out["is_suspended"] = _derive_suspended(out)
-    out["board"] = _derive_board(out)
-    out["limit_rate"] = _derive_limit_rate(out)
     out["is_limit_up"] = _derive_limit_flag(out, flag_col="is_limit_up", direction="up")
     out["is_limit_down"] = _derive_limit_flag(out, flag_col="is_limit_down", direction="down")
     out["listing_days"] = _derive_listing_days(out)
@@ -187,13 +126,11 @@ def annotate_a_share_universe(
 
     if as_of_date is not None:
         as_of = pd.Timestamp(as_of_date).normalize()
-        effective_as_of = out["date"].max()
-        out = out.loc[out["date"] == effective_as_of].copy()
+        out = out.loc[out["date"] == as_of].copy()
         if out.empty:
             return _empty_universe_frame(daily_bars)
-        out["effective_as_of"] = effective_as_of
 
-    out["pass_non_st"] = (~out["is_st"] & out["st_metadata_available"]) if cfg.exclude_st and cfg.require_st_metadata else (~out["is_st"] if cfg.exclude_st else True)
+    out["pass_non_st"] = ~out["is_st"] if cfg.exclude_st else True
     out["pass_listing_days"] = out["listing_days"] >= cfg.min_listing_days
     out["pass_not_suspended"] = ~out["is_suspended"] if cfg.exclude_suspended else True
     if cfg.exclude_limit_up_down:
@@ -269,21 +206,6 @@ def _derive_st_from_name(df: pd.DataFrame) -> pd.Series:
     return names.str.contains(r"(?:^|[^A-Z])(?:\*?ST|退)", regex=True)
 
 
-def _st_metadata_available(df: pd.DataFrame) -> pd.Series:
-    has_flag = df["is_st"].notna() if "is_st" in df.columns else pd.Series(False, index=df.index)
-    has_name = (
-        df["name"].fillna("").astype(str).str.strip().ne("")
-        if "name" in df.columns
-        else pd.Series(False, index=df.index)
-    )
-    untrusted_tdx = (
-        df["source"].fillna("").astype(str).str.lower().isin({"tongdaxin", "tdx"})
-        if "source" in df.columns
-        else pd.Series(False, index=df.index)
-    )
-    return (has_name | (has_flag & ~untrusted_tdx & ~has_name)).astype(bool)
-
-
 def _derive_suspended(df: pd.DataFrame) -> pd.Series:
     suspended = _derive_bool_column(df, "is_suspended", default=False)
     if "trade_status" in df.columns:
@@ -292,24 +214,6 @@ def _derive_suspended(df: pd.DataFrame) -> pd.Series:
     if {"volume", "amount"}.issubset(df.columns):
         suspended = suspended | ((df["volume"].fillna(0) <= 0) & (df["amount"].fillna(0) <= 0))
     return suspended.astype(bool)
-
-
-def _derive_board(df: pd.DataFrame) -> pd.Series:
-    code = df["code"].astype(str).str.split(".").str[0].str.zfill(6)
-    board = pd.Series("unknown", index=df.index, dtype="string")
-    board.loc[code.str.startswith(("300", "301"))] = "chinext"
-    board.loc[code.str.startswith(("688", "689"))] = "star"
-    board.loc[code.str.startswith(("430", "830", "831", "832", "833", "834", "835", "836", "837", "838", "839", "870", "871", "872", "873", "920"))] = "beijing"
-    board.loc[code.str.startswith(("000", "001", "002", "003", "600", "601", "603", "605", "900"))] = "main"
-    return board
-
-
-def _derive_limit_rate(df: pd.DataFrame) -> pd.Series:
-    rate = pd.Series(0.10, index=df.index, dtype="float64")
-    rate.loc[df["board"].isin(["chinext", "star"])] = 0.20
-    rate.loc[df["board"] == "beijing"] = 0.30
-    rate.loc[df["is_st"]] = 0.05
-    return rate
 
 
 def _derive_limit_flag(df: pd.DataFrame, *, flag_col: str, direction: str) -> pd.Series:
@@ -322,8 +226,8 @@ def _derive_limit_flag(df: pd.DataFrame, *, flag_col: str, direction: str) -> pd
     else:
         return flag.astype(bool)
 
-    # Small tolerance accounts for tick rounding. New listings are already rejected by age.
-    threshold = df["limit_rate"] * 100 - 0.2
+    # Approximate fallback. Exact A-share limits require board, listing stage and ST history.
+    threshold = 9.8
     if direction == "up":
         derived = pct >= threshold
     else:
@@ -332,14 +236,11 @@ def _derive_limit_flag(df: pd.DataFrame, *, flag_col: str, direction: str) -> pd
 
 
 def _derive_listing_days(df: pd.DataFrame) -> pd.Series:
-    if "first_trade_date" in df.columns:
-        first = pd.to_datetime(df["first_trade_date"], errors="coerce")
-    elif "listing_days" in df.columns and df.groupby("code")["date"].transform("size").le(1).all():
-        # Preserve precomputed snapshot values for the legacy snapshot API.
-        return pd.to_numeric(df["listing_days"], errors="coerce").fillna(0).astype(int)
-    else:
-        first = df.groupby("code")["date"].transform("min")
-    return (df["date"] - first).dt.days.add(1).fillna(0).astype(int)
+    if "listing_days" in df.columns:
+        listing_days = pd.to_numeric(df["listing_days"], errors="coerce")
+        fallback = df.groupby("code").cumcount() + 1
+        return listing_days.fillna(fallback).astype(int)
+    return (df.groupby("code").cumcount() + 1).astype(int)
 
 
 def _derive_avg_amount_20d(df: pd.DataFrame) -> pd.Series:
@@ -363,11 +264,8 @@ def _derive_avg_amount_20d(df: pd.DataFrame) -> pd.Series:
 
 def _reject_reasons(row: pd.Series) -> str:
     reasons: list[str] = []
-    if not bool(row.get("st_metadata_available", True)):
-        reasons.append("missing_st_metadata")
-    elif not bool(row["pass_non_st"]):
-        reasons.append("st_or_star_st")
     mapping = {
+        "pass_non_st": "st_or_star_st",
         "pass_listing_days": "listing_days_lt_min",
         "pass_not_suspended": "suspended_or_no_trade",
         "pass_not_limit_up_down": "limit_up_or_limit_down",

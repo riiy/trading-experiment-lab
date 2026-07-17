@@ -26,16 +26,18 @@ live_trading = forbidden
 ## Quick start
 
 ```bash
-cd trading-experiment-lab
 uv sync --extra dev
 uv run texperiment config-check
 uv run pytest -q
 ```
 
-Install AkShare support:
+所有项目命令通过 `uv run` 执行。旧版 `venv` / `pip` 命令不再是标准流程。
+
+不安装项目脚本时：
 
 ```bash
-uv sync --extra dev --extra akshare
+uv run python -m texperiment.cli config-check
+uv run pytest -q
 ```
 
 
@@ -50,52 +52,24 @@ data/raw/market/a_share_daily/
 Normalize them into the canonical parquet dataset:
 
 ```bash
-texperiment ingest-a-share-daily \
+uv run texperiment ingest-a-share-daily \
   --input data/raw/market/a_share_daily \
   --output data/processed/a_share_daily.parquet \
   --provider auto \
   --adj-type qfq
 
-texperiment data-check --path data/processed/a_share_daily.parquet
+uv run texperiment data-check --path data/processed/a_share_daily.parquet
 ```
 
 Supported input styles for the first version: canonical, AkShare-style CSV, Tushare-style CSV, and Baostock-style CSV. See `docs/A_SHARE_DAILY_DATA_INGESTION.md`.
-
-Direct full-market AkShare ingestion:
-
-```bash
-uv run texperiment fetch-a-share-daily \
-  --start-date 20200101 \
-  --end-date 20260716 \
-  --output data/processed/a_share_daily.parquet \
-  --adj-type qfq
-```
-
-Fast local TongdaXin `.day` ingestion:
-
-```bash
-uv run texperiment ingest-tdx-a-share-daily \
-  --input /path/to/T0002/vipdoc \
-  --output data/processed/a_share_daily.parquet
-```
-
-TongdaXin GB18030 text export ingestion, mixed stock/fund directories supported:
-
-```bash
-uv run texperiment ingest-tdx-export-a-share-daily \
-  --input data/raw/export \
-  --output data/processed/a_share_daily.parquet
-```
 
 ## Core workflow
 
 ```text
 Data
 ↓
-Universe
-↓
-Indicators
-↓
+{ Indicators + Universe }
+↘
 Signal
 ↓
 Backtest
@@ -149,3 +123,30 @@ uv run texperiment build-a-share-universe \
 ```
 
 文档：`docs/A_SHARE_UNIVERSE_FILTERING.md`。
+
+
+## A股指标层
+
+生成 `STOCK_RS_PULLBACK_v1` 所需的 MA20 / MA60 / 20日收益 / 相对沪深300强度 / 近10日高点 / 回撤幅度 / 成交量MA5：
+
+```bash
+uv run texperiment compute-a-share-indicators \
+  --daily-input data/processed/a_share_daily.parquet \
+  --benchmark-input data/processed/index_daily.parquet \
+  --benchmark-code 000300.SH \
+  --output data/processed/a_share_indicators.parquet \
+  --setup STOCK_RS_PULLBACK_v1
+```
+
+`--daily-input` 必须是包含每只股票完整历史的日线文件，不能使用只含每只股票一行的 `a_share_universe.parquet`。Parquet 输入自动分批计算并流式写出，避免完整日线一次性加载导致内存不足。
+
+如果需要从 TDX 文本导出生成沪深300基准文件：
+
+```bash
+uv run texperiment ingest-tdx-export-index-daily \
+  --input data/raw/export/SH#000300.txt \
+  --output data/processed/index_daily.parquet \
+  --code 000300.SH
+```
+
+文档：`docs/A_SHARE_INDICATORS.md`。

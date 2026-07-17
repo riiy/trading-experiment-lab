@@ -137,6 +137,60 @@ def write_tdx_export_parquet(
             temp_output.unlink()
 
 
+def read_tdx_index_export_file(path: str | Path, *, code: str = "000300.SH") -> pd.DataFrame:
+    """Read one TDX index text export into canonical daily-bar fields."""
+    path = Path(path)
+    with path.open("r", encoding="gb18030", errors="replace") as handle:
+        header = handle.readline()
+    parts = header.strip().split()
+    name = parts[1] if len(parts) > 1 else ""
+    adj_type = "qfq" if "前复权" in header else "none"
+    try:
+        raw = pd.read_csv(
+            path, encoding="gb18030", skiprows=2, header=None,
+            names=_RAW_COLUMNS, usecols=range(7), comment="#",
+        )
+    except pd.errors.EmptyDataError:
+        return _empty_canonical_frame()
+    raw["date"] = pd.to_datetime(raw["date"], errors="coerce")
+    for column in _RAW_COLUMNS[1:]:
+        raw[column] = pd.to_numeric(raw[column], errors="coerce")
+    raw = raw.dropna(subset=_RAW_COLUMNS).sort_values("date").drop_duplicates("date", keep="last")
+    raw = raw.loc[(raw[["open", "high", "low", "close"]] > 0).all(axis=1)].copy()
+    if raw.empty:
+        return _empty_canonical_frame()
+    raw["code"] = code
+    raw["name"] = name
+    raw["pre_close"] = raw["close"].shift(1)
+    raw["pct_chg"] = (raw["close"] / raw["pre_close"] - 1) * 100
+    raw["trade_status"] = "1"
+    raw["is_suspended"] = False
+    raw["is_limit_up"] = False
+    raw["is_limit_down"] = False
+    raw["is_st"] = False
+    raw["listing_days"] = (raw["date"] - raw["date"].min()).dt.days + 1
+    return normalize_daily_bars(
+        raw, provider="canonical", adj_type=adj_type,
+        source="tongdaxin_export", source_file=path,
+    )
+
+
+def write_tdx_index_parquet(
+    input_path: str | Path,
+    output_path: str | Path,
+    *,
+    code: str = "000300.SH",
+) -> DataQualityReport:
+    frame = read_tdx_index_export_file(input_path, code=code)
+    if frame.empty:
+        raise ValueError(f"Index export contains no valid rows: {input_path}")
+    report = validate_daily_bars(frame)
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_parquet(output, index=False)
+    return report
+
+
 def _is_a_share_code(market: str, code: str) -> bool:
     if market == "SH":
         return code.startswith(("600", "601", "603", "605", "688", "689", "900"))

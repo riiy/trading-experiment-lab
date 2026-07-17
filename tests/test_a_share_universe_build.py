@@ -2,12 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from texperiment.universe.a_share import (
-    AShareUniverseConfig,
-    annotate_a_share_universe,
-    build_a_share_universe,
-    build_a_share_universe_from_parquet,
-)
+from texperiment.universe.a_share import AShareUniverseConfig, annotate_a_share_universe, build_a_share_universe
 
 
 def _row(code: str, date: str, close: float, amount: float, **extra):
@@ -79,88 +74,3 @@ def test_config_can_relax_thresholds_for_small_fixture():
     cfg = AShareUniverseConfig(min_listing_days=1, min_avg_amount_20d=1, max_one_lot_value=2_000)
     out = build_a_share_universe(df, config=cfg)
     assert len(out) == 1
-
-
-def test_listing_days_uses_calendar_days_from_first_observation():
-    df = pd.DataFrame(
-        [
-            _row("000001.SZ", "2026-01-01", 10, 400_000_000, avg_amount_20d=400_000_000),
-            _row("000001.SZ", "2026-01-02", 10, 400_000_000, avg_amount_20d=400_000_000),
-            _row("000001.SZ", "2026-01-10", 10, 400_000_000, avg_amount_20d=400_000_000),
-        ]
-    )
-
-    out = build_a_share_universe(
-        df,
-        as_of_date="2026-01-10",
-        config=AShareUniverseConfig(min_listing_days=10),
-    )
-
-    assert out.loc[0, "listing_days"] == 10
-
-
-def test_missing_tdx_st_metadata_is_rejected():
-    df = pd.DataFrame(
-        [_row("000001.SZ", "2026-07-15", 10, 400_000_000, source="tongdaxin", name="", avg_amount_20d=400_000_000)]
-    )
-
-    out = annotate_a_share_universe(
-        df,
-        config=AShareUniverseConfig(min_listing_days=1, min_avg_amount_20d=1),
-    )
-
-    assert bool(out.loc[0, "st_metadata_available"]) is False
-    assert "missing_st_metadata" in out.loc[0, "reject_reasons"]
-
-
-def test_board_specific_limit_rates_are_applied():
-    rows = [
-        _row("000001.SZ", "2026-07-15", 10, 400_000_000, pct_chg=9.9, pre_close=10 / 1.099, name="普通股"),
-        _row("300001.SZ", "2026-07-15", 10, 400_000_000, pct_chg=19.9, pre_close=10 / 1.199, name="创业板股"),
-        _row("688001.SH", "2026-07-15", 10, 400_000_000, pct_chg=19.9, pre_close=10 / 1.199, name="科创板股"),
-        _row("920001.BJ", "2026-07-15", 10, 400_000_000, pct_chg=29.9, pre_close=10 / 1.299, name="北交所股"),
-    ]
-
-    out = annotate_a_share_universe(
-        pd.DataFrame(rows),
-        config=AShareUniverseConfig(min_listing_days=1, min_avg_amount_20d=1),
-    )
-
-    assert out["pass_not_limit_up_down"].tolist() == [False, False, False, False]
-    assert out["limit_rate"].tolist() == [0.1, 0.2, 0.2, 0.3]
-
-
-def test_non_trading_as_of_uses_latest_available_date():
-    df = pd.DataFrame(
-        [
-            _row("000001.SZ", "2026-07-17", 10, 400_000_000),
-            _row("000001.SZ", "2026-07-20", 10, 400_000_000),
-        ]
-    )
-
-    out = annotate_a_share_universe(
-        df,
-        as_of_date="2026-07-18",
-        config=AShareUniverseConfig(min_listing_days=1, min_avg_amount_20d=1),
-    )
-
-    assert out.loc[0, "date"] == pd.Timestamp("2026-07-17")
-    assert out.loc[0, "effective_as_of"] == pd.Timestamp("2026-07-17")
-
-
-def test_build_universe_from_parquet_reads_batches(tmp_path):
-    dates = pd.date_range("2026-01-01", periods=20, freq="D")
-    df = pd.DataFrame([_row("000001.SZ", d.strftime("%Y-%m-%d"), 10, 400_000_000) for d in dates])
-    path = tmp_path / "bars.parquet"
-    df.to_parquet(path, index=False)
-
-    out = build_a_share_universe_from_parquet(
-        path,
-        as_of_date="2026-01-20",
-        config=AShareUniverseConfig(min_listing_days=20),
-        batch_size=7,
-    )
-
-    assert len(out) == 1
-    assert out.loc[0, "avg_amount_20d"] == 400_000_000
-    assert out.loc[0, "listing_days"] == 20

@@ -6,18 +6,17 @@ from pathlib import Path
 
 from texperiment.config.loader import load_yaml
 from texperiment.config.validator import validate_global_account_config, validate_setup_config
-from texperiment.data.akshare_source import fetch_a_share_daily
 from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, write_parquet
 from texperiment.data.quality import validate_daily_bars
-from texperiment.data.tdx_source import write_tdx_parquet
-from texperiment.data.tdx_export_source import write_tdx_export_parquet
-from texperiment.guards.trading_permission import assert_trading_disabled
-from texperiment.universe.a_share import (
-    AShareUniverseConfig,
-    build_a_share_universe,
-    build_a_share_universe_from_parquet,
-    write_universe,
+from texperiment.data.tdx_export_source import write_tdx_index_parquet
+from texperiment.indicators.a_share import (
+    AShareIndicatorConfig,
+    build_a_share_indicators,
+    write_a_share_indicators_from_parquet,
+    write_indicators,
 )
+from texperiment.guards.trading_permission import assert_trading_disabled
+from texperiment.universe.a_share import AShareUniverseConfig, build_a_share_universe, write_universe
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -76,53 +75,11 @@ def cmd_data_check(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_fetch_a_share_daily(args: argparse.Namespace) -> int:
+def cmd_ingest_tdx_export_index_daily(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     output_path = _resolve(root, args.output)
-    df, report = fetch_a_share_daily(
-        args.start_date,
-        args.end_date,
-        adj_type=args.adj_type,
-        pause_seconds=args.pause,
-        max_retries=args.max_retries,
-    )
-    quality = validate_daily_bars(df, strict=not args.allow_quality_warnings)
-    write_parquet(df, output_path)
-    print(f"fetch-a-share-daily: OK -> {output_path}")
-    print(f"symbols_requested: {report.symbols_requested}")
-    print(f"symbols_succeeded: {report.symbols_succeeded}")
-    print(f"symbols_failed: {report.symbols_failed}")
-    print(_quality_report_to_json(quality))
-    return 0
-
-
-def cmd_ingest_tdx_a_share_daily(args: argparse.Namespace) -> int:
-    root = Path(args.root).resolve()
-    output_path = _resolve(root, args.output)
-    report = write_tdx_parquet(
-        args.input,
-        output_path,
-        adj_type=args.adj_type,
-        strict=not args.allow_quality_warnings,
-    )
-    print(f"ingest-tdx-a-share-daily: OK -> {output_path}")
-    print(_quality_report_to_json(report))
-    return 0
-
-
-def cmd_ingest_tdx_export_a_share_daily(args: argparse.Namespace) -> int:
-    root = Path(args.root).resolve()
-    output_path = _resolve(root, args.output)
-    report, ingest_report = write_tdx_export_parquet(
-        args.input,
-        output_path,
-        strict=not args.allow_quality_warnings,
-    )
-    print(f"ingest-tdx-export-a-share-daily: OK -> {output_path}")
-    print(f"files_seen: {ingest_report.files_seen}")
-    print(f"files_ingested: {ingest_report.files_ingested}")
-    print(f"files_skipped: {ingest_report.files_skipped}")
-    print(f"stock_count: {ingest_report.stock_count}")
+    report = write_tdx_index_parquet(_resolve(root, args.input), output_path, code=args.code)
+    print(f"ingest-tdx-export-index-daily: OK -> {output_path}")
     print(_quality_report_to_json(report))
     return 0
 
@@ -135,21 +92,13 @@ def cmd_build_a_share_universe(args: argparse.Namespace) -> int:
     setup_config = load_yaml(setup_path)
     universe_config = AShareUniverseConfig.from_setup_config(setup_config)
 
-    if input_path.suffix.lower() == ".parquet":
-        universe = build_a_share_universe_from_parquet(
-            input_path,
-            as_of_date=args.as_of,
-            config=universe_config,
-            include_rejected=args.include_rejected,
-        )
-    else:
-        df = read_daily_bars(input_path)
-        universe = build_a_share_universe(
-            df,
-            as_of_date=args.as_of,
-            config=universe_config,
-            include_rejected=args.include_rejected,
-        )
+    df = read_daily_bars(input_path)
+    universe = build_a_share_universe(
+        df,
+        as_of_date=args.as_of,
+        config=universe_config,
+        include_rejected=args.include_rejected,
+    )
     if universe.empty and not args.allow_empty:
         raise SystemExit(
             "build-a-share-universe produced 0 rows. "
@@ -168,6 +117,56 @@ def cmd_build_a_share_universe(args: argparse.Namespace) -> int:
         "min_avg_amount_20d": universe_config.min_avg_amount_20d,
         "max_one_lot_value": universe_config.max_one_lot_value,
         "min_listing_days": universe_config.min_listing_days,
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_compute_a_share_indicators(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    daily_path = _resolve(root, args.daily_input)
+    output_path = _resolve(root, args.output)
+    setup_path = root / "configs" / "setups" / f"{args.setup}.yaml"
+    setup_config = load_yaml(setup_path)
+    config = AShareIndicatorConfig.from_setup_config(setup_config)
+    if args.benchmark_code:
+        config = AShareIndicatorConfig(
+            ma_short_window=config.ma_short_window,
+            ma_long_window=config.ma_long_window,
+            return_window=config.return_window,
+            benchmark_code=args.benchmark_code,
+            high_lookback_window=config.high_lookback_window,
+            volume_ma_window=config.volume_ma_window,
+        )
+
+    if args.benchmark_input:
+        benchmark = read_daily_bars(_resolve(root, args.benchmark_input))
+    else:
+        benchmark = read_daily_bars(daily_path)
+
+    if daily_path.suffix.lower() == ".parquet":
+        rows_written, complete_count = write_a_share_indicators_from_parquet(
+            daily_path,
+            output_path,
+            benchmark_bars=benchmark,
+            config=config,
+        )
+    else:
+        daily = read_daily_bars(daily_path)
+        indicators = build_a_share_indicators(daily, benchmark_bars=benchmark, config=config)
+        write_indicators(indicators, output_path)
+        rows_written = len(indicators)
+        complete_count = int(indicators["has_complete_indicator_window"].sum()) if "has_complete_indicator_window" in indicators.columns else 0
+    print(f"compute-a-share-indicators: OK -> {output_path}")
+    print(json.dumps({
+        "setup": args.setup,
+        "rows_written": int(rows_written),
+        "complete_indicator_rows": complete_count,
+        "benchmark_code": config.benchmark_code,
+        "ma_short_window": config.ma_short_window,
+        "ma_long_window": config.ma_long_window,
+        "return_window": config.return_window,
+        "high_lookback_window": config.high_lookback_window,
+        "volume_ma_window": config.volume_ma_window,
     }, ensure_ascii=False, indent=2))
     return 0
 
@@ -197,28 +196,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--allow-quality-warnings", action="store_true")
     p.set_defaults(func=cmd_data_check)
 
-    p = sub.add_parser("fetch-a-share-daily", help="Fetch full-market A-share daily bars from AkShare")
-    p.add_argument("--start-date", required=True, help="Start date in YYYYMMDD format")
-    p.add_argument("--end-date", required=True, help="End date in YYYYMMDD format")
-    p.add_argument("--output", default="data/processed/a_share_daily.parquet")
-    p.add_argument("--adj-type", default="qfq", choices=["none", "qfq", "hfq"])
-    p.add_argument("--pause", type=float, default=0.2)
-    p.add_argument("--max-retries", type=int, default=3)
-    p.add_argument("--allow-quality-warnings", action="store_true")
-    p.set_defaults(func=cmd_fetch_a_share_daily)
+    p = sub.add_parser("ingest-tdx-export-index-daily", help="Read one TDX index text export")
+    p.add_argument("--input", required=True)
+    p.add_argument("--output", default="data/processed/index_daily.parquet")
+    p.add_argument("--code", default="000300.SH")
+    p.set_defaults(func=cmd_ingest_tdx_export_index_daily)
 
-    p = sub.add_parser("ingest-tdx-a-share-daily", help="Read TongdaXin vipdoc .day files")
-    p.add_argument("--input", required=True, help="TongdaXin vipdoc/T0002 directory")
-    p.add_argument("--output", default="data/processed/a_share_daily.parquet")
-    p.add_argument("--adj-type", default="none", choices=["none"])
-    p.add_argument("--allow-quality-warnings", action="store_true")
-    p.set_defaults(func=cmd_ingest_tdx_a_share_daily)
 
-    p = sub.add_parser("ingest-tdx-export-a-share-daily", help="Read TDX GB18030 text exports")
-    p.add_argument("--input", required=True, help="Directory containing market#code.txt exports")
-    p.add_argument("--output", default="data/processed/a_share_daily.parquet")
-    p.add_argument("--allow-quality-warnings", action="store_true")
-    p.set_defaults(func=cmd_ingest_tdx_export_a_share_daily)
+    p = sub.add_parser("compute-a-share-indicators", help="Compute MA/returns/relative strength/pullback indicators for A-share stocks")
+    p.add_argument("--daily-input", default="data/processed/a_share_daily.parquet", help="Canonical A-share daily bars")
+    p.add_argument("--benchmark-input", default=None, help="Canonical index daily bars; omit if benchmark rows are inside daily-input")
+    p.add_argument("--output", default="data/processed/a_share_indicators.parquet", help="Output indicators parquet/csv")
+    p.add_argument("--setup", default="STOCK_RS_PULLBACK_v1", help="Setup config id")
+    p.add_argument("--benchmark-code", default=None, help="Override benchmark code, default from setup config")
+    p.set_defaults(func=cmd_compute_a_share_indicators)
 
     p = sub.add_parser("build-a-share-universe", help="Build executable A-share universe for the setup")
     p.add_argument("--input", default="data/processed/a_share_daily.parquet", help="Canonical daily bars parquet")

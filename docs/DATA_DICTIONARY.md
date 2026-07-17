@@ -25,24 +25,33 @@
 | is_limit_up | bool | 是否涨停，当前为近似推导 |
 | is_limit_down | bool | 是否跌停，当前为近似推导 |
 | is_st | bool | 是否 ST / *ST |
-| listing_days | int | 上市天数，可后续补充 |
+| listing_days | int | 上市天数；缺失时股票池按每只股票已观察行数回退 |
 | industry | string | 行业分类，可选 |
 | source | string | 数据来源 |
 | source_file | string | 原始文件路径 |
 
 ## indicators
 
+由 `compute-a-share-indicators` 生成。
+
 | 字段 | 说明 |
 |---|---|
 | ma20 | 20 日均线 |
 | ma60 | 60 日均线 |
 | ret20 | 个股 20 日收益 |
+| benchmark_close | 沪深300当日收盘价 |
 | benchmark_ret20 | 沪深300 20 日收益 |
 | excess_ret20 | 个股相对沪深300 20 日超额收益 |
-| high_10d | 近 10 日高点 |
-| drawdown_from_10d_high | 从近 10 日高点回撤幅度 |
+| relative_strength_20d | 相对沪深300强度，当前等同于 `excess_ret20` |
+| high_10d | 近 10 日高点，包含当前交易日 |
+| drawdown_from_10d_high | 从近 10 日高点回撤幅度，`1 - close / high_10d` |
 | vol_ma5 | 5 日平均成交量 |
-| breakout_body_midpoint | 突破阳线实体中点 |
+| volume_ratio_to_ma5 | 当日成交量 / 5 日平均成交量 |
+| close_above_ma20 | 收盘价是否高于MA20 |
+| ma20_above_ma60 | MA20是否高于MA60 |
+| volume_below_ma5 | 当日成交量是否低于5日均量 |
+| has_complete_indicator_window | 核心指标窗口是否完整 |
+| benchmark_code | 使用的基准指数代码 |
 
 ## trades
 
@@ -81,3 +90,5 @@
 | `pass_one_lot_value` | bool | 是否通过一手金额过滤 |
 | `is_tradable_universe` | bool | 是否进入可交易股票池 |
 | `reject_reasons` | string | 未通过原因，分号分隔 |
+
+股票池输出同时保留对应的最新标准日线字段。未使用 `--include-rejected` 时，输出只包含 `is_tradable_universe=true` 的行；使用该选项时，同时保留拒绝行及其 `reject_reasons`。
