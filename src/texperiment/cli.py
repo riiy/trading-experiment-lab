@@ -30,6 +30,7 @@ from texperiment.indicators.a_share import (
 )
 from texperiment.guards.trading_permission import assert_trading_disabled
 from texperiment.metrics.validation import build_validation_artifacts, write_validation_outputs
+from texperiment.tickets.generator import build_trade_ticket_artifacts, write_ticket_outputs
 from texperiment.setups.stock_rs_pullback_v1.signal import (
     build_stock_rs_pullback_signals,
     build_stock_rs_pullback_signals_from_parquet,
@@ -382,6 +383,50 @@ def cmd_account_sim_stock_rs_pullback(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_generate_stock_rs_pullback_tickets(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    setup_config = load_yaml(root / "configs" / "setups" / f"{args.setup}.yaml")
+    account_config = load_yaml(root / "configs" / "global_account.yaml")
+    summary_path = _resolve(root, args.summary_input)
+    if not summary_path.exists():
+        raise SystemExit(f"account simulation summary not found: {summary_path}")
+    account_summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    if account_summary.get("force_research"):
+        raise SystemExit("formal tickets are blocked for force-research account simulation output")
+
+    account_sim = read_table(_resolve(root, args.account_sim_input))
+    try:
+        artifacts = build_trade_ticket_artifacts(
+            account_sim,
+            account_config=account_config,
+            setup_config=setup_config,
+            account_summary=account_summary,
+            selected_trade_id=args.trade_id,
+            selected_simulation_id=args.simulation_id,
+        )
+    except PermissionError as exc:
+        raise SystemExit(str(exc)) from exc
+    paths = write_ticket_outputs(
+        artifacts,
+        output_dir=_resolve(root, args.output_dir),
+        index_path=_resolve(root, args.index_output),
+        summary_path=_resolve(root, args.summary_output),
+        report_path=_resolve(root, args.report_output),
+    )
+    print("generate-stock-rs-pullback-tickets: OK")
+    print(json.dumps({
+        "decision": artifacts["summary"]["decision"],
+        "tickets_generated": artifacts["summary"]["tickets_generated"],
+        "tickets_rejected": artifacts["summary"]["tickets_rejected"],
+        "output_paths": {
+            "index": str(paths["index"]),
+            "summary": str(paths["summary"]),
+            "report": str(paths["report"]),
+        },
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="texperiment")
     parser.add_argument("--root", default=str(ROOT), help="Project root directory")
@@ -486,6 +531,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--setup", default="STOCK_RS_PULLBACK_v1")
     p.add_argument("--force-research", action="store_true")
     p.set_defaults(func=cmd_account_sim_stock_rs_pullback)
+
+    p = sub.add_parser(
+        "generate-stock-rs-pullback-tickets",
+        help="Generate manual-review tickets from accepted account trades",
+    )
+    p.add_argument("--account-sim-input", default="data/account_sim/STOCK_RS_PULLBACK_v1_account_sim.csv")
+    p.add_argument("--summary-input", default="data/account_sim/STOCK_RS_PULLBACK_v1_account_summary.json")
+    p.add_argument("--output-dir", default="data/tickets/draft")
+    p.add_argument("--index-output", default="data/tickets/STOCK_RS_PULLBACK_v1_ticket_index.csv")
+    p.add_argument("--summary-output", default="data/tickets/STOCK_RS_PULLBACK_v1_ticket_summary.json")
+    p.add_argument("--report-output", default="data/reports/STOCK_RS_PULLBACK_v1_ticket_generation_report.md")
+    p.add_argument("--setup", default="STOCK_RS_PULLBACK_v1")
+    p.add_argument("--trade-id", default=None)
+    p.add_argument("--simulation-id", default=None)
+    p.set_defaults(func=cmd_generate_stock_rs_pullback_tickets)
 
     return parser
 

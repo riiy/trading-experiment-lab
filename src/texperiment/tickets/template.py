@@ -1,16 +1,77 @@
-TRADE_TICKET_TEMPLATE = """# Trade Ticket
+from __future__ import annotations
 
-- Setup: {setup_id}
-- Code: {code}
-- Entry price: {entry_price}
-- Stop price: {stop_price}
-- Target price: {target_price}
-- Shares: {shares}
-- Planned loss: {planned_loss}
-- Capital used: {capital_used}
+TRADE_TICKET_TEMPLATE = """# Trading Experiment 正式交易票
 
-Forbidden:
-- no average down
-- no chase
-- no conversion to long-term holding
+> 这是一张研究系统生成的交易票，不是自动下单指令。禁止任何程序化自动提交订单；执行前必须人工复核券商、价格、流动性、账户状态和当日风险预算。
+
+## 1. 基本信息
+
+| 字段 | 内容 |
+|---|---|
+| Ticket ID | {ticket_id} |
+| Setup | {setup_id} |
+| Trade ID | {trade_id} |
+| Simulation ID | {simulation_id} |
+| 标的 | {code} {name} |
+| 市场 | A股 |
+| 订单权限 | {order_permission} |
+
+## 2. 入场计划
+
+| 字段 | 数值 |
+|---|---:|
+| 计划入场日 | {entry_date} |
+| 计划入场价 | {entry_price:.4f} |
+| 止损价 | {stop_price:.4f} |
+| 目标价 | {target_price:.4f} |
+| 每股风险 | {per_share_risk:.4f} |
+| 股数 | {shares} |
+| 资金占用 | {capital_used:.2f} |
+| 计划亏损 | {planned_loss:.2f} |
+
+## 3. 退出规则
+
+- 结构止损：跌破止损价退出。
+- 目标退出：到达目标价退出。
+- 时间退出：最长持有 {max_holding_days} 个交易日。
+- 无上攻退出：{time_stop_days} 个交易日内没有达到 1R 上攻，则按规则退出。
+- A股 T+1：入场日默认不允许当日退出。
+
+## 4. 失效条件
+
+- 入场日无法在计划价格附近成交。
+- 开盘跳空导致计划亏损超过上限。
+- 标的停牌、涨停买不到、跌停卖不出或流动性显著异常。
+- 出现重大利空、监管处罚、业绩暴雷等未在信号中体现的风险。
+- 账户当月亏损预算或总回撤预算已经触发限制。
+
+## 5. 禁止动作
+
+- 不自动下单。
+- 不加仓摊平。
+- 不追高改价。
+- 不扩大股数。
+- 不把短线实验交易改成长线持仓。
+- 不使用家庭核心资产配置资金。
+- 不因盘中情绪修改止损、目标或持有期。
+
+## 6. 回测/仿真参考
+
+| 字段 | 数值 |
+|---|---:|
+| 回测退出日 | {exit_date} |
+| 回测退出原因 | {exit_reason} |
+| 回测净收益率 | {net_return} |
+| 回测R倍数 | {r_multiple} |
+| 仿真盈亏 | {pnl} |
+
+## 7. 人工复核
+
+- 是否仍满足 Setup 条件：
+- 是否仍满足账户风控：
+- 是否存在未纳入系统的重大信息：
+- 是否按票执行：
+- 入场偏差：
+- 退出偏差：
+- 复盘结论：保留 / 观察 / 归档
 """
