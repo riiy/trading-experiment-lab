@@ -137,6 +137,43 @@ def test_qfq_only_execution_realism_is_blocking_not_evaluable():
     assert bool(realism["blocking"]) is True
 
 
+def test_expected_limit_up_invalid_entry_is_not_engine_failure():
+    trade = _trade(99, status="invalid_trade")
+    trade.update({
+        "signal_date": "2026-01-02",
+        "pullback_date": "2026-01-01",
+        "trigger_date": "2026-01-02",
+        "entry_date": "2026-01-03",
+        "entry_price": 10.0,
+        "invalid_reason": "invalid_limit_up_cannot_buy",
+    })
+    dates = pd.date_range("2025-10-01", periods=100, freq="D")
+    bars = pd.DataFrame({
+        "date": dates,
+        "code": trade["code"],
+        "open": 10.0,
+        "high": 10.5,
+        "low": 9.5,
+        "close": 10.0,
+        "volume": 1000,
+        "adj_type": "qfq",
+        "adj_factor": pd.NA,
+        "is_suspended": False,
+        "is_limit_up": False,
+    })
+    bars.loc[bars["date"] == pd.Timestamp("2026-01-03"), "is_limit_up"] = True
+    indicators = bars.copy()
+    for column, value in {"ma20": 10.0, "ma60": 10.0, "ret20": 0.0, "high_10d": 10.5, "vol_ma5": 1000.0}.items():
+        indicators[column] = value
+    universe = bars[["date", "code"]].copy()
+    universe["is_tradable_universe"] = True
+
+    details = audit_trade(trade, signal={}, daily_bars=bars, indicators=indicators, universe=universe)
+
+    entry_check = details.loc[details["check_id"] == "ENTRY_DAY_EXECUTABLE"].iloc[0]
+    assert entry_check["verdict"] == "PASS"
+
+
 def test_final_decision_requires_manual_review_and_never_changes_permissions():
     details = pd.DataFrame([{
         "severity": "CRITICAL",

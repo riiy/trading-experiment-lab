@@ -101,7 +101,8 @@ def audit_trade(
     checks.append(_detail(trade_id, "ENTRY_IS_NEXT_TRADING_DAY_OPEN", "Next trading-day open entry", "CRITICAL", [row.get("entry_date"), row.get("entry_price")], None if expected_entry is None else [expected_entry["date"], expected_entry["open"]], "PASS" if entry_ok else "FAIL", True, "first stock bar after trigger"))
 
     executable = expected_entry is not None and not _bool(expected_entry.get("is_suspended")) and not _bool(expected_entry.get("is_limit_up"))
-    checks.append(_detail(trade_id, "ENTRY_DAY_EXECUTABLE", "Entry-day execution status", "CRITICAL", None if expected_entry is None else expected_entry.to_dict(), executable, "PASS" if executable else "FAIL", True, "suspension and limit-up flags"))
+    entry_status_ok, entry_evidence = _entry_status_matches_trade(row, expected_entry, executable)
+    checks.append(_detail(trade_id, "ENTRY_DAY_EXECUTABLE", "Entry-day execution status", "CRITICAL", None if expected_entry is None else expected_entry.to_dict(), {"executable": executable, "expected_outcome": entry_evidence}, "PASS" if entry_status_ok else "FAIL", True, "suspension and limit-up flags"))
 
     t1_ok = entry_date is None or exit_date is None or exit_date > entry_date
     checks.append(_detail(trade_id, "T1_NO_ENTRY_DAY_EXIT", "A-share T+1", "CRITICAL", [entry_date, exit_date], t1_ok, "PASS" if t1_ok else "FAIL", True, "exit must follow entry date"))
@@ -236,6 +237,19 @@ def _reconstruct_invalid_reason(row: dict[str, Any], expected_entry: pd.Series |
     if entry is not None and stop is not None and stop >= entry:
         return "invalid_stop_not_below_entry"
     return str(row.get("invalid_reason"))
+
+
+def _entry_status_matches_trade(row: dict[str, Any], expected_entry: pd.Series | None, executable: bool) -> tuple[bool, str]:
+    if row.get("status") == "valid_trade":
+        return executable, "valid trade requires executable entry"
+    reason = str(row.get("invalid_reason"))
+    if reason == "invalid_no_next_open":
+        return expected_entry is None, "missing next open"
+    if reason == "invalid_suspended_cannot_buy":
+        return expected_entry is not None and _bool(expected_entry.get("is_suspended")), "suspended entry correctly rejected"
+    if reason == "invalid_limit_up_cannot_buy":
+        return expected_entry is not None and _bool(expected_entry.get("is_limit_up")), "limit-up entry correctly rejected"
+    return executable, "other invalid reason requires an otherwise executable entry"
 
 
 def _prepare_history(frame: pd.DataFrame, code: str) -> pd.DataFrame:
