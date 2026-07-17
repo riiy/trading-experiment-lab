@@ -6,6 +6,12 @@ from pathlib import Path
 
 from texperiment.config.loader import load_yaml
 from texperiment.config.validator import validate_global_account_config, validate_setup_config
+from texperiment.backtest.engine import (
+    run_stock_rs_pullback_backtest,
+    run_stock_rs_pullback_backtest_from_parquet,
+    summarize_backtest_trades,
+    write_trades,
+)
 from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, write_parquet
 from texperiment.data.quality import validate_daily_bars
 from texperiment.data.tdx_export_source import write_tdx_index_parquet
@@ -267,6 +273,33 @@ def cmd_generate_stock_rs_pullback_signals(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_backtest_stock_rs_pullback(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    setup_path = root / "configs" / "setups" / f"{args.setup}.yaml"
+    setup_config = load_yaml(setup_path)
+    signals = read_daily_bars(_resolve(root, args.signal_input))
+    daily_path = _resolve(root, args.daily_input)
+    if daily_path.suffix.lower() == ".parquet":
+        trades = run_stock_rs_pullback_backtest_from_parquet(
+            signals,
+            daily_path,
+            setup_config=setup_config,
+            batch_size=args.batch_size,
+        )
+    else:
+        daily = read_daily_bars(daily_path)
+        trades = run_stock_rs_pullback_backtest(signals, daily, setup_config=setup_config)
+    if trades.empty and not args.allow_empty:
+        raise SystemExit(
+            "backtest-stock-rs-pullback produced 0 trades; use --allow-empty to write empty output"
+        )
+    output_path = _resolve(root, args.output)
+    write_trades(trades, output_path)
+    print(f"backtest-stock-rs-pullback: OK -> {output_path}")
+    print(json.dumps(summarize_backtest_trades(trades), ensure_ascii=False, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="texperiment")
     parser.add_argument("--root", default=str(ROOT), help="Project root directory")
@@ -331,6 +364,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--allow-empty", action="store_true")
     p.add_argument("--batch-size", type=_positive_int, default=250_000, help="Parquet rows per batch")
     p.set_defaults(func=cmd_generate_stock_rs_pullback_signals)
+
+    p = sub.add_parser(
+        "backtest-stock-rs-pullback",
+        help="Backtest STOCK_RS_PULLBACK_v1 triggered signals",
+    )
+    p.add_argument("--signal-input", default="data/signals/STOCK_RS_PULLBACK_v1_signals.csv")
+    p.add_argument("--daily-input", default="data/processed/a_share_daily.parquet")
+    p.add_argument("--output", default="data/trades/STOCK_RS_PULLBACK_v1_backtest_trades.csv")
+    p.add_argument("--setup", default="STOCK_RS_PULLBACK_v1")
+    p.add_argument("--allow-empty", action="store_true")
+    p.add_argument("--batch-size", type=_positive_int, default=250_000, help="Parquet rows per batch")
+    p.set_defaults(func=cmd_backtest_stock_rs_pullback)
 
     return parser
 
