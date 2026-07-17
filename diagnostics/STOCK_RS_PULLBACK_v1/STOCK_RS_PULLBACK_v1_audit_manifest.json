@@ -1,0 +1,139 @@
+{
+  "audit_plan_version": "AUDIT_STOCK_RS_PULLBACK_v1_PLAN_v1",
+  "random_seed": 20260717,
+  "git_commit": "5ceed91cc59e00146547060f8bbe0cda045c138c",
+  "git_dirty": false,
+  "created_at": "2026-07-17T18:10:31.882061+08:00",
+  "timezone": "Asia/Shanghai",
+  "environment": {
+    "python": "3.13.2",
+    "operating_system": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "uv_lock_sha256": "ab72dc958c64edc7dbbc76eb0faf12ffd9f3cedbf635b696b2901919f5da55e4",
+    "config_sha256": "843aa95813a965c5f942f7448598076c4c51c56ad138360aed89886eb4d0b415",
+    "backtest_engine_sha256": "e3373196a44cb14b39e3d4551ac6808762f74f8629321d349e77d9ebefcf332b"
+  },
+  "inputs": [
+    {
+      "path": "configs/setups/STOCK_RS_PULLBACK_v1.yaml",
+      "sha256": "424271e49a423fab4bcee0110cf32df4f4e91ecd4685669ef90f3bc8d1ef7e85",
+      "bytes": 1471
+    },
+    {
+      "path": "data/processed/a_share_daily.parquet",
+      "sha256": "e2ad43e91cb337367c8e4463f275307e4dc313ecfa4bd748bbee7d11c45b216c",
+      "rows": 15930299,
+      "columns": 25,
+      "min_date": "1990-12-19",
+      "max_date": "2026-07-16",
+      "code_count": 5526,
+      "source_values": [
+        "tongdaxin_export"
+      ],
+      "adj_type_values": [
+        "qfq"
+      ],
+      "duplicate_primary_keys": 0,
+      "duplicate_check_method": "adjacent_sorted_stream",
+      "missing_critical_fields": {
+        "date": 0,
+        "code": 0,
+        "open": 0,
+        "high": 0,
+        "low": 0,
+        "close": 0,
+        "volume": 0,
+        "amount": 0
+      },
+      "missing_columns": []
+    },
+    {
+      "path": "data/processed/a_share_indicators.parquet",
+      "sha256": "628e1f93c92b2498ab07ace46f1c8864a6c0202f9b79e2cbf88388a56803d78d",
+      "rows": 15930299,
+      "columns": 41,
+      "min_date": "1990-12-19",
+      "max_date": "2026-07-16",
+      "code_count": 5526,
+      "source_values": [
+        "tongdaxin_export"
+      ],
+      "adj_type_values": [
+        "qfq"
+      ],
+      "duplicate_primary_keys": 0,
+      "duplicate_check_method": "adjacent_sorted_stream",
+      "missing_critical_fields": {
+        "date": 0,
+        "code": 0,
+        "ma20": 104890,
+        "ma60": 325080,
+        "ret20": 110405,
+        "benchmark_ret20": 1407038
+      },
+      "missing_columns": []
+    },
+    {
+      "path": "data/processed/a_share_universe_full.parquet",
+      "sha256": "a86f6a3409c0b14f9ca593ebffcaafd324df7e9e6c7a1955f2ef679853eb8911",
+      "rows": 15930299,
+      "columns": 35,
+      "min_date": "1990-12-19",
+      "max_date": "2026-07-16",
+      "code_count": 5526,
+      "source_values": [
+        "tongdaxin_export"
+      ],
+      "adj_type_values": [
+        "qfq"
+      ],
+      "duplicate_primary_keys": 0,
+      "duplicate_check_method": "adjacent_sorted_stream",
+      "missing_critical_fields": {
+        "date": 0,
+        "code": 0,
+        "is_tradable_universe": 0
+      },
+      "missing_columns": []
+    },
+    {
+      "path": "data/signals/STOCK_RS_PULLBACK_v1_signals.csv",
+      "sha256": "6cb6895305f8f0c7b1fe6e90c9752db4acc203e987b4408b5b1dd9f2d1729d61",
+      "rows": 18202,
+      "columns": 20,
+      "min_date": "2006-07-12",
+      "max_date": "2026-07-16",
+      "code_count": 3348,
+      "source_values": [],
+      "adj_type_values": [],
+      "duplicate_primary_keys": 0,
+      "duplicate_check_method": "adjacent_sorted_stream",
+      "missing_critical_fields": {
+        "signal_id": 0,
+        "code": 0,
+        "signal_date": 0,
+        "status": 0
+      },
+      "missing_columns": []
+    },
+    {
+      "path": "data/trades/STOCK_RS_PULLBACK_v1_backtest_trades.csv",
+      "sha256": "69dc2498d679bc43bcdd903b6206bde0ee9f6ef8a43c50e851a807032d7746d2",
+      "rows": 18202,
+      "columns": 22,
+      "min_date": "2006-07-12",
+      "max_date": "2026-07-16",
+      "code_count": 3348,
+      "source_values": [],
+      "adj_type_values": [],
+      "duplicate_primary_keys": 0,
+      "duplicate_check_method": "adjacent_sorted_stream",
+      "missing_critical_fields": {
+        "trade_id": 0,
+        "signal_id": 0,
+        "code": 0,
+        "status": 0
+      },
+      "missing_columns": []
+    }
+  ]
+}

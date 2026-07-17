@@ -1,5 +1,5 @@
 Trading_Experiment:
-  status: audit_planning
+  status: audit_closed
   capital_limit: 30000
   max_planned_loss_per_trade: 500
   instrument_scope:
@@ -21,6 +21,18 @@ setups:
       status: NOT_EVALUABLE
       reason: missing_industry_metadata
       impact_on_final_decision: none
+    audit:
+      status: CLOSED
+      decision: ENGINE_ERROR_FOUND
+      plan_version: AUDIT_STOCK_RS_PULLBACK_v1_PLAN_v1
+      sample_count: 50
+      critical_failures: 10
+      blocking_not_evaluable: 150
+      recalculation_performed: false
+      new_setup_started: false
+      closed_at: "2026-07-17T10:13:39Z"
+      report: diagnostics/STOCK_RS_PULLBACK_v1/AUDIT_STOCK_RS_PULLBACK_v1.md
+      summary: diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_audit_summary.json
 archived_paths:
   - earnings_event
   - major_contract_event

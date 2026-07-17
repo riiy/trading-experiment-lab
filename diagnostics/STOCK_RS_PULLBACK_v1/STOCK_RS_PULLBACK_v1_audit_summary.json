@@ -1,0 +1,9 @@
+{
+  "decision": "ENGINE_ERROR_FOUND",
+  "sample_count": 50,
+  "critical_failures": 10,
+  "blocking_not_evaluable": 150,
+  "non_blocking_not_evaluable": 0,
+  "recalculation_performed": false,
+  "new_setup_started": false
+}
