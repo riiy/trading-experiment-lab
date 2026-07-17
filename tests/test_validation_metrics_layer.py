@@ -76,6 +76,8 @@ def test_build_validation_artifacts_core_metrics_and_gates():
     assert overall["top3_contribution_ratio"] == pytest_approx(0.17 / 0.13)
     assert metrics["gates"]["min_valid_trades"]["passed"] is True
     assert metrics["decision"] == "VALIDATION_PASSED_NEEDS_ACCOUNT_SIMULATION"
+    assert metrics["industry_analysis"]["status"] == "NOT_EVALUABLE"
+    assert metrics["industry_analysis"]["impact_on_final_decision"] == "none"
     assert "行业集中度" in artifacts["report_markdown"]
 
 

@@ -10,11 +10,16 @@ Trading_Experiment:
 
 setups:
   - id: STOCK_RS_PULLBACK_v1
-    status: pre_registration_planned
+    status: FAILED_ARCHIVED
     market_scope: A_SHARE_ONLY
     trading_allowed: false
     account_simulation_allowed: false
-    decision: PRE_REGISTRATION_NOT_FROZEN
+    ticket_generation_allowed: false
+    decision: FAILED_ARCHIVED
+    industry_analysis:
+      status: NOT_EVALUABLE
+      reason: missing_industry_metadata
+      impact_on_final_decision: none
 
 archived_paths:
   - earnings_event

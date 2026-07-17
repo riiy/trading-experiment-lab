@@ -57,6 +57,7 @@ def build_validation_artifacts(
     overall = compute_overall_metrics(trades, enriched)
     yearly = by_year(enriched)
     industry = by_industry(enriched)
+    industry_analysis = assess_industry_analysis(enriched)
     gates = evaluate_validation_gates(overall, yearly, threshold)
     decision = decide_validation_status(gates, overall)
     metrics = {
@@ -67,6 +68,7 @@ def build_validation_artifacts(
         "threshold": asdict(threshold),
         "yearly": yearly.to_dict(orient="records"),
         "industry": industry.to_dict(orient="records"),
+        "industry_analysis": industry_analysis,
     }
     return {
         "metrics": _json_safe(metrics),
@@ -128,6 +130,22 @@ def compute_overall_metrics(all_trades: pd.DataFrame, valid_trades: pd.DataFrame
         "avg_holding_days": float(holding.mean()) if not holding.empty else 0.0,
         "exit_reason_counts": exit_reason_counts,
         "invalid_reason_counts": invalid_reason_counts,
+    }
+
+
+def assess_industry_analysis(valid_trades: pd.DataFrame) -> dict[str, str]:
+    if valid_trades.empty or "industry" not in valid_trades.columns:
+        return {
+            "status": "NOT_EVALUABLE",
+            "reason": "missing_industry_metadata",
+            "impact_on_final_decision": "none",
+        }
+    labels = valid_trades["industry"].astype("string").str.strip()
+    known = labels.notna() & labels.ne("") & labels.ne("UNKNOWN")
+    return {
+        "status": "EVALUABLE" if bool(known.any()) else "NOT_EVALUABLE",
+        "reason": "available_industry_metadata" if bool(known.any()) else "missing_industry_metadata",
+        "impact_on_final_decision": "none",
     }
 
 
@@ -194,6 +212,7 @@ def render_validation_report(metrics: dict[str, Any]) -> str:
     gates = metrics["gates"]
     yearly = metrics.get("yearly", [])
     industry = metrics.get("industry", [])
+    industry_analysis = metrics.get("industry_analysis", {})
     decision = metrics["decision"]
 
     lines = [
@@ -241,7 +260,15 @@ def render_validation_report(metrics: dict[str, Any]) -> str:
     if not yearly:
         lines.append("| - | 0 | - | - | - | - |")
 
-    lines += ["", "## 5. 行业集中度", "", "| 行业 | 有效交易 | 占比 | 平均净收益 | PF | 净收益合计 |", "|---|---:|---:|---:|---:|---:|"]
+    lines += [
+        "",
+        "## 5. 行业集中度",
+        "",
+        f"状态: `{industry_analysis.get('status', 'NOT_EVALUABLE')}`。原因: `{industry_analysis.get('reason', 'missing_industry_metadata')}`。该状态不影响最终验证决策。",
+        "",
+        "| 行业 | 有效交易 | 占比 | 平均净收益 | PF | 净收益合计 |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
     for row in industry[:20]:
         lines.append(
             f"| {row.get('industry')} | {row.get('valid_trades')} | {_fmt(row.get('trade_share'))} | {_fmt(row.get('mean_net_return'))} | {_fmt(row.get('profit_factor'))} | {_fmt(row.get('net_return_sum'))} |"
