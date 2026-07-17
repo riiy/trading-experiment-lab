@@ -4,6 +4,9 @@ import argparse
 import json
 from pathlib import Path
 
+import pandas as pd
+import pyarrow.parquet as pq
+
 from texperiment.config.loader import load_yaml
 from texperiment.config.validator import validate_global_account_config, validate_setup_config
 from texperiment.backtest.engine import (
@@ -12,7 +15,7 @@ from texperiment.backtest.engine import (
     summarize_backtest_trades,
     write_trades,
 )
-from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, write_parquet
+from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, read_table, write_parquet
 from texperiment.data.quality import validate_daily_bars
 from texperiment.data.tdx_export_source import write_tdx_index_parquet
 from texperiment.indicators.a_share import (
@@ -22,6 +25,7 @@ from texperiment.indicators.a_share import (
     write_indicators,
 )
 from texperiment.guards.trading_permission import assert_trading_disabled
+from texperiment.metrics.validation import build_validation_artifacts, write_validation_outputs
 from texperiment.setups.stock_rs_pullback_v1.signal import (
     build_stock_rs_pullback_signals,
     build_stock_rs_pullback_signals_from_parquet,
@@ -300,6 +304,37 @@ def cmd_backtest_stock_rs_pullback(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_report_stock_rs_pullback(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    setup_path = root / "configs" / "setups" / f"{args.setup}.yaml"
+    setup_config = load_yaml(setup_path)
+    trades = read_table(_resolve(root, args.trade_input))
+    metadata = None
+    if args.metadata_input:
+        metadata = _read_metrics_metadata(_resolve(root, args.metadata_input), trades, args.batch_size)
+    artifacts = build_validation_artifacts(
+        trades,
+        setup_config=setup_config,
+        metadata=metadata,
+    )
+    if trades.empty and not args.allow_empty:
+        raise SystemExit("report-stock-rs-pullback received empty trades; use --allow-empty to continue")
+    output_paths = write_validation_outputs(
+        artifacts,
+        metrics_path=_resolve(root, args.metrics_output),
+        report_path=_resolve(root, args.report_output),
+        yearly_path=_resolve(root, args.yearly_output),
+        industry_path=_resolve(root, args.industry_output),
+    )
+    print("report-stock-rs-pullback: OK")
+    print(json.dumps({
+        "decision": artifacts["metrics"]["decision"],
+        "valid_trades": artifacts["metrics"]["overall"]["valid_trades"],
+        "output_paths": {key: str(path) for key, path in output_paths.items()},
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="texperiment")
     parser.add_argument("--root", default=str(ROOT), help="Project root directory")
@@ -377,6 +412,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--batch-size", type=_positive_int, default=250_000, help="Parquet rows per batch")
     p.set_defaults(func=cmd_backtest_stock_rs_pullback)
 
+    p = sub.add_parser(
+        "report-stock-rs-pullback",
+        help="Generate STOCK_RS_PULLBACK_v1 validation metrics and report",
+    )
+    p.add_argument("--trade-input", default="data/trades/STOCK_RS_PULLBACK_v1_backtest_trades.csv")
+    p.add_argument("--metadata-input", default=None)
+    p.add_argument("--metrics-output", default="data/reports/STOCK_RS_PULLBACK_v1_metrics.json")
+    p.add_argument("--report-output", default="data/reports/STOCK_RS_PULLBACK_v1_validation_report.md")
+    p.add_argument("--yearly-output", default="data/reports/STOCK_RS_PULLBACK_v1_yearly.csv")
+    p.add_argument("--industry-output", default="data/reports/STOCK_RS_PULLBACK_v1_industry.csv")
+    p.add_argument("--setup", default="STOCK_RS_PULLBACK_v1")
+    p.add_argument("--allow-empty", action="store_true")
+    p.add_argument("--batch-size", type=_positive_int, default=250_000, help="Metadata rows per batch")
+    p.set_defaults(func=cmd_report_stock_rs_pullback)
+
     return parser
 
 
@@ -396,6 +446,25 @@ def _positive_int(value: str) -> int:
     if parsed <= 0:
         raise argparse.ArgumentTypeError("must be a positive integer")
     return parsed
+
+
+def _read_metrics_metadata(path: Path, trades: pd.DataFrame, batch_size: int) -> pd.DataFrame:
+    codes = set(trades["code"].astype(str)) if "code" in trades.columns else set()
+    columns = ["date", "code", "industry", "name"]
+    if path.suffix.lower() != ".parquet":
+        metadata = read_table(path)
+        return metadata.loc[metadata["code"].astype(str).isin(codes)].copy() if codes else metadata
+    parquet = pq.ParquetFile(path)
+    frames: list[pd.DataFrame] = []
+    available = set(parquet.schema_arrow.names)
+    selected = [column for column in columns if column in available]
+    for batch in parquet.iter_batches(batch_size=batch_size, columns=selected):
+        frame = batch.to_pandas()
+        if codes and "code" in frame.columns:
+            frame = frame.loc[frame["code"].astype(str).isin(codes)]
+        if not frame.empty:
+            frames.append(frame)
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=selected)
 
 
 def _quality_report_to_json(report) -> str:

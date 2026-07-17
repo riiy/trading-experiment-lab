@@ -89,10 +89,12 @@ def test_streaming_universe_matches_full_history_calculation(tmp_path):
     source = pd.DataFrame(rows).sort_values(["code", "date"])
     config = AShareUniverseConfig(min_listing_days=1, min_avg_amount_20d=1, max_one_lot_value=2_000)
     expected = annotate_a_share_universe(source, config=config)
+    daily_path = tmp_path / "daily.parquet"
     output_path = tmp_path / "universe.parquet"
+    source.to_parquet(daily_path, index=False)
 
     rows_written, eligible_count = write_a_share_universe_from_parquet(
-        _write_parquet(source, tmp_path / "daily.parquet"),
+        daily_path,
         output_path,
         config=config,
         include_rejected=True,
@@ -108,8 +110,3 @@ def test_streaming_universe_matches_full_history_calculation(tmp_path):
         expected[["date", "code", "listing_days", "avg_amount_20d", "is_tradable_universe"]],
         check_dtype=False,
     )
-
-
-def _write_parquet(df: pd.DataFrame, path):
-    df.to_parquet(path, index=False)
-    return path
