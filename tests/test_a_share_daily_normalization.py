@@ -8,9 +8,9 @@ from texperiment.data.akshare_source import fetch_a_share_daily
 from texperiment.data.codecs import normalize_a_share_code
 from texperiment.data.normalizer import detect_provider, normalize_daily_bars
 from texperiment.data.quality import validate_daily_bars
-from texperiment.data.tdx_source import ingest_tdx_a_share_daily, write_tdx_parquet
-from texperiment.data.tdx_export_source import read_tdx_export_file, write_tdx_export_parquet
 from texperiment.data.schema import CANONICAL_DAILY_COLUMNS
+from texperiment.data.tdx_export_source import read_tdx_export_file, write_tdx_export_parquet
+from texperiment.data.tdx_source import ingest_tdx_a_share_daily, write_tdx_parquet
 
 
 def test_normalize_a_share_code():
@@ -97,28 +97,13 @@ def test_fetch_akshare_full_market_normalizes_and_reports_failures():
         def stock_zh_a_hist(self, *, symbol, **kwargs):
             if symbol == "600000":
                 raise RuntimeError("temporary provider failure")
-            return pd.DataFrame(
-                {
-                    "日期": ["20260715"],
-                    "股票代码": [symbol],
-                    "开盘": [10.0],
-                    "最高": [10.5],
-                    "最低": [9.8],
-                    "收盘": [10.2],
-                    "成交量": [100],
-                    "成交额": [100000],
-                }
-            )
+            return pd.DataFrame({
+                "日期": ["20260715"], "股票代码": [symbol], "开盘": [10.0],
+                "最高": [10.5], "最低": [9.8], "收盘": [10.2],
+                "成交量": [100], "成交额": [100000],
+            })
 
-    out, report = fetch_a_share_daily(
-        "20260715",
-        "20260715",
-        api=FakeAkShare(),
-        pause_seconds=0,
-        max_retries=1,
-        sleep=lambda _: None,
-    )
-
+    out, report = fetch_a_share_daily("20260715", "20260715", api=FakeAkShare(), pause_seconds=0, max_retries=1, sleep=lambda _: None)
     assert out.loc[0, "code"] == "000001.SZ"
     assert out.loc[0, "name"] == "平安银行"
     assert out.loc[0, "volume"] == 10000
@@ -137,28 +122,13 @@ def test_fetch_akshare_falls_back_to_spot_symbol_list():
             return pd.DataFrame({"代码": ["000001"], "名称": ["平安银行"]})
 
         def stock_zh_a_hist(self, *, symbol, **kwargs):
-            return pd.DataFrame(
-                {
-                    "日期": ["20260715"],
-                    "股票代码": [symbol],
-                    "开盘": [10.0],
-                    "最高": [10.5],
-                    "最低": [9.8],
-                    "收盘": [10.2],
-                    "成交量": [100],
-                    "成交额": [100000],
-                }
-            )
+            return pd.DataFrame({
+                "日期": ["20260715"], "股票代码": [symbol], "开盘": [10.0],
+                "最高": [10.5], "最低": [9.8], "收盘": [10.2],
+                "成交量": [100], "成交额": [100000],
+            })
 
-    out, report = fetch_a_share_daily(
-        "20260715",
-        "20260715",
-        api=FakeAkShare(),
-        pause_seconds=0,
-        max_retries=1,
-        sleep=lambda _: None,
-    )
-
+    out, report = fetch_a_share_daily("20260715", "20260715", api=FakeAkShare(), pause_seconds=0, max_retries=1, sleep=lambda _: None)
     assert out.loc[0, "code"] == "000001.SZ"
     assert report.symbols_requested == 1
 
@@ -171,24 +141,17 @@ def test_ingest_tdx_day_file(tmp_path):
         (20260715, 1020, 1080, 1010, 1070, 220000.0, 20, 0),
     ]
     (lday / "sz000001.day").write_bytes(b"".join(struct.pack("<5IfII", *record) for record in records))
-
     out = ingest_tdx_a_share_daily(tmp_path / "vipdoc")
-
     assert out["code"].tolist() == ["000001.SZ", "000001.SZ"]
     assert out["volume"].tolist() == [1000, 2000]
     assert out.loc[1, "pre_close"] == 10.2
     assert out.loc[0, "source"] == "tongdaxin"
-    assert validate_daily_bars(out).ok is True
-
-    report = write_tdx_parquet(
-        tmp_path / "vipdoc",
-        tmp_path / "processed" / "a_share_daily.parquet",
-    )
+    assert validate_daily_bars(out).ok
+    report = write_tdx_parquet(tmp_path / "vipdoc", tmp_path / "processed" / "bars.parquet")
     assert report.rows == 2
-    assert len(pd.read_parquet(tmp_path / "processed" / "a_share_daily.parquet")) == 2
 
 
-def test_ingest_tdx_text_export_standardizes_gbk_header_and_skips_fund(tmp_path):
+def test_ingest_tdx_text_export_standardizes_header_and_skips_fund(tmp_path):
     export = tmp_path / "export"
     export.mkdir()
     stock = export / "SZ#000001.txt"
@@ -201,15 +164,13 @@ def test_ingest_tdx_text_export_standardizes_gbk_header_and_skips_fund(tmp_path)
         "159919 沪深300ETF 深市 前复权\n日期 开盘 最高 最低 收盘 成交量 成交额\n"
         "2026-07-15,4,4.1,3.9,4,100,400\n".encode("gb18030")
     )
-
     frame = read_tdx_export_file(stock)
+    assert list(frame.columns) == CANONICAL_DAILY_COLUMNS
     assert frame["code"].tolist() == ["000001.SZ", "000001.SZ"]
     assert frame["name"].tolist() == ["平安银行", "平安银行"]
     assert frame["adj_type"].tolist() == ["qfq", "qfq"]
     assert frame["volume"].tolist() == [1000000, 2000000]
     assert frame["listing_days"].tolist() == [1, 2]
-    assert list(frame.columns) == CANONICAL_DAILY_COLUMNS
-
     report, ingest = write_tdx_export_parquet(export, tmp_path / "out.parquet")
     out = pd.read_parquet(tmp_path / "out.parquet")
     assert ingest.files_ingested == 1

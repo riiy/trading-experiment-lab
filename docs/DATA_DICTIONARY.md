@@ -63,3 +63,21 @@
 | r_multiple | R 倍数 |
 | status | valid_trade / invalid_* |
 | invalid_reason | 无效原因 |
+
+
+## A股股票池字段
+
+由 `build-a-share-universe` 生成。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `avg_amount_20d` | float | 近20日平均成交额，单位人民币元 |
+| `one_lot_value` | float | 一手金额，`close * lot_size` |
+| `pass_non_st` | bool | 是否通过非ST过滤 |
+| `pass_listing_days` | bool | 是否通过上市天数过滤 |
+| `pass_not_suspended` | bool | 是否通过停牌/无交易过滤 |
+| `pass_not_limit_up_down` | bool | 是否通过涨跌停过滤 |
+| `pass_avg_amount_20d` | bool | 是否通过成交额过滤 |
+| `pass_one_lot_value` | bool | 是否通过一手金额过滤 |
+| `is_tradable_universe` | bool | 是否进入可交易股票池 |
+| `reject_reasons` | string | 未通过原因，分号分隔 |

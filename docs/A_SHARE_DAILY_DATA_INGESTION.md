@@ -39,21 +39,17 @@ texperiment ingest-a-share-daily --provider auto ...
 uv sync --extra dev --extra akshare
 ```
 
-按股票逐只拉取指定日期区间：
-
 ```bash
 uv run texperiment fetch-a-share-daily \
   --start-date 20200101 \
-  --end-date 20261231 \
+  --end-date 20260716 \
   --output data/processed/a_share_daily.parquet \
   --adj-type qfq
 ```
 
-AkShare 股票列表优先使用交易所列表接口，超时或不可用时回退到 Eastmoney 行情列表；列表和逐股历史请求都会重试。单只股票请求失败不会中断其他股票拉取，命令会输出 `symbols_failed`。正式研究前必须检查失败列表并补拉；质量警告模式只允许临时探索。
+股票列表和逐股历史请求均支持重试；失败股票会输出统计，正式研究前必须检查失败列表。
 
 ## 通达信本地日线
-
-通达信本地 `vipdoc/{sh,sz,bj}/lday/*.day` 文件可以避免逐股票网络请求：
 
 ```bash
 uv run texperiment ingest-tdx-a-share-daily \
@@ -61,13 +57,9 @@ uv run texperiment ingest-tdx-a-share-daily \
   --output data/processed/a_share_daily.parquet
 ```
 
-解析器按通达信 `.day` 格式读取价格、成交额和成交量，成交量转换为股。该格式通常是未复权数据，输出默认 `adj_type=none`；不能直接作为 `STOCK_RS_PULLBACK_v1` 的 qfq 历史研究数据。
-
-导入过程按股票文件流式写入 Parquet，不会把全市场数据一次性汇总到内存。
+TDX `.day` 是未复权数据，输出 `adj_type=none`。导入过程按股票文件流式写入 Parquet。
 
 ## 通达信文本导出
-
-通达信也可导出 GB18030 编码文本，文件名形如 `SZ#000001.txt`。导出目录可能同时包含股票、基金和无行情文件。使用以下命令只导入 A 股：
 
 ```bash
 uv run texperiment ingest-tdx-export-a-share-daily \
@@ -75,7 +67,7 @@ uv run texperiment ingest-tdx-export-a-share-daily \
   --output data/processed/a_share_daily.parquet
 ```
 
-解析器从首行读取名称和复权标记，从文件名读取市场与代码；成交量保持股，成交额保持人民币元。文件首行标记为 `前复权` 时输出 `adj_type=qfq`。`turnover_rate`、`adj_factor`、`industry` 等源文件没有提供的字段保持为空。
+文本导出使用 GB18030 编码，首行提供名称和复权标记。目录可混合基金文件，导入器按 A 股代码前缀过滤；前复权标记输出 `adj_type=qfq`。成交量单位为股，成交额单位为人民币元。缺失 `turnover_rate`、`adj_factor`、`industry` 保持为空。
 
 ## 标准输出路径
 
