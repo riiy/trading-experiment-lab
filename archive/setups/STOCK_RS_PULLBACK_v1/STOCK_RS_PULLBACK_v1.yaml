@@ -1,0 +1,69 @@
+setup_id: STOCK_RS_PULLBACK_v1
+name: 强势股相对强度回踩
+status: pre_registration
+trading_allowed: false
+
+market_scope:
+  include:
+    - A_SHARE
+  exclude:
+    - HK_CONNECT
+
+universe:
+  exclude_st: true
+  exclude_new_listing_days_lt: 180
+  exclude_suspended: true
+  exclude_limit_up_down: true
+  min_avg_amount_20d: 300000000
+  max_one_lot_value: 15000
+  lot_size: 100
+
+strength_filter:
+  lookback_days: 20
+  benchmark: 000300.SH
+  excess_return_min: 0.05
+  require_close_above_ma20: true
+  require_ma20_above_ma60: true
+  require_20d_high_recent: true
+
+pullback_filter:
+  high_lookback_days: 10
+  drawdown_min: 0.03
+  drawdown_max: 0.08
+  volume_less_than_ma5: true
+  require_close_above_ma20: true
+  require_not_break_breakout_body_midpoint: true
+
+entry:
+  trigger: reclaim_pullback_day_high
+  execution: next_day_open
+
+exit:
+  stop: below_pullback_low
+  target_r_multiple: 2
+  max_holding_days: 10
+  time_stop_days: 5
+  time_stop_condition: no_upside_progress
+
+cost:
+  round_trip_cost: 0.002
+
+validation_threshold:
+  min_valid_trades: 80
+  mean_net_return_gt: 0
+  median_net_return_gte: 0
+  profit_factor_gt: 1.20
+  best_3_removed_mean_gte: 0
+  top3_contribution_ratio_lte: 1.0
+  min_positive_years_or_regimes: 2
+
+account_constraints:
+  capital_limit: 30000
+  max_planned_loss_per_trade: 500
+  micro_live_initial_loss_limit: 300
+  max_positions: 1
+
+decision:
+  pass: VALIDATION_PASSED_NEEDS_ACCOUNT_SIMULATION
+  edge: EDGE_NOT_TRADABLE
+  fail: FAILED_ARCHIVED

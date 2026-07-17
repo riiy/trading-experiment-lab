@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from texperiment.exceptions import PermissionDenied
+from texperiment.guards.setup_status import is_archived
 
 
 def assert_trading_disabled(registry: dict) -> None:
@@ -10,6 +11,8 @@ def assert_trading_disabled(registry: dict) -> None:
 
 
 def assert_can_generate_formal_ticket(setup_status: str, account_sim_status: str) -> None:
+    if is_archived(setup_status):
+        raise PermissionDenied(f"Formal ticket generation blocked for archived setup: {setup_status}")
     if setup_status != "validation_passed":
         raise PermissionDenied("Setup validation has not passed")
     if account_sim_status != "passed":

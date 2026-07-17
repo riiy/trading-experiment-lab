@@ -19,6 +19,9 @@ from texperiment.account.account_simulator import (
     build_account_simulation_artifacts,
     write_account_simulation_outputs,
 )
+from texperiment.audit.manifest import build_audit_manifest
+from texperiment.audit.report import write_audit_outputs
+from texperiment.audit.sampler import select_audit_sample
 from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, read_table, write_parquet
 from texperiment.data.quality import validate_daily_bars
 from texperiment.data.tdx_export_source import write_tdx_index_parquet
@@ -29,6 +32,7 @@ from texperiment.indicators.a_share import (
     write_indicators,
 )
 from texperiment.guards.trading_permission import assert_trading_disabled
+from texperiment.guards.setup_status import is_archived
 from texperiment.metrics.validation import build_validation_artifacts, write_validation_outputs
 from texperiment.tickets.generator import build_trade_ticket_artifacts, write_ticket_outputs
 from texperiment.setups.stock_rs_pullback_v1.signal import (
@@ -50,16 +54,18 @@ ROOT = Path(__file__).resolve().parents[2]
 def cmd_config_check(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     account = load_yaml(root / "configs" / "global_account.yaml")
-    setup = load_yaml(root / "configs" / "setups" / "STOCK_RS_PULLBACK_v1.yaml")
     registry = load_yaml(root / "experiment_registry.yaml")
+    current_setup = registry.get("Trading_Experiment", {}).get("current_setup")
+    setup_ids = list(_registered_setups(registry))
 
     validate_global_account_config(account)
-    validate_setup_config(setup)
+    for setup_id in setup_ids:
+        validate_setup_config(load_yaml(root / "configs" / "setups" / f"{setup_id}.yaml"))
     assert_trading_disabled(registry)
 
     print("config-check: OK")
     print("trading_allowed: false")
-    print("current_setup: STOCK_RS_PULLBACK_v1")
+    print(f"current_setup: {current_setup if current_setup is not None else 'null'}")
     return 0
 
 
@@ -68,7 +74,8 @@ def cmd_status(args: argparse.Namespace) -> int:
     registry = load_yaml(root / "experiment_registry.yaml")
     exp = registry.get("Trading_Experiment", {})
     print(f"status: {exp.get('status')}")
-    print(f"current_setup: {exp.get('current_setup')}")
+    current_setup = exp.get("current_setup")
+    print(f"current_setup: {current_setup if current_setup is not None else 'null'}")
     print(f"trading_allowed: {exp.get('trading_allowed')}")
     return 0
 
@@ -344,6 +351,7 @@ def cmd_account_sim_stock_rs_pullback(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     setup_config = load_yaml(root / "configs" / "setups" / f"{args.setup}.yaml")
     account_config = load_yaml(root / "configs" / "global_account.yaml")
+    _assert_setup_action_allowed(root, args.setup, "account simulation")
     metrics_path = _resolve(root, args.metrics_input)
     if not args.force_research:
         if not metrics_path.exists():
@@ -387,6 +395,7 @@ def cmd_generate_stock_rs_pullback_tickets(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     setup_config = load_yaml(root / "configs" / "setups" / f"{args.setup}.yaml")
     account_config = load_yaml(root / "configs" / "global_account.yaml")
+    _assert_setup_action_allowed(root, args.setup, "formal ticket generation")
     summary_path = _resolve(root, args.summary_input)
     if not summary_path.exists():
         raise SystemExit(f"account simulation summary not found: {summary_path}")
@@ -424,6 +433,43 @@ def cmd_generate_stock_rs_pullback_tickets(args: argparse.Namespace) -> int:
             "report": str(paths["report"]),
         },
     }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_prepare_stock_rs_pullback_audit(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    inputs = {
+        "configs/setups/STOCK_RS_PULLBACK_v1.yaml": {
+            "key_fields": (),
+            "critical_fields": (),
+        },
+        args.daily_input: {
+            "key_fields": ("date", "code"),
+            "critical_fields": ("date", "code", "open", "high", "low", "close", "volume", "amount"),
+        },
+        args.indicator_input: {
+            "key_fields": ("date", "code"),
+            "critical_fields": ("date", "code", "ma20", "ma60", "ret20", "benchmark_ret20"),
+        },
+        args.universe_input: {
+            "key_fields": ("date", "code"),
+            "critical_fields": ("date", "code", "is_tradable_universe"),
+        },
+        args.signal_input: {
+            "key_fields": ("signal_id",),
+            "critical_fields": ("signal_id", "code", "signal_date", "status"),
+        },
+        args.trade_input: {
+            "key_fields": ("trade_id",),
+            "critical_fields": ("trade_id", "signal_id", "code", "status"),
+        },
+    }
+    manifest = build_audit_manifest(root, inputs, batch_size=args.batch_size)
+    trades = read_table(_resolve(root, args.trade_input))
+    samples = select_audit_sample(trades)
+    paths = write_audit_outputs(_resolve(root, args.output_dir), manifest=manifest, samples=samples)
+    print("prepare-stock-rs-pullback-audit: OK")
+    print(json.dumps({"sample_count": len(samples), "output_paths": {key: str(path) for key, path in paths.items()}}, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -547,6 +593,19 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--simulation-id", default=None)
     p.set_defaults(func=cmd_generate_stock_rs_pullback_tickets)
 
+    p = sub.add_parser(
+        "prepare-stock-rs-pullback-audit",
+        help="Freeze v1 audit inputs and select deterministic samples",
+    )
+    p.add_argument("--daily-input", default="data/processed/a_share_daily.parquet")
+    p.add_argument("--indicator-input", default="data/processed/a_share_indicators.parquet")
+    p.add_argument("--universe-input", default="data/processed/a_share_universe_full.parquet")
+    p.add_argument("--signal-input", default="data/signals/STOCK_RS_PULLBACK_v1_signals.csv")
+    p.add_argument("--trade-input", default="data/trades/STOCK_RS_PULLBACK_v1_backtest_trades.csv")
+    p.add_argument("--output-dir", default="diagnostics/STOCK_RS_PULLBACK_v1")
+    p.add_argument("--batch-size", type=_positive_int, default=250_000)
+    p.set_defaults(func=cmd_prepare_stock_rs_pullback_audit)
+
     return parser
 
 
@@ -566,6 +625,23 @@ def _positive_int(value: str) -> int:
     if parsed <= 0:
         raise argparse.ArgumentTypeError("must be a positive integer")
     return parsed
+
+
+def _assert_setup_action_allowed(root: Path, setup_id: str, action: str) -> None:
+    registry = load_yaml(root / "experiment_registry.yaml")
+    setup = _registered_setups(registry).get(setup_id)
+    if setup is None:
+        raise SystemExit(f"setup not registered: {setup_id}")
+    status = str(setup.get("status", ""))
+    if is_archived(status):
+        raise SystemExit(f"{action} blocked for archived setup {setup_id}: {status}")
+
+
+def _registered_setups(registry: dict) -> dict[str, dict]:
+    setups = registry.get("setups", {})
+    if isinstance(setups, dict):
+        return setups
+    return {str(item.get("id")): item for item in setups if isinstance(item, dict) and item.get("id")}
 
 
 def _read_metrics_metadata(path: Path, trades: pd.DataFrame, batch_size: int) -> pd.DataFrame:

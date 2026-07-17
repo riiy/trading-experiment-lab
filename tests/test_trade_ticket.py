@@ -1,5 +1,6 @@
 import pytest
 
+from texperiment.cli import main
 from texperiment.tickets.generator import generate_ticket
 from texperiment.tickets.validator import validate_ticket_payload
 
@@ -57,3 +58,8 @@ def test_direct_ticket_generation_rejects_forbidden_order_field():
             per_share_risk=2.5,
             broker="forbidden",
         )
+
+
+def test_ticket_cli_blocks_archived_setup():
+    with pytest.raises(SystemExit, match="archived setup"):
+        main(["generate-stock-rs-pullback-tickets"])

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from texperiment.exceptions import ConfigError
 
-
 def validate_global_account_config(config: dict) -> None:
     account = config.get("account", {})
     risk = config.get("risk", {})
@@ -18,7 +17,7 @@ def validate_global_account_config(config: dict) -> None:
 
 def validate_setup_config(config: dict) -> None:
     if config.get("setup_id") != "STOCK_RS_PULLBACK_v1":
-        raise ConfigError("setup_id must be STOCK_RS_PULLBACK_v1")
+        raise ConfigError("setup_id must be STOCK_RS_PULLBACK_v1 during audit planning")
     if config.get("trading_allowed") is not False:
         raise ConfigError("setup.trading_allowed must be false before validation passes")
     thresholds = config.get("validation_threshold", {})

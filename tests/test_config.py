@@ -14,3 +14,17 @@ def test_global_account_config_valid():
 def test_setup_config_valid():
     config = load_yaml(ROOT / "configs" / "setups" / "STOCK_RS_PULLBACK_v1.yaml")
     validate_setup_config(config)
+
+
+def test_registry_is_frozen_for_audit_only():
+    registry = load_yaml(ROOT / "experiment_registry.yaml")
+    experiment = registry["Trading_Experiment"]
+    archived = registry["setups"]["STOCK_RS_PULLBACK_v1"]
+
+    assert experiment["status"] == "audit_planning"
+    assert experiment["current_setup"] is None
+    assert experiment["tradable_setups"] == 0
+    assert experiment["trading_allowed"] is False
+    assert archived["status"] == "FAILED_ARCHIVED"
+    assert archived["account_simulation_allowed"] is False
+    assert archived["ticket_generation_allowed"] is False

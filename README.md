@@ -13,7 +13,7 @@ It is **not** an automatic trading system. It is designed to make every setup:
 Current setup:
 
 ```text
-STOCK_RS_PULLBACK_v1 = 强势股相对强度回踩 Setup
+none (audit planning only)
 ```
 
 Current status:
@@ -22,6 +22,8 @@ Current status:
 trading_allowed = false
 live_trading = forbidden
 ```
+
+`STOCK_RS_PULLBACK_v1` 已因核心验证指标失败归档，禁止账户仿真和交易票生成。当前只允许完整性审计，不定义或实现新 Setup。归档清单：`archive/setups/STOCK_RS_PULLBACK_v1/ARCHIVE_MANIFEST.md`。
 
 ## Quick start
 

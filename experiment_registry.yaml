@@ -1,15 +1,16 @@
 Trading_Experiment:
-  status: research_active_no_trade
+  status: audit_planning
   capital_limit: 30000
   max_planned_loss_per_trade: 500
   instrument_scope:
     - A_SHARE_STOCK
     - HK_CONNECT_STOCK
-  current_setup: STOCK_RS_PULLBACK_v1
+  current_setup: null
   trading_allowed: false
+  tradable_setups: 0
 
 setups:
-  - id: STOCK_RS_PULLBACK_v1
+  STOCK_RS_PULLBACK_v1:
     status: FAILED_ARCHIVED
     market_scope: A_SHARE_ONLY
     trading_allowed: false
@@ -20,7 +21,6 @@ setups:
       status: NOT_EVALUABLE
       reason: missing_industry_metadata
       impact_on_final_decision: none
-
 archived_paths:
   - earnings_event
   - major_contract_event

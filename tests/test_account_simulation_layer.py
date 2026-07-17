@@ -160,34 +160,24 @@ def test_account_simulation_cli_requires_validation_pass(tmp_path):
     trade_path = tmp_path / "trades.csv"
     trades = pd.DataFrame([_trade("t1", "2026-01-02", "2026-01-08")])
     trades.to_csv(trade_path, index=False)
-    with pytest.raises(SystemExit, match="validation metrics not found"):
+    with pytest.raises(SystemExit, match="archived setup"):
         main([
             "--root", str(Path(__file__).resolve().parents[1]),
             "account-sim-stock-rs-pullback",
+            "--setup", "STOCK_RS_PULLBACK_v1",
             "--trade-input", str(trade_path),
             "--metrics-input", str(tmp_path / "failed.json"),
         ])
 
 
-def test_account_simulation_cli_force_research_writes_outputs(tmp_path):
+def test_force_research_cannot_bypass_archived_setup(tmp_path):
     trade_path = tmp_path / "trades.csv"
-    output_path = tmp_path / "account.csv"
-    summary_path = tmp_path / "summary.json"
-    report_path = tmp_path / "report.md"
     pd.DataFrame([_trade("t1", "2026-01-02", "2026-01-08")]).to_csv(trade_path, index=False)
 
-    rc = main([
-        "--root", str(Path(__file__).resolve().parents[1]),
-        "account-sim-stock-rs-pullback",
-        "--trade-input", str(trade_path),
-        "--output", str(output_path),
-        "--summary-output", str(summary_path),
-        "--report-output", str(report_path),
-        "--force-research",
-    ])
-
-    assert rc == 0
-    assert output_path.exists()
-    assert summary_path.exists()
-    assert report_path.exists()
-    assert '"force_research": true' in summary_path.read_text(encoding="utf-8")
+    with pytest.raises(SystemExit, match="archived setup"):
+        main([
+            "--root", str(Path(__file__).resolve().parents[1]),
+            "account-sim-stock-rs-pullback",
+            "--trade-input", str(trade_path),
+            "--force-research",
+        ])
