@@ -15,6 +15,10 @@ from texperiment.backtest.engine import (
     summarize_backtest_trades,
     write_trades,
 )
+from texperiment.account.account_simulator import (
+    build_account_simulation_artifacts,
+    write_account_simulation_outputs,
+)
 from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, read_table, write_parquet
 from texperiment.data.quality import validate_daily_bars
 from texperiment.data.tdx_export_source import write_tdx_index_parquet
@@ -335,6 +339,49 @@ def cmd_report_stock_rs_pullback(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_account_sim_stock_rs_pullback(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    setup_config = load_yaml(root / "configs" / "setups" / f"{args.setup}.yaml")
+    account_config = load_yaml(root / "configs" / "global_account.yaml")
+    metrics_path = _resolve(root, args.metrics_input)
+    if not args.force_research:
+        if not metrics_path.exists():
+            raise SystemExit(
+                f"validation metrics not found: {metrics_path}; use --force-research only for development"
+            )
+        metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+        decision = metrics.get("decision")
+        if decision != "VALIDATION_PASSED_NEEDS_ACCOUNT_SIMULATION":
+            raise SystemExit(
+                f"account simulation requires validation PASS, got {decision!r}; "
+                "use --force-research only for development"
+            )
+
+    trades = read_table(_resolve(root, args.trade_input))
+    artifacts = build_account_simulation_artifacts(
+        trades,
+        account_config=account_config,
+        setup_config=setup_config,
+    )
+    artifacts["summary"]["force_research"] = bool(args.force_research)
+    paths = write_account_simulation_outputs(
+        artifacts,
+        simulation_path=_resolve(root, args.output),
+        summary_path=_resolve(root, args.summary_output),
+        report_path=_resolve(root, args.report_output),
+    )
+    summary = artifacts["summary"]
+    print("account-sim-stock-rs-pullback: OK")
+    print(json.dumps({
+        "decision": summary.get("decision"),
+        "accepted_trades": summary.get("accepted_trades"),
+        "rejected_or_skipped": summary.get("rejected_or_skipped"),
+        "force_research": summary["force_research"],
+        "output_paths": {key: str(path) for key, path in paths.items()},
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="texperiment")
     parser.add_argument("--root", default=str(ROOT), help="Project root directory")
@@ -426,6 +473,19 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--allow-empty", action="store_true")
     p.add_argument("--batch-size", type=_positive_int, default=250_000, help="Metadata rows per batch")
     p.set_defaults(func=cmd_report_stock_rs_pullback)
+
+    p = sub.add_parser(
+        "account-sim-stock-rs-pullback",
+        help="Simulate STOCK_RS_PULLBACK_v1 trades in the account",
+    )
+    p.add_argument("--trade-input", default="data/trades/STOCK_RS_PULLBACK_v1_backtest_trades.csv")
+    p.add_argument("--metrics-input", default="data/reports/STOCK_RS_PULLBACK_v1_metrics.json")
+    p.add_argument("--output", default="data/account_sim/STOCK_RS_PULLBACK_v1_account_sim.csv")
+    p.add_argument("--summary-output", default="data/account_sim/STOCK_RS_PULLBACK_v1_account_summary.json")
+    p.add_argument("--report-output", default="data/reports/STOCK_RS_PULLBACK_v1_account_simulation_report.md")
+    p.add_argument("--setup", default="STOCK_RS_PULLBACK_v1")
+    p.add_argument("--force-research", action="store_true")
+    p.set_defaults(func=cmd_account_sim_stock_rs_pullback)
 
     return parser
 
