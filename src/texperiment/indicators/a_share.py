@@ -155,10 +155,11 @@ def write_a_share_indicators_from_parquet(
                 working = pd.concat([history, group], ignore_index=True) if history is not None else group
                 calculated = build_a_share_indicators(working, benchmark_bars=benchmark, config=cfg)
                 pieces.append(calculated.loc[calculated["_stream_row_id"].isin(group["_stream_row_id"])])
-                tails[code] = group.tail(max(cfg.ma_long_window, cfg.return_window, cfg.high_lookback_window, cfg.volume_ma_window))
+                tails[code] = working.tail(max(cfg.ma_long_window, cfg.return_window, cfg.high_lookback_window, cfg.volume_ma_window))
             if not pieces:
                 continue
-            result = pd.concat(pieces, ignore_index=True).sort_values(["code", "date"])
+            # Preserve source code/date order so companion streamed datasets can be joined by key.
+            result = pd.concat(pieces, ignore_index=True)
             result = result.drop(columns=["_stream_row_id"])
             table = pa.Table.from_pandas(result, preserve_index=False)
             if writer is None:

@@ -73,6 +73,27 @@
 | status | valid_trade / invalid_* |
 | invalid_reason | 无效原因 |
 
+## signal layer
+
+由 `generate-stock-rs-pullback-signals` 生成。
+
+| 字段 | 说明 |
+|---|---|
+| signal_id | 稳定信号标识 |
+| setup_id | Setup 标识 |
+| code | 股票代码 |
+| signal_date | 信号日；正式信号为触发日 |
+| pullback_date | 回踩日 |
+| trigger_date | 重新站上回踩日高点日期 |
+| status | `triggered_entry_next_open` 或候选审计状态 |
+| entry_execution | 当前为 `next_day_open` |
+| pullback_high | 回踩日最高价 |
+| pullback_low | 回踩日最低价，同时作为结构止损参考价 |
+| stop_price | 当前结构止损参考价 |
+| trigger_close | 触发日收盘价 |
+| days_to_trigger | 回踩日至触发日交易日距离 |
+| invalid_reason | 候选过期或强势失效原因 |
+
 
 ## A股股票池字段
 

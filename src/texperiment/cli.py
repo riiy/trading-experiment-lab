@@ -16,7 +16,18 @@ from texperiment.indicators.a_share import (
     write_indicators,
 )
 from texperiment.guards.trading_permission import assert_trading_disabled
-from texperiment.universe.a_share import AShareUniverseConfig, build_a_share_universe, write_universe
+from texperiment.setups.stock_rs_pullback_v1.signal import (
+    build_stock_rs_pullback_signals,
+    build_stock_rs_pullback_signals_from_parquet,
+    validate_universe_coverage,
+    write_signals,
+)
+from texperiment.universe.a_share import (
+    AShareUniverseConfig,
+    build_a_share_universe,
+    write_a_share_universe_from_parquet,
+    write_universe,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -92,6 +103,33 @@ def cmd_build_a_share_universe(args: argparse.Namespace) -> int:
     setup_config = load_yaml(setup_path)
     universe_config = AShareUniverseConfig.from_setup_config(setup_config)
 
+    if input_path.suffix.lower() == ".parquet":
+        rows_written, eligible_count = write_a_share_universe_from_parquet(
+            input_path,
+            output_path,
+            as_of_date=args.as_of,
+            config=universe_config,
+            include_rejected=args.include_rejected,
+            batch_size=args.batch_size,
+        )
+        print(f"build-a-share-universe: OK -> {output_path}")
+        print(json.dumps({
+            "setup": args.setup,
+            "as_of": args.as_of,
+            "rows_written": rows_written,
+            "eligible_count": eligible_count,
+            "include_rejected": bool(args.include_rejected),
+            "min_avg_amount_20d": universe_config.min_avg_amount_20d,
+            "max_one_lot_value": universe_config.max_one_lot_value,
+            "min_listing_days": universe_config.min_listing_days,
+        }, ensure_ascii=False, indent=2))
+        if rows_written == 0 and not args.allow_empty:
+            raise SystemExit(
+                "build-a-share-universe produced 0 rows. "
+                "Use --include-rejected to inspect rejection reasons or --allow-empty to suppress this error."
+            )
+        return 0
+
     df = read_daily_bars(input_path)
     universe = build_a_share_universe(
         df,
@@ -149,6 +187,7 @@ def cmd_compute_a_share_indicators(args: argparse.Namespace) -> int:
             output_path,
             benchmark_bars=benchmark,
             config=config,
+            batch_size=args.batch_size,
         )
     else:
         daily = read_daily_bars(daily_path)
@@ -167,6 +206,63 @@ def cmd_compute_a_share_indicators(args: argparse.Namespace) -> int:
         "return_window": config.return_window,
         "high_lookback_window": config.high_lookback_window,
         "volume_ma_window": config.volume_ma_window,
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_generate_stock_rs_pullback_signals(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    indicator_path = _resolve(root, args.indicator_input)
+    output_path = _resolve(root, args.output)
+    setup_path = root / "configs" / "setups" / f"{args.setup}.yaml"
+    setup_config = load_yaml(setup_path)
+    universe = None
+    if args.universe_input and indicator_path.suffix.lower() != ".parquet":
+        universe = read_daily_bars(_resolve(root, args.universe_input))
+    if args.require_universe and not args.universe_input:
+        raise SystemExit("--require-universe requires --universe-input")
+
+    if indicator_path.suffix.lower() == ".parquet":
+        try:
+            signals = build_stock_rs_pullback_signals_from_parquet(
+                indicator_path,
+                universe_path=_resolve(root, args.universe_input) if args.universe_input else None,
+                setup_config=setup_config,
+                include_candidates=args.include_candidates,
+                require_universe=args.require_universe,
+                batch_size=args.batch_size,
+            )
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+    else:
+        indicators = read_daily_bars(indicator_path)
+        if args.universe_input:
+            universe = read_daily_bars(_resolve(root, args.universe_input))
+        if args.require_universe:
+            try:
+                validate_universe_coverage(indicators, universe)
+            except ValueError as exc:
+                raise SystemExit(str(exc)) from exc
+        signals = build_stock_rs_pullback_signals(
+            indicators,
+            universe=universe,
+            setup_config=setup_config,
+            include_candidates=args.include_candidates,
+        )
+    if signals.empty and not args.allow_empty:
+        raise SystemExit(
+            "generate-stock-rs-pullback-signals produced 0 rows. "
+            "Use --include-candidates or --allow-empty to inspect/suppress empty output."
+        )
+    write_signals(signals, output_path)
+    counts = signals["status"].value_counts().to_dict() if not signals.empty else {}
+    print(f"generate-stock-rs-pullback-signals: OK -> {output_path}")
+    print(json.dumps({
+        "setup": args.setup,
+        "rows_written": int(len(signals)),
+        "status_counts": counts,
+        "include_candidates": bool(args.include_candidates),
+        "require_universe": bool(args.require_universe),
     }, ensure_ascii=False, indent=2))
     return 0
 
@@ -209,6 +305,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output", default="data/processed/a_share_indicators.parquet", help="Output indicators parquet/csv")
     p.add_argument("--setup", default="STOCK_RS_PULLBACK_v1", help="Setup config id")
     p.add_argument("--benchmark-code", default=None, help="Override benchmark code, default from setup config")
+    p.add_argument("--batch-size", type=_positive_int, default=250_000, help="Parquet rows per batch")
     p.set_defaults(func=cmd_compute_a_share_indicators)
 
     p = sub.add_parser("build-a-share-universe", help="Build executable A-share universe for the setup")
@@ -218,7 +315,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--as-of", default=None, help="Optional trading date, e.g. 2026-07-15")
     p.add_argument("--include-rejected", action="store_true", help="Write rejected rows too, with reject_reasons")
     p.add_argument("--allow-empty", action="store_true", help="Allow 0-row output")
+    p.add_argument("--batch-size", type=_positive_int, default=250_000, help="Parquet rows per batch")
     p.set_defaults(func=cmd_build_a_share_universe)
+
+    p = sub.add_parser(
+        "generate-stock-rs-pullback-signals",
+        help="Generate STOCK_RS_PULLBACK_v1 pullback/reclaim signals",
+    )
+    p.add_argument("--indicator-input", default="data/processed/a_share_indicators.parquet")
+    p.add_argument("--universe-input", default=None)
+    p.add_argument("--output", default="data/signals/STOCK_RS_PULLBACK_v1_signals.csv")
+    p.add_argument("--setup", default="STOCK_RS_PULLBACK_v1")
+    p.add_argument("--include-candidates", action="store_true")
+    p.add_argument("--require-universe", action="store_true")
+    p.add_argument("--allow-empty", action="store_true")
+    p.add_argument("--batch-size", type=_positive_int, default=250_000, help="Parquet rows per batch")
+    p.set_defaults(func=cmd_generate_stock_rs_pullback_signals)
 
     return parser
 
@@ -232,6 +344,13 @@ def main(argv: list[str] | None = None) -> int:
 def _resolve(root: Path, value: str) -> Path:
     path = Path(value)
     return path if path.is_absolute() else root / path
+
+
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
 
 
 def _quality_report_to_json(report) -> str:

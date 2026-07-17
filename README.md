@@ -111,6 +111,16 @@ uv run texperiment build-a-share-universe \
   --as-of 2026-07-15
 ```
 
+生成用于历史信号回测的全日期股票池时，不要使用 `--as-of`，并保留拒绝行：
+
+```bash
+uv run texperiment build-a-share-universe \
+  --input data/processed/a_share_daily.parquet \
+  --output data/processed/a_share_universe_full.parquet \
+  --setup STOCK_RS_PULLBACK_v1 \
+  --include-rejected
+```
+
 调试过滤原因：
 
 ```bash
@@ -140,6 +150,8 @@ uv run texperiment compute-a-share-indicators \
 
 `--daily-input` 必须是包含每只股票完整历史的日线文件，不能使用只含每只股票一行的 `a_share_universe.parquet`。Parquet 输入自动分批计算并流式写出，避免完整日线一次性加载导致内存不足。
 
+默认批大小为 `250000` 行；内存较小时使用 `--batch-size 50000`。不要用 shell 重试掩盖退出码 `137`，该退出码表示进程被系统 OOM killer 终止。
+
 如果需要从 TDX 文本导出生成沪深300基准文件：
 
 ```bash
@@ -150,3 +162,20 @@ uv run texperiment ingest-tdx-export-index-daily \
 ```
 
 文档：`docs/A_SHARE_INDICATORS.md`。
+
+## STOCK_RS_PULLBACK_v1 信号层
+
+使用完整历史指标和按日期覆盖的股票池，生成回踩后重新站上回踩日高点的次日开盘信号：
+
+```bash
+uv run texperiment generate-stock-rs-pullback-signals \
+  --indicator-input data/processed/a_share_indicators.parquet \
+  --universe-input data/processed/a_share_universe_full.parquet \
+  --output data/signals/STOCK_RS_PULLBACK_v1_signals.csv \
+  --setup STOCK_RS_PULLBACK_v1 \
+  --require-universe
+```
+
+`--require-universe` 要求股票池覆盖指标表全部 `date + code`，不能使用单日 `--as-of` 快照。使用 `--include-candidates` 可输出等待、过期和强势失效候选；候选不是正式交易信号。
+
+文档：`docs/STOCK_RS_PULLBACK_SIGNAL_LAYER.md`。

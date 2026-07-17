@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pandas as pd
 
-from texperiment.universe.a_share import AShareUniverseConfig, annotate_a_share_universe, build_a_share_universe
+from texperiment.universe.a_share import (
+    AShareUniverseConfig,
+    annotate_a_share_universe,
+    build_a_share_universe,
+    write_a_share_universe_from_parquet,
+)
 
 
 def _row(code: str, date: str, close: float, amount: float, **extra):
@@ -74,3 +79,37 @@ def test_config_can_relax_thresholds_for_small_fixture():
     cfg = AShareUniverseConfig(min_listing_days=1, min_avg_amount_20d=1, max_one_lot_value=2_000)
     out = build_a_share_universe(df, config=cfg)
     assert len(out) == 1
+
+
+def test_streaming_universe_matches_full_history_calculation(tmp_path):
+    rows = []
+    dates = pd.date_range("2026-01-01", periods=25, freq="D")
+    for d in dates:
+        rows.append(_row("000001.SZ", d.strftime("%Y-%m-%d"), 10, 1_000_000))
+    source = pd.DataFrame(rows).sort_values(["code", "date"])
+    config = AShareUniverseConfig(min_listing_days=1, min_avg_amount_20d=1, max_one_lot_value=2_000)
+    expected = annotate_a_share_universe(source, config=config)
+    output_path = tmp_path / "universe.parquet"
+
+    rows_written, eligible_count = write_a_share_universe_from_parquet(
+        _write_parquet(source, tmp_path / "daily.parquet"),
+        output_path,
+        config=config,
+        include_rejected=True,
+        batch_size=7,
+    )
+    actual = pd.read_parquet(output_path).sort_values(["code", "date"]).reset_index(drop=True)
+    expected = expected.sort_values(["code", "date"]).reset_index(drop=True)
+
+    assert rows_written == len(expected)
+    assert eligible_count == int(expected["is_tradable_universe"].sum())
+    pd.testing.assert_frame_equal(
+        actual[["date", "code", "listing_days", "avg_amount_20d", "is_tradable_universe"]],
+        expected[["date", "code", "listing_days", "avg_amount_20d", "is_tradable_universe"]],
+        check_dtype=False,
+    )
+
+
+def _write_parquet(df: pd.DataFrame, path):
+    df.to_parquet(path, index=False)
+    return path

@@ -47,6 +47,17 @@ uv run texperiment compute-a-share-indicators \
 
 Parquet 输入使用分批计算：每批读取固定行数，并为每只股票保留最长指标窗口历史，再追加写入输出文件。该路径适用于大型日线文件；CSV 输入仍采用全量 DataFrame 计算。
 
+默认批大小为 `250000` 行。内存较小时降低批大小：
+
+```bash
+uv run texperiment compute-a-share-indicators \
+  --daily-input data/processed/a_share_daily.parquet \
+  --benchmark-input data/processed/index_daily.parquet \
+  --output data/processed/a_share_indicators.parquet \
+  --batch-size 50000 \
+  --setup STOCK_RS_PULLBACK_v1
+```
+
 如果沪深300指数行已经混在同一个日线文件里，可以省略 `--benchmark-input`：
 
 ```bash

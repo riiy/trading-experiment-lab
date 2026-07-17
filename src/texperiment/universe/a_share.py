@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 
 @dataclass(frozen=True)
@@ -160,6 +163,85 @@ def write_universe(df: pd.DataFrame, path: str | Path) -> None:
         df.to_csv(path, index=False, encoding="utf-8-sig")
         return
     df.to_parquet(path, index=False)
+
+
+def write_a_share_universe_from_parquet(
+    daily_path: str | Path,
+    output_path: str | Path,
+    *,
+    as_of_date: str | pd.Timestamp | None = None,
+    config: AShareUniverseConfig | None = None,
+    include_rejected: bool = False,
+    batch_size: int = 250_000,
+) -> tuple[int, int]:
+    """Build an A-share universe from Parquet without loading all bars."""
+    cfg = config or AShareUniverseConfig()
+    as_of = pd.Timestamp(as_of_date).normalize() if as_of_date is not None else None
+    parquet = pq.ParquetFile(daily_path)
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temp = output.with_name(f".{output.name}.{os.getpid()}.tmp")
+    writer: pq.ParquetWriter | None = None
+    tails: dict[str, pd.DataFrame] = {}
+    seen_counts: dict[str, int] = {}
+    row_id = 0
+    rows_written = 0
+    eligible_count = 0
+    try:
+        for batch in parquet.iter_batches(batch_size=batch_size):
+            current = _prepare_daily_bars(batch.to_pandas())
+            current["_stream_row_id"] = range(row_id, row_id + len(current))
+            row_id += len(current)
+            pieces: list[pd.DataFrame] = []
+            for code, group in current.groupby("code", sort=False):
+                group = group.sort_values("date").copy()
+                if "listing_days" not in group.columns:
+                    group["listing_days"] = range(
+                        seen_counts.get(code, 0) + 1,
+                        seen_counts.get(code, 0) + len(group) + 1,
+                    )
+                else:
+                    listing_days = pd.to_numeric(group["listing_days"], errors="coerce")
+                    fallback = pd.Series(
+                        range(seen_counts.get(code, 0) + 1, seen_counts.get(code, 0) + len(group) + 1),
+                        index=group.index,
+                    )
+                    group["listing_days"] = listing_days.fillna(fallback)
+                history = tails.get(code)
+                working = pd.concat([history, group], ignore_index=True) if history is not None else group
+                annotated = annotate_a_share_universe(working, config=cfg)
+                selected = annotated.loc[annotated["_stream_row_id"].isin(group["_stream_row_id"])].copy()
+                if as_of is not None:
+                    selected = selected.loc[selected["date"] == as_of]
+                if not include_rejected:
+                    selected = selected.loc[selected["is_tradable_universe"]]
+                if not selected.empty:
+                    pieces.append(selected)
+                tails[code] = working.tail(20)
+                seen_counts[code] = seen_counts.get(code, 0) + len(group)
+            if not pieces:
+                continue
+            result = pd.concat(pieces, ignore_index=True).drop(columns=["_stream_row_id"])
+            table = pa.Table.from_pandas(result, preserve_index=False)
+            if writer is None:
+                writer = pq.ParquetWriter(temp, table.schema, compression="snappy")
+            writer.write_table(table)
+            rows_written += len(result)
+            eligible_count += int(result["is_tradable_universe"].sum())
+
+        if writer is not None:
+            writer.close()
+            writer = None
+            os.replace(temp, output)
+        else:
+            empty = _empty_universe_frame(pd.DataFrame())
+            write_universe(empty, output)
+        return rows_written, eligible_count
+    finally:
+        if writer is not None:
+            writer.close()
+        if temp.exists():
+            temp.unlink()
 
 
 def _prepare_daily_bars(df: pd.DataFrame) -> pd.DataFrame:

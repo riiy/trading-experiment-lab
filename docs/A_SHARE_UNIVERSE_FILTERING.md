@@ -69,6 +69,17 @@ uv run texperiment build-a-share-universe \
 
 输出包含通过过滤的股票。
 
+Parquet 输入使用分批处理，默认每批 `250000` 行。内存较小时可降低批大小：
+
+```bash
+uv run texperiment build-a-share-universe \
+  --input data/processed/a_share_daily.parquet \
+  --output data/processed/a_share_universe_full.parquet \
+  --setup STOCK_RS_PULLBACK_v1 \
+  --include-rejected \
+  --batch-size 50000
+```
+
 排查为什么股票被过滤：
 
 ```bash
