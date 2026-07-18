@@ -64,6 +64,10 @@ engine_remediation_tasks:
     status: REMEDIATION_AUDIT_PASSED_RECALCULATION_AUTHORIZED
     is_new_setup: false
     baseline_commit: 1cbfa676459e31075c479826cb68dc58b3beeec8
+    remediation_audit_commit: 0f639519c4f59c7a0c34ab095738eeff1923e17f
+    remediation_decision: REMEDIATION_AUDIT_PASSED
+    tests_passed: 123
+    config_check: OK
     preregistration: docs/ENGINE_REMEDIATION_A_SHARE_EXECUTION_v1.md
     full_recalculation_allowed: true
     historical_st_remediation_deferred: true
