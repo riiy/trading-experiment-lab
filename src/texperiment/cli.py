@@ -35,6 +35,11 @@ from texperiment.indicators.a_share import (
 from texperiment.guards.trading_permission import assert_trading_disabled
 from texperiment.guards.setup_status import is_archived
 from texperiment.metrics.validation import build_validation_artifacts, write_validation_outputs
+from texperiment.recalculation import (
+    build_recalculation_manifest,
+    run_full_recalculation,
+    write_recalculation_manifest,
+)
 from texperiment.tickets.generator import build_trade_ticket_artifacts, write_ticket_outputs
 from texperiment.setups.stock_rs_pullback_v1.signal import (
     build_stock_rs_pullback_signals,
@@ -501,6 +506,36 @@ def cmd_prepare_stock_rs_pullback_audit(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_freeze_stock_rs_pullback_recalculation(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    _assert_full_recalculation_allowed(root)
+    output = _resolve(root, args.output)
+    try:
+        manifest = build_recalculation_manifest(root, output)
+        write_recalculation_manifest(manifest, output)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    print(f"freeze-stock-rs-pullback-recalculation: OK -> {output}")
+    print(json.dumps({
+        "engine_git_commit": manifest["engine_git_commit"],
+        "output_id": manifest["output_id"],
+        "input_count": len(manifest["inputs"]) + len(manifest["raw_inputs"]),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_run_stock_rs_pullback_recalculation(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    _assert_full_recalculation_allowed(root)
+    try:
+        paths = run_full_recalculation(root, _resolve(root, args.manifest))
+    except (FileExistsError, ValueError) as exc:
+        raise SystemExit(str(exc)) from exc
+    print("run-stock-rs-pullback-recalculation: OK")
+    print(json.dumps({name: str(path) for name, path in paths.items()}, ensure_ascii=False, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="texperiment")
     parser.add_argument("--root", default=str(ROOT), help="Project root directory")
@@ -641,6 +676,26 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output-dir", default="diagnostics/STOCK_RS_PULLBACK_v1")
     p.add_argument("--batch-size", type=_positive_int, default=250_000)
     p.set_defaults(func=cmd_prepare_stock_rs_pullback_audit)
+
+    p = sub.add_parser(
+        "freeze-stock-rs-pullback-recalculation",
+        help="Freeze full recalculation inputs and engine provenance",
+    )
+    p.add_argument(
+        "--output",
+        default="diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_RECALCULATED_manifest.json",
+    )
+    p.set_defaults(func=cmd_freeze_stock_rs_pullback_recalculation)
+
+    p = sub.add_parser(
+        "run-stock-rs-pullback-recalculation",
+        help="Run immutable full recalculation from a committed manifest",
+    )
+    p.add_argument(
+        "--manifest",
+        default="diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_RECALCULATED_manifest.json",
+    )
+    p.set_defaults(func=cmd_run_stock_rs_pullback_recalculation)
 
     return parser
 

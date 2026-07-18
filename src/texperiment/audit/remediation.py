@@ -144,7 +144,24 @@ def _load_remediation_bars(
         root / "data/processed/a_share_daily.parquet",
         codes,
         columns=["date", "code", "open", "high", "low", "close"],
-    ).rename(columns={field: f"frozen_{field}" for field in ("open", "high", "low", "close")})
+    )
+    return prepare_remediation_bars(
+        bars,
+        frozen,
+        daily_ratio_fallback_codes=daily_ratio_fallback_codes,
+        historical_st_overrides=historical_st_overrides,
+    )
+
+
+def prepare_remediation_bars(
+    bars: pd.DataFrame,
+    frozen_qfq: pd.DataFrame,
+    *,
+    daily_ratio_fallback_codes: set[str] | None = None,
+    historical_st_overrides: dict[tuple[str, str], str] | None = None,
+    enrich: bool = True,
+) -> pd.DataFrame:
+    frozen = frozen_qfq.rename(columns={field: f"frozen_{field}" for field in ("open", "high", "low", "close")})
     bars = bars.merge(frozen, on=["date", "code"], how="left", validate="one_to_one")
     for field in ("open", "high", "low", "close"):
         frozen_field = f"frozen_{field}"
@@ -159,7 +176,8 @@ def _load_remediation_bars(
         if int(selected.sum()) != 1:
             raise ValueError(f"historical ST override did not match exactly one row: {code} {trade_date}")
         bars.loc[selected, "historical_st_status"] = status
-    bars = enrich_price_limit_fields(bars)
+    if enrich:
+        bars = enrich_price_limit_fields(bars)
     return bars.sort_values(["code", "date"]).reset_index(drop=True)
 
 

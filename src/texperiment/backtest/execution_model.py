@@ -3,6 +3,8 @@ from __future__ import annotations
 import math
 from typing import Any
 
+EXECUTION_MODEL_VERSION = "A_SHARE_EXECUTION_V2_CONSERVATIVE_LIMIT_EXITS"
+
 
 def can_buy_at_open(bar: dict[str, Any]) -> tuple[bool, str | None]:
     """Fail closed unless raw-price open fillability is explicitly known."""
