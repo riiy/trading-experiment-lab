@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from texperiment.cli import main
 from texperiment.metrics.industry import attach_latest_industry, by_industry
@@ -136,7 +137,7 @@ def test_write_validation_outputs(tmp_path):
     assert loaded["setup_id"] == "STOCK_RS_PULLBACK_v1"
 
 
-def test_validation_report_cli_writes_all_outputs(tmp_path):
+def test_validation_report_cli_cannot_overwrite_original_after_authorization(tmp_path):
     trades = pd.DataFrame([_trade("000001.SZ", "2026-01-10", 0.03)])
     trade_path = tmp_path / "trades.csv"
     metadata_path = tmp_path / "metadata.parquet"
@@ -151,19 +152,19 @@ def test_validation_report_cli_writes_all_outputs(tmp_path):
     yearly_path = tmp_path / "yearly.csv"
     industry_path = tmp_path / "industry.csv"
 
-    rc = main([
-        "--root", str(Path(__file__).resolve().parents[1]),
-        "report-stock-rs-pullback",
-        "--trade-input", str(trade_path),
-        "--metadata-input", str(metadata_path),
-        "--metrics-output", str(metrics_path),
-        "--report-output", str(report_path),
-        "--yearly-output", str(yearly_path),
-        "--industry-output", str(industry_path),
-    ])
+    with pytest.raises(SystemExit, match="must use STOCK_RS_PULLBACK_v1_RECALCULATED"):
+        main([
+            "--root", str(Path(__file__).resolve().parents[1]),
+            "report-stock-rs-pullback",
+            "--trade-input", str(trade_path),
+            "--metadata-input", str(metadata_path),
+            "--metrics-output", str(metrics_path),
+            "--report-output", str(report_path),
+            "--yearly-output", str(yearly_path),
+            "--industry-output", str(industry_path),
+        ])
 
-    assert rc == 0
-    assert all(path.exists() for path in [metrics_path, report_path, yearly_path, industry_path])
+    assert not any(path.exists() for path in [metrics_path, report_path, yearly_path, industry_path])
 
 
 def pytest_approx(value):

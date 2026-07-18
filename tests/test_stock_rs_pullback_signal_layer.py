@@ -114,7 +114,7 @@ def test_require_universe_rejects_partial_date_coverage():
         validate_universe_coverage(indicators, universe)
 
 
-def test_cli_generates_triggered_signal_with_full_universe(tmp_path):
+def test_signal_cli_cannot_overwrite_original_after_authorization(tmp_path):
     indicators = pd.DataFrame([
         _row(0, close=106, high=110, low=105, drawdown=0.00, volume=120),
         _row(1, close=104, high=108, low=103, drawdown=0.05, volume=80),
@@ -130,15 +130,14 @@ def test_cli_generates_triggered_signal_with_full_universe(tmp_path):
     indicators.to_parquet(indicator_path, index=False)
     universe.to_parquet(universe_path, index=False)
 
-    rc = main([
-        "--root", str(Path(__file__).resolve().parents[1]),
-        "generate-stock-rs-pullback-signals",
-        "--indicator-input", str(indicator_path),
-        "--universe-input", str(universe_path),
-        "--output", str(output_path),
-        "--require-universe",
-    ])
+    with pytest.raises(SystemExit, match="must use STOCK_RS_PULLBACK_v1_RECALCULATED"):
+        main([
+            "--root", str(Path(__file__).resolve().parents[1]),
+            "generate-stock-rs-pullback-signals",
+            "--indicator-input", str(indicator_path),
+            "--universe-input", str(universe_path),
+            "--output", str(output_path),
+            "--require-universe",
+        ])
 
-    assert rc == 0
-    output = pd.read_csv(output_path)
-    assert output.loc[0, "status"] == "triggered_entry_next_open"
+    assert not output_path.exists()

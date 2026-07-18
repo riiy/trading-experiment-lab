@@ -160,7 +160,7 @@ def test_account_simulation_cli_requires_validation_pass(tmp_path):
     trade_path = tmp_path / "trades.csv"
     trades = pd.DataFrame([_trade("t1", "2026-01-02", "2026-01-08")])
     trades.to_csv(trade_path, index=False)
-    with pytest.raises(SystemExit, match="archived setup"):
+    with pytest.raises(SystemExit, match="account_simulation_allowed=false"):
         main([
             "--root", str(Path(__file__).resolve().parents[1]),
             "account-sim-stock-rs-pullback",
@@ -174,7 +174,7 @@ def test_force_research_cannot_bypass_archived_setup(tmp_path):
     trade_path = tmp_path / "trades.csv"
     pd.DataFrame([_trade("t1", "2026-01-02", "2026-01-08")]).to_csv(trade_path, index=False)
 
-    with pytest.raises(SystemExit, match="archived setup"):
+    with pytest.raises(SystemExit, match="account_simulation_allowed=false"):
         main([
             "--root", str(Path(__file__).resolve().parents[1]),
             "account-sim-stock-rs-pullback",

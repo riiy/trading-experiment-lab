@@ -22,6 +22,7 @@ def _stock_rows(code: str, start_close: float, days: int = 65):
             "close": close,
             "volume": 1_000_000 + i * 1000,
             "amount": 100_000_000,
+            "adj_type": "qfq",
         })
     return rows
 
@@ -39,6 +40,7 @@ def _benchmark_rows(code: str = "000300.SH", start_close: float = 1000, days: in
             "low": close - 2,
             "close": close,
             "volume": 10_000_000,
+            "adj_type": "qfq",
         })
     return rows
 
@@ -92,3 +94,18 @@ def test_benchmark_can_be_in_same_input_table():
 
     assert "benchmark_ret20" in out.columns
     assert out.loc[out["code"] == "000001.SZ", "benchmark_ret20"].notna().sum() > 0
+
+
+def test_indicators_prefer_explicit_adjusted_prices():
+    daily = pd.DataFrame(_stock_rows("000001.SZ", 10))
+    benchmark = pd.DataFrame(_benchmark_rows())
+    daily["adj_close"] = daily["close"]
+    daily["adj_high"] = daily["high"]
+    daily["close"] = 1000.0
+    daily["high"] = 1001.0
+    benchmark["adj_close"] = benchmark["close"]
+    benchmark["close"] = 5000.0
+
+    out = build_a_share_indicators(daily, benchmark_bars=benchmark)
+
+    assert out.iloc[-1]["ma20"] == pytest.approx(daily["adj_close"].tail(20).mean())

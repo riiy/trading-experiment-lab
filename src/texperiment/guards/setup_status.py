@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from texperiment.exceptions import PermissionDenied
 
-TERMINAL_STATUSES = {"FAILED_ARCHIVED", "EDGE_NOT_TRADABLE", "STOP_FEASIBILITY_FAILED"}
+TERMINAL_STATUSES = {
+    "ARCHIVED_NON_TRADABLE",
+    "FAILED_ARCHIVED",
+    "EDGE_NOT_TRADABLE",
+    "STOP_FEASIBILITY_FAILED",
+}
 
 
 def is_archived(status: str) -> bool:

@@ -188,6 +188,7 @@ def _prepare_stock_bars(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     out["date"] = pd.to_datetime(out["date"]).dt.normalize()
     out["code"] = out["code"].astype(str)
+    _select_adjusted_price_layer(out, required=("close", "high"))
     for col in ["open", "high", "low", "close", "volume", "amount"]:
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce")
@@ -205,12 +206,25 @@ def _prepare_benchmark_bars(df: pd.DataFrame, cfg: AShareIndicatorConfig) -> pd.
     out = df.copy()
     out["date"] = pd.to_datetime(out["date"]).dt.normalize()
     out["code"] = out["code"].astype(str)
+    _select_adjusted_price_layer(out, required=("close",))
     out["close"] = pd.to_numeric(out["close"], errors="coerce")
     out = out.loc[out["code"] == cfg.benchmark_code].copy()
     if out.empty:
         raise ValueError(f"benchmark code not found: {cfg.benchmark_code}")
     out = out.drop_duplicates(["date", "code"], keep="last")
     return out.sort_values("date").reset_index(drop=True)
+
+
+def _select_adjusted_price_layer(df: pd.DataFrame, *, required: tuple[str, ...]) -> None:
+    explicit = all(f"adj_{field}" in df and df[f"adj_{field}"].notna().all() for field in required)
+    if explicit:
+        for field in ("open", "high", "low", "close"):
+            adjusted = f"adj_{field}"
+            if adjusted in df:
+                df[field] = df[adjusted]
+        return
+    if "adj_type" not in df or not df["adj_type"].astype(str).str.lower().isin({"qfq", "hfq"}).all():
+        raise ValueError("adjusted price layer required for indicator calculation")
 
 
 def _benchmark_returns(benchmark: pd.DataFrame, cfg: AShareIndicatorConfig) -> pd.DataFrame:

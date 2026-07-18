@@ -119,13 +119,14 @@ def annotate_a_share_universe(
             return _empty_universe_frame(daily_bars)
 
     out = out.sort_values(["code", "date"]).reset_index(drop=True)
-    out["is_st"] = _derive_bool_column(out, "is_st", default=False) | _derive_st_from_name(out)
+    historical_st = out.get("historical_st_status", pd.Series("UNKNOWN", index=out.index)).astype(str).str.upper()
+    out["is_st"] = historical_st.eq("TRUE")
     out["is_suspended"] = _derive_suspended(out)
-    out["is_limit_up"] = _derive_limit_flag(out, flag_col="is_limit_up", direction="up")
-    out["is_limit_down"] = _derive_limit_flag(out, flag_col="is_limit_down", direction="down")
+    out["is_limit_up"] = out.get("close_at_limit_up", pd.Series("UNKNOWN", index=out.index)).astype(str).str.upper().eq("TRUE")
+    out["is_limit_down"] = out.get("close_at_limit_down", pd.Series("UNKNOWN", index=out.index)).astype(str).str.upper().eq("TRUE")
     out["listing_days"] = _derive_listing_days(out)
     out["avg_amount_20d"] = _derive_avg_amount_20d(out)
-    out["one_lot_value"] = out["close"] * cfg.lot_size
+    out["one_lot_value"] = pd.to_numeric(out.get("raw_close"), errors="coerce") * cfg.lot_size
 
     if as_of_date is not None:
         as_of = pd.Timestamp(as_of_date).normalize()
@@ -133,15 +134,17 @@ def annotate_a_share_universe(
         if out.empty:
             return _empty_universe_frame(daily_bars)
 
-    out["pass_non_st"] = ~out["is_st"] if cfg.exclude_st else True
-    out["pass_listing_days"] = out["listing_days"] >= cfg.min_listing_days
+    out["pass_non_st"] = historical_st.eq("FALSE") if cfg.exclude_st else True
+    out["pass_listing_days"] = (out["listing_days"] >= cfg.min_listing_days).fillna(False)
     out["pass_not_suspended"] = ~out["is_suspended"] if cfg.exclude_suspended else True
     if cfg.exclude_limit_up_down:
-        out["pass_not_limit_up_down"] = ~(out["is_limit_up"] | out["is_limit_down"])
+        one_price_up = out.get("one_price_limit_up", pd.Series("UNKNOWN", index=out.index)).astype(str).str.upper()
+        one_price_down = out.get("one_price_limit_down", pd.Series("UNKNOWN", index=out.index)).astype(str).str.upper()
+        out["pass_not_limit_up_down"] = one_price_up.eq("FALSE") & one_price_down.eq("FALSE")
     else:
         out["pass_not_limit_up_down"] = True
-    out["pass_avg_amount_20d"] = out["avg_amount_20d"] >= cfg.min_avg_amount_20d
-    out["pass_one_lot_value"] = out["one_lot_value"] <= cfg.max_one_lot_value
+    out["pass_avg_amount_20d"] = (out["avg_amount_20d"] >= cfg.min_avg_amount_20d).fillna(False)
+    out["pass_one_lot_value"] = (out["one_lot_value"] <= cfg.max_one_lot_value).fillna(False)
 
     pass_cols = [
         "pass_non_st",
@@ -183,7 +186,6 @@ def write_a_share_universe_from_parquet(
     temp = output.with_name(f".{output.name}.{os.getpid()}.tmp")
     writer: pq.ParquetWriter | None = None
     tails: dict[str, pd.DataFrame] = {}
-    seen_counts: dict[str, int] = {}
     row_id = 0
     rows_written = 0
     eligible_count = 0
@@ -195,18 +197,6 @@ def write_a_share_universe_from_parquet(
             pieces: list[pd.DataFrame] = []
             for code, group in current.groupby("code", sort=False):
                 group = group.sort_values("date").copy()
-                if "listing_days" not in group.columns:
-                    group["listing_days"] = range(
-                        seen_counts.get(code, 0) + 1,
-                        seen_counts.get(code, 0) + len(group) + 1,
-                    )
-                else:
-                    listing_days = pd.to_numeric(group["listing_days"], errors="coerce")
-                    fallback = pd.Series(
-                        range(seen_counts.get(code, 0) + 1, seen_counts.get(code, 0) + len(group) + 1),
-                        index=group.index,
-                    )
-                    group["listing_days"] = listing_days.fillna(fallback)
                 history = tails.get(code)
                 working = pd.concat([history, group], ignore_index=True) if history is not None else group
                 annotated = annotate_a_share_universe(working, config=cfg)
@@ -218,7 +208,6 @@ def write_a_share_universe_from_parquet(
                 if not selected.empty:
                     pieces.append(selected)
                 tails[code] = working.tail(20)
-                seen_counts[code] = seen_counts.get(code, 0) + len(group)
             if not pieces:
                 continue
             result = pd.concat(pieces, ignore_index=True).drop(columns=["_stream_row_id"])
@@ -260,6 +249,9 @@ def _prepare_daily_bars(df: pd.DataFrame) -> pd.DataFrame:
         out["date"] = pd.to_datetime(out["date"]).dt.normalize()
     out["code"] = out["code"].astype(str)
     out["close"] = pd.to_numeric(out["close"], errors="coerce")
+    if "raw_close" not in out:
+        out["raw_close"] = pd.NA
+    out["raw_close"] = pd.to_numeric(out["raw_close"], errors="coerce")
     if "amount" in out.columns:
         out["amount"] = pd.to_numeric(out["amount"], errors="coerce")
     else:
@@ -298,31 +290,15 @@ def _derive_suspended(df: pd.DataFrame) -> pd.Series:
     return suspended.astype(bool)
 
 
-def _derive_limit_flag(df: pd.DataFrame, *, flag_col: str, direction: str) -> pd.Series:
-    flag = _derive_bool_column(df, flag_col, default=False)
-    if "pct_chg" in df.columns:
-        pct = pd.to_numeric(df["pct_chg"], errors="coerce")
-    elif "pre_close" in df.columns:
-        pre_close = pd.to_numeric(df["pre_close"], errors="coerce")
-        pct = (df["close"] / pre_close - 1.0) * 100.0
-    else:
-        return flag.astype(bool)
-
-    # Approximate fallback. Exact A-share limits require board, listing stage and ST history.
-    threshold = 9.8
-    if direction == "up":
-        derived = pct >= threshold
-    else:
-        derived = pct <= -threshold
-    return (flag | derived.fillna(False)).astype(bool)
-
-
 def _derive_listing_days(df: pd.DataFrame) -> pd.Series:
     if "listing_days" in df.columns:
         listing_days = pd.to_numeric(df["listing_days"], errors="coerce")
-        fallback = df.groupby("code").cumcount() + 1
-        return listing_days.fillna(fallback).astype(int)
-    return (df.groupby("code").cumcount() + 1).astype(int)
+        if listing_days.notna().any():
+            return listing_days.astype("Float64")
+    if "listing_date" in df.columns:
+        listing_date = pd.to_datetime(df["listing_date"], errors="coerce").dt.normalize()
+        return ((df["date"] - listing_date).dt.days + 1).where(listing_date.notna()).astype("Float64")
+    return pd.Series(pd.NA, index=df.index, dtype="Float64")
 
 
 def _derive_avg_amount_20d(df: pd.DataFrame) -> pd.Series:

@@ -59,20 +59,22 @@ data/processed/a_share_daily.parquet
 | raw_code | 原始代码 |
 | name | 股票名称，可空 |
 | market | SH / SZ / BJ |
-| open/high/low/close | 日线价格 |
+| open/high/low/close | provider 兼容价格；新代码必须选择显式价格层 |
+| raw_open/raw_high/raw_low/raw_close | 未复权真实交易价格 |
+| adj_open/adj_high/adj_low/adj_close | 前复权连续信号价格 |
+| hfq_open/hfq_high/hfq_low/hfq_close | 后复权交叉验证价格 |
 | pre_close | 前收盘，可空 |
 | volume | 成交量，统一为股 |
 | amount | 成交额，统一为人民币元 |
 | turnover_rate | 换手率，可空 |
 | pct_chg | 涨跌幅，可空 |
 | adj_type | none / qfq / hfq |
-| adj_factor | 复权因子，可空 |
+| adj_factor/adj_offset | 仿射复权映射参数，可空 |
 | trade_status | 原始交易状态，可空 |
 | is_suspended | 是否停牌 |
-| is_limit_up | 是否涨停，当前为近似推导 |
-| is_limit_down | 是否跌停，当前为近似推导 |
+| is_limit_up/is_limit_down | 旧兼容收盘状态，禁止用于开盘成交判断 |
 | is_st | 是否 ST / *ST |
-| listing_days | 上市天数；TDX 导入按文件首个有效日期计算，缺失时股票池按观察到的行数保守回退 |
+| listing_days | 上市天数；仅可靠来源可用于正式上市阶段判断 |
 | industry | 行业分类，可后续补充 |
 | source | 数据来源 |
 | source_file | 原始文件路径 |
@@ -187,16 +189,38 @@ A股日线原始文件读取
 成交量/成交额单位统一
 基础质量检查
 标准 parquet 输出
+TDX 前复权/不复权/后复权三层配对导入
+raw/adjusted 双价格层和仿射复权映射验证
 ```
+
+Engine Remediation 使用独立输出，不覆盖原始验证输入：
+
+```bash
+uv run texperiment ingest-tdx-paired-a-share-daily \
+  --qfq-input data/raw/tdx_text/qfq \
+  --raw-input data/raw/tdx_text/raw \
+  --hfq-input data/raw/tdx_text/hfq \
+  --output data/processed/a_share_daily_remediation.parquet
+```
+
+TDX 前复权价格与未复权价格实测不是纯乘法关系。配对导入按日拟合并验证：
+
+```text
+adj_price = raw_price * adj_factor + adj_offset
+```
+
+后复权层用于交叉验证。无法在1.1分钱容差内验证的行保留 `UNKNOWN_AFFINE_FIT`，不得用于执行真实性 PASS。
+
+三层源文件日期集必须完全一致。若某日任一价格层包含非正 OHLC，该日不能形成有效双价格行并计入 `dropped_invalid_layer_rows`；导入器先从完整 raw 序列计算 `raw_pre_close` 和原始 `listing_trading_day`，再排除该日，避免截断后错误重算前收和上市序号。
 
 未完成：
 
 ```text
-上市日期表驱动的精确上市天数
-ST 历史状态精确表
+权威上市日期和上市阶段表
+时点 ST 历史状态表
 行业分类接入
-按板块、ST 状态区分的精确涨跌停规则
-复权因子独立管理
+开盘集合竞价成交证据
+`UNKNOWN_AFFINE_FIT` 行的独立公司行为数据核验
 分红送转除权审计
 港股通日线接入
 ```

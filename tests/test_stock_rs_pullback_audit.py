@@ -137,7 +137,7 @@ def test_qfq_only_execution_realism_is_blocking_not_evaluable():
     assert bool(realism["blocking"]) is True
 
 
-def test_expected_limit_up_invalid_entry_is_not_engine_failure():
+def test_close_limit_flag_cannot_validate_open_unfillability():
     trade = _trade(99, status="invalid_trade")
     trade.update({
         "signal_date": "2026-01-02",
@@ -171,7 +171,81 @@ def test_expected_limit_up_invalid_entry_is_not_engine_failure():
     details = audit_trade(trade, signal={}, daily_bars=bars, indicators=indicators, universe=universe)
 
     entry_check = details.loc[details["check_id"] == "ENTRY_DAY_EXECUTABLE"].iloc[0]
-    assert entry_check["verdict"] == "PASS"
+    assert entry_check["verdict"] == "NOT_EVALUABLE_OPEN_FILLABILITY"
+
+
+def test_remediation_audit_reconstructs_exit_independently_from_recorded_values():
+    trade = _trade(7)
+    dates = pd.date_range("2025-10-01", periods=100, freq="D")
+    trade.update({
+        "signal_date": str(dates[-6].date()),
+        "pullback_date": str(dates[-7].date()),
+        "trigger_date": str(dates[-6].date()),
+        "entry_date": str(dates[-5].date()),
+        "entry_price": 10.0,
+        "entry_adjusted_price": 10.0,
+        "entry_adj_factor": 1.0,
+        "stop_price": 9.0,
+        "stop_adjusted_price": 9.0,
+        "target_price": 12.0,
+        "target_adjusted_price": 12.0,
+        "exit_date": str(dates[-4].date()),
+        "exit_price": 9.5,
+        "exit_adjusted_price": 9.5,
+        "exit_adj_factor": 1.0,
+        "gross_return": -0.05,
+        "net_return": -0.052,
+        "r_multiple": -0.5,
+        "holding_days": 2,
+        "exit_reason": "stop_loss",
+    })
+    bars = pd.DataFrame({
+        "date": dates,
+        "code": trade["code"],
+        "open": 10.0,
+        "high": 10.5,
+        "low": 9.5,
+        "close": 10.0,
+        "raw_open": 10.0,
+        "raw_high": 10.5,
+        "raw_low": 9.5,
+        "raw_close": 10.0,
+        "adj_open": 10.0,
+        "adj_high": 10.5,
+        "adj_low": 9.5,
+        "adj_close": 10.0,
+        "adj_factor": 1.0,
+        "volume": 1000,
+        "adj_type": "dual",
+        "is_suspended": False,
+        "can_buy_at_open": "TRUE",
+        "can_sell_at_open": "TRUE",
+        "can_sell_intraday": "TRUE",
+        "can_sell_at_close": "TRUE",
+        "one_price_limit_up": "FALSE",
+        "historical_st_status": "FALSE",
+        "limit_rule_status": "KNOWN_LIMIT",
+    })
+    bars.loc[bars["date"] == dates[-4], ["low", "raw_low", "adj_low"]] = 8.9
+    indicators = bars.copy()
+    for column, value in {"ma20": 10.0, "ma60": 10.0, "ret20": 0.0, "high_10d": 10.5, "vol_ma5": 1000.0}.items():
+        indicators[column] = value
+    universe = bars[["date", "code"]].copy()
+    universe["is_tradable_universe"] = True
+
+    details = audit_trade(
+        trade,
+        signal={"signal_id": trade["signal_id"], "stop_price": 9.0},
+        daily_bars=bars,
+        indicators=indicators,
+        universe=universe,
+    )
+
+    verdicts = details.set_index("check_id")["verdict"]
+    assert verdicts["EXIT_PRICE_RECONSTRUCTION"] == "FAIL"
+    assert verdicts["GROSS_RETURN_RECALCULATION"] == "FAIL"
+    assert verdicts["R_MULTIPLE_RECALCULATION"] == "FAIL"
+    assert verdicts["EXECUTION_REALISM"] == "PASS"
 
 
 def test_final_decision_requires_manual_review_and_never_changes_permissions():

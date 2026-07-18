@@ -1,0 +1,33 @@
+{
+  "task": "ENGINE_REMEDIATION_A_SHARE_EXECUTION_v1",
+  "baseline_commit": "1cbfa676459e31075c479826cb68dc58b3beeec8",
+  "generated_at": "2026-07-18T13:40:16.915473+00:00",
+  "locked_sample_sha256": "8b8ef1ea0528b5004dede80f8c3b6fb8a077178e9229bd98f46633b292bcdc54",
+  "frozen_qfq_sha256": "e2ad43e91cb337367c8e4463f275307e4dc313ecfa4bd748bbee7d11c45b216c",
+  "remediation_daily_sha256": "0a7a3ddf717d1cc9bb958657dc2f644d6c86da2433b2cff72ab374b30043b35a",
+  "engine_source_sha256": "1cbef4fa07fa4084b2565976b94ebc1fb2f6671568902563d5c7bd2e6bc2bb3e",
+  "sample_count": 50,
+  "full_recalculation_performed": false,
+  "historical_st_repaired": false,
+  "daily_ratio_fallback": {
+    "formula": "adj_factor = qfq_close / raw_close; adj_offset = 0",
+    "scope": "flat OHLC rows with UNKNOWN_AFFINE_FIT only",
+    "codes": [
+      "600114.SH"
+    ]
+  },
+  "historical_st_point_overrides": [
+    {
+      "code": "300137.SZ",
+      "date": "2015-05-28",
+      "status": "FALSE",
+      "provenance": "USER_CONFIRMED_DIRECT_DATABASE_QUERY"
+    },
+    {
+      "code": "600037.SH",
+      "date": "2015-05-28",
+      "status": "FALSE",
+      "provenance": "USER_CONFIRMED_DIRECT_DATABASE_QUERY"
+    }
+  ]
+}

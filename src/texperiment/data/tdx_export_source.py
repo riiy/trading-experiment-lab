@@ -45,7 +45,7 @@ def read_tdx_export_file(path: str | Path) -> pd.DataFrame:
         header = handle.readline()
     header_parts = header.strip().split()
     name = header_parts[1] if len(header_parts) > 1 else ""
-    adj_type = "qfq" if "前复权" in header else "none"
+    adj_type = "qfq" if "前复权" in header else "hfq" if "后复权" in header else "none"
 
     try:
         raw = pd.read_csv(
@@ -79,8 +79,6 @@ def read_tdx_export_file(path: str | Path) -> pd.DataFrame:
     raw["is_st"] = name != "" and bool(_ST_RE.search(name))
     first_date = raw["date"].min()
     raw["listing_days"] = (raw["date"] - first_date).dt.days + 1
-    raw["is_limit_up"] = raw["pct_chg"] >= 9.8
-    raw["is_limit_down"] = raw["pct_chg"] <= -9.8
     return normalize_daily_bars(
         raw,
         provider="canonical",
@@ -144,7 +142,7 @@ def read_tdx_index_export_file(path: str | Path, *, code: str = "000300.SH") -> 
         header = handle.readline()
     parts = header.strip().split()
     name = parts[1] if len(parts) > 1 else ""
-    adj_type = "qfq" if "前复权" in header else "none"
+    adj_type = "qfq" if "前复权" in header else "hfq" if "后复权" in header else "none"
     try:
         raw = pd.read_csv(
             path, encoding="gb18030", skiprows=2, header=None,

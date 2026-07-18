@@ -14,6 +14,8 @@ from texperiment.data.schema import (
     SUPPORTED_PROVIDERS,
     StandardizationReport,
 )
+from texperiment.market_rules.a_share_board import get_a_share_board
+from texperiment.market_rules.price_limit import enrich_price_limit_fields
 
 # Column mappings for common A-share data exports.
 # The project does not depend on a single provider. The ingest command accepts raw CSV/parquet
@@ -61,7 +63,6 @@ PROVIDER_COLUMN_MAPS: dict[str, Mapping[str, str]] = {
         "tradestatus": "trade_status",
         "pctChg": "pct_chg",
         "isST": "is_st",
-        "adjustflag": "adj_factor",
     },
 }
 
@@ -138,7 +139,17 @@ def normalize_daily_bars(
     out["source_file"] = str(source_file) if source_file is not None else ""
 
     _fill_optional_columns(out)
+    _populate_price_layers(out)
     _derive_status_columns(out)
+    evaluable = (
+        out["raw_open"].notna()
+        & out["adj_factor"].notna()
+        & out["listing_date"].notna()
+        & out["listing_date_status"].astype(str).str.upper().eq("VERIFIED")
+        & out["historical_st_status"].astype(str).str.upper().isin({"TRUE", "FALSE"})
+    )
+    if evaluable.any():
+        out.loc[evaluable] = enrich_price_limit_fields(out.loc[evaluable])
     out = out[CANONICAL_DAILY_COLUMNS]
     out = out.sort_values(["code", "date"]).reset_index(drop=True)
     return out
@@ -167,10 +178,24 @@ def _rename_columns(df: pd.DataFrame, provider: str) -> pd.DataFrame:
 def _fill_optional_columns(df: pd.DataFrame) -> None:
     defaults = {
         "name": "",
+        "board": "",
+        "listing_date": pd.NaT,
+        "listing_date_status": "UNKNOWN",
+        "listing_trading_day": pd.NA,
+        "historical_st_status": "UNKNOWN",
+        "historical_st_branch_status": "NOT_EVALUATED",
+        "opening_auction_fill_status": "UNKNOWN",
+        "closing_auction_fill_status": "UNKNOWN",
         "pre_close": pd.NA,
         "turnover_rate": pd.NA,
         "pct_chg": pd.NA,
         "adj_factor": pd.NA,
+        "adj_offset": pd.NA,
+        "adjustment_status": "UNKNOWN",
+        "adjustment_fit_error": pd.NA,
+        "hfq_fit_error": pd.NA,
+        "volume_layer_match": False,
+        "amount_layer_match": False,
         "trade_status": "",
         "is_suspended": False,
         "is_limit_up": False,
@@ -178,6 +203,34 @@ def _fill_optional_columns(df: pd.DataFrame) -> None:
         "is_st": False,
         "listing_days": pd.NA,
         "industry": "",
+        "raw_open": pd.NA,
+        "raw_high": pd.NA,
+        "raw_low": pd.NA,
+        "raw_close": pd.NA,
+        "raw_pre_close": pd.NA,
+        "adj_open": pd.NA,
+        "adj_high": pd.NA,
+        "adj_low": pd.NA,
+        "adj_close": pd.NA,
+        "hfq_open": pd.NA,
+        "hfq_high": pd.NA,
+        "hfq_low": pd.NA,
+        "hfq_close": pd.NA,
+        "limit_up_price": pd.NA,
+        "limit_down_price": pd.NA,
+        "open_at_limit_up": "UNKNOWN",
+        "open_at_limit_down": "UNKNOWN",
+        "close_at_limit_up": "UNKNOWN",
+        "close_at_limit_down": "UNKNOWN",
+        "one_price_limit_up": "UNKNOWN",
+        "one_price_limit_down": "UNKNOWN",
+        "can_buy_at_open": "UNKNOWN",
+        "can_sell_at_open": "UNKNOWN",
+        "can_sell_intraday": "UNKNOWN",
+        "can_sell_at_close": "UNKNOWN",
+        "scheduled_close_fill_status": "UNKNOWN",
+        "limit_rule_status": "UNKNOWN_NOT_EVALUATED",
+        "limit_rule_reason": "price-limit rule not evaluated",
     }
     for col, default in defaults.items():
         if col not in df.columns:
@@ -185,6 +238,26 @@ def _fill_optional_columns(df: pd.DataFrame) -> None:
 
     for col in BOOLEAN_COLUMNS:
         df[col] = _to_bool_series(df[col])
+
+    missing_board = df["board"].astype(str).str.strip().eq("")
+    df.loc[missing_board, "board"] = df.loc[missing_board, "code"].map(lambda code: str(get_a_share_board(code)))
+
+
+def _populate_price_layers(df: pd.DataFrame) -> None:
+    raw_source = df["adj_type"].astype(str).str.lower().eq("none")
+    adjusted_source = df["adj_type"].astype(str).str.lower().isin({"qfq", "hfq"})
+    for field in ("open", "high", "low", "close"):
+        raw_field = f"raw_{field}"
+        adj_field = f"adj_{field}"
+        raw_missing = raw_source & df[raw_field].isna()
+        adjusted_missing = adjusted_source & df[adj_field].isna()
+        if raw_missing.any():
+            df.loc[raw_missing, raw_field] = df.loc[raw_missing, field]
+        if adjusted_missing.any():
+            df.loc[adjusted_missing, adj_field] = df.loc[adjusted_missing, field]
+    raw_pre_close_missing = raw_source & df["raw_pre_close"].isna()
+    if raw_pre_close_missing.any():
+        df.loc[raw_pre_close_missing, "raw_pre_close"] = df.loc[raw_pre_close_missing, "pre_close"]
 
 
 def _derive_status_columns(df: pd.DataFrame) -> None:
@@ -194,12 +267,10 @@ def _derive_status_columns(df: pd.DataFrame) -> None:
         df.loc[status == "0", "is_suspended"] = True
         df.loc[status == "1", "is_suspended"] = False
 
-    # A simple derived limit-up/down flag. This is approximate and conservative; exact price-limit
-    # handling belongs in a later corporate action / board-type module.
-    if "pre_close" in df.columns and df["pre_close"].notna().any():
-        pct_from_preclose = (df["close"] / df["pre_close"] - 1.0).where(df["pre_close"] > 0)
-        df.loc[pct_from_preclose >= 0.098, "is_limit_up"] = True
-        df.loc[pct_from_preclose <= -0.098, "is_limit_down"] = True
+    # Legacy flags now mean known close-at-limit only. Unknown rule states stay false here;
+    # execution and new validation paths use explicit tri-state fields instead.
+    df.loc[df["close_at_limit_up"].eq("TRUE"), "is_limit_up"] = True
+    df.loc[df["close_at_limit_down"].eq("TRUE"), "is_limit_down"] = True
 
 
 def _to_bool_series(s: pd.Series) -> pd.Series:

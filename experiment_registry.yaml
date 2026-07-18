@@ -1,5 +1,5 @@
 Trading_Experiment:
-  status: audit_closed
+  status: recalculation_authorized
   capital_limit: 30000
   max_planned_loss_per_trade: 500
   instrument_scope:
@@ -8,15 +8,40 @@ Trading_Experiment:
   current_setup: null
   trading_allowed: false
   tradable_setups: 0
+  next_action:
+    - freeze_remediation_engine_commit
+    - freeze_recalculation_input_hashes
+    - run_STOCK_RS_PULLBACK_v1_RECALCULATED
+  allowed:
+    - repair_execution_semantics
+    - add_raw_price_schema
+    - add_price_limit_rules
+    - add_historical_status_interface
+    - add_regression_tests
+    - rerun_locked_50_sample_audit
+    - full_backtest_recalculation_to_RECALCULATED_paths
+  forbidden:
+    - failure_diagnostics
+    - new_setup_definition
+    - account_simulation
+    - ticket_generation
+    - live_trading
 
 setups:
   STOCK_RS_PULLBACK_v1:
-    status: FAILED_ARCHIVED
+    lifecycle_status: ARCHIVED_NON_TRADABLE
+    validation_status: INVALIDATED_BY_ENGINE_ERROR
     market_scope: A_SHARE_ONLY
     trading_allowed: false
     account_simulation_allowed: false
     ticket_generation_allowed: false
-    decision: FAILED_ARCHIVED
+    original_validation:
+      preserved: true
+      status: INVALIDATED_BY_ENGINE_ERROR
+      prior_decision: FAILED_ARCHIVED
+      validation_report: data/reports/STOCK_RS_PULLBACK_v1_validation_report.md
+      metrics: data/reports/STOCK_RS_PULLBACK_v1_metrics.json
+      trades: data/trades/STOCK_RS_PULLBACK_v1_backtest_trades.csv
     industry_analysis:
       status: NOT_EVALUABLE
       reason: missing_industry_metadata
@@ -24,15 +49,73 @@ setups:
     audit:
       status: CLOSED
       decision: ENGINE_ERROR_FOUND
+      locked_commit: 1cbfa676459e31075c479826cb68dc58b3beeec8
       plan_version: AUDIT_STOCK_RS_PULLBACK_v1_PLAN_v1
       sample_count: 50
       critical_failures: 10
       blocking_not_evaluable: 150
-      recalculation_performed: false
+      full_recalculation_performed: false
       new_setup_started: false
       closed_at: "2026-07-17T10:13:39Z"
       report: diagnostics/STOCK_RS_PULLBACK_v1/AUDIT_STOCK_RS_PULLBACK_v1.md
       summary: diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_audit_summary.json
+engine_remediation_tasks:
+  ENGINE_REMEDIATION_A_SHARE_EXECUTION_v1:
+    status: REMEDIATION_AUDIT_PASSED_RECALCULATION_AUTHORIZED
+    is_new_setup: false
+    baseline_commit: 1cbfa676459e31075c479826cb68dc58b3beeec8
+    preregistration: docs/ENGINE_REMEDIATION_A_SHARE_EXECUTION_v1.md
+    full_recalculation_allowed: true
+    historical_st_remediation_deferred: true
+    daily_ratio_fallback_codes:
+      - 600114.SH
+    historical_st_point_overrides:
+      - code: 300137.SZ
+        date: "2015-05-28"
+        status: false
+        provenance: USER_CONFIRMED_DIRECT_DATABASE_QUERY
+      - code: 600037.SH
+        date: "2015-05-28"
+        status: false
+        provenance: USER_CONFIRMED_DIRECT_DATABASE_QUERY
+    data_layer:
+      status: PRICE_LAYERS_READY_WITH_BRANCH_INVARIANCE
+      output: data/processed/a_share_daily_remediation.parquet
+      sha256: 0a7a3ddf717d1cc9bb958657dc2f644d6c86da2433b2cff72ab374b30043b35a
+      rows: 15926305
+      stock_count: 5526
+      min_date: "1990-12-19"
+      max_date: "2026-07-17"
+      adjustment_known_rows: 15871028
+      adjustment_unknown_rows: 55277
+      dropped_invalid_layer_rows: 740183
+      historical_st_status: UNKNOWN_ALL_ROWS
+      limit_rule_status: UNKNOWN_MISSING_HISTORICAL_ST_ALL_ROWS
+    sample_audit:
+      status: COMPLETE
+      decision: REMEDIATION_AUDIT_PASSED
+      sample_count: 50
+      original_limit_up_errors_resolved: 5
+      remediated_valid_trades: 50
+      data_limited_trade_outcomes: 0
+      critical_failures: 0
+      critical_engine_error_remaining: false
+      check_not_evaluable_count: 56
+      material_blocking_trade_count: 0
+      blocking_not_evaluable: 0
+      daily_ratio_fallback_resolved:
+        - 600114.SH
+      historical_st_point_overrides: 2
+      full_recalculation_performed: false
+      conservative_close_limit_down_cases:
+        - code: 300137.SZ
+          scheduled_exit_date: "2015-05-28"
+          actual_exit_date: "2015-05-29"
+        - code: 600037.SH
+          scheduled_exit_date: "2015-05-28"
+          actual_exit_date: "2015-05-29"
+      report: diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/REMEDIATION_AUDIT_STOCK_RS_PULLBACK_v1.md
+      summary: diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/STOCK_RS_PULLBACK_v1_remediation_summary.json
 archived_paths:
   - earnings_event
   - major_contract_event

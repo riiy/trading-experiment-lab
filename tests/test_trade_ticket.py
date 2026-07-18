@@ -61,5 +61,5 @@ def test_direct_ticket_generation_rejects_forbidden_order_field():
 
 
 def test_ticket_cli_blocks_archived_setup():
-    with pytest.raises(SystemExit, match="archived setup"):
+    with pytest.raises(SystemExit, match="ticket_generation_allowed=false"):
         main(["generate-stock-rs-pullback-tickets"])

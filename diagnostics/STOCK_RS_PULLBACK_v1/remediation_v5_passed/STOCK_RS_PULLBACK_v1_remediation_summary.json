@@ -1,0 +1,21 @@
+{
+  "decision": "REMEDIATION_AUDIT_PASSED",
+  "sample_count": 50,
+  "original_limit_up_invalid_samples": 5,
+  "original_limit_up_errors_resolved": 5,
+  "remediated_valid_trades": 50,
+  "data_limited_trade_outcomes": 0,
+  "unexpected_invalid_outcomes": 0,
+  "critical_failures": 0,
+  "critical_engine_error_remaining": false,
+  "check_not_evaluable_count": 56,
+  "material_blocking_trade_count": 0,
+  "blocking_not_evaluable": 0,
+  "historical_st_repaired": false,
+  "full_recalculation_performed": false,
+  "new_setup_started": false,
+  "daily_ratio_fallback_codes": [
+    "600114.SH"
+  ],
+  "historical_st_point_overrides": 2
+}

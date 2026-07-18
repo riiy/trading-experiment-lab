@@ -21,7 +21,7 @@ def test_formal_ticket_guard_blocks_before_pass():
 
 def test_formal_ticket_guard_blocks_archived_setup():
     with pytest.raises(PermissionDenied, match="archived setup"):
-        assert_can_generate_formal_ticket("FAILED_ARCHIVED", "passed")
+        assert_can_generate_formal_ticket("ARCHIVED_NON_TRADABLE", "passed")
 
 
 def test_no_live_trade_always_blocks():

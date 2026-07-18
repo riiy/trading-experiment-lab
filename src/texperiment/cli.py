@@ -25,6 +25,7 @@ from texperiment.audit.sampler import select_audit_sample
 from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, read_table, write_parquet
 from texperiment.data.quality import validate_daily_bars
 from texperiment.data.tdx_export_source import write_tdx_index_parquet
+from texperiment.data.tdx_paired_source import write_tdx_paired_export_parquet
 from texperiment.indicators.a_share import (
     AShareIndicatorConfig,
     build_a_share_indicators,
@@ -114,6 +115,21 @@ def cmd_ingest_tdx_export_index_daily(args: argparse.Namespace) -> int:
     report = write_tdx_index_parquet(_resolve(root, args.input), output_path, code=args.code)
     print(f"ingest-tdx-export-index-daily: OK -> {output_path}")
     print(_quality_report_to_json(report))
+    return 0
+
+
+def cmd_ingest_tdx_paired_a_share_daily(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    output_path = _resolve(root, args.output)
+    quality, report = write_tdx_paired_export_parquet(
+        _resolve(root, args.qfq_input),
+        _resolve(root, args.raw_input),
+        _resolve(root, args.hfq_input),
+        output_path,
+        strict=not args.allow_quality_warnings,
+    )
+    print(f"ingest-tdx-paired-a-share-daily: OK -> {output_path}")
+    print(json.dumps({"quality": json.loads(_quality_report_to_json(quality)), "paired": report.__dict__}, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -234,6 +250,8 @@ def cmd_compute_a_share_indicators(args: argparse.Namespace) -> int:
 
 def cmd_generate_stock_rs_pullback_signals(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
+    _assert_full_recalculation_allowed(root)
+    _assert_recalculated_paths(args.output)
     indicator_path = _resolve(root, args.indicator_input)
     output_path = _resolve(root, args.output)
     setup_path = root / "configs" / "setups" / f"{args.setup}.yaml"
@@ -291,6 +309,8 @@ def cmd_generate_stock_rs_pullback_signals(args: argparse.Namespace) -> int:
 
 def cmd_backtest_stock_rs_pullback(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
+    _assert_full_recalculation_allowed(root)
+    _assert_recalculated_paths(args.signal_input, args.output)
     setup_path = root / "configs" / "setups" / f"{args.setup}.yaml"
     setup_config = load_yaml(setup_path)
     signals = read_daily_bars(_resolve(root, args.signal_input))
@@ -318,6 +338,14 @@ def cmd_backtest_stock_rs_pullback(args: argparse.Namespace) -> int:
 
 def cmd_report_stock_rs_pullback(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
+    _assert_full_recalculation_allowed(root)
+    _assert_recalculated_paths(
+        args.trade_input,
+        args.metrics_output,
+        args.report_output,
+        args.yearly_output,
+        args.industry_output,
+    )
     setup_path = root / "configs" / "setups" / f"{args.setup}.yaml"
     setup_config = load_yaml(setup_path)
     trades = read_table(_resolve(root, args.trade_input))
@@ -498,6 +526,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--allow-quality-warnings", action="store_true")
     p.set_defaults(func=cmd_data_check)
 
+    p = sub.add_parser("ingest-tdx-paired-a-share-daily", help="Join TDX qfq/raw/hfq exports into remediation daily bars")
+    p.add_argument("--qfq-input", default="data/raw/tdx_text/qfq")
+    p.add_argument("--raw-input", default="data/raw/tdx_text/raw")
+    p.add_argument("--hfq-input", default="data/raw/tdx_text/hfq")
+    p.add_argument("--output", default="data/processed/a_share_daily_remediation.parquet")
+    p.add_argument("--allow-quality-warnings", action="store_true")
+    p.set_defaults(func=cmd_ingest_tdx_paired_a_share_daily)
+
     p = sub.add_parser("ingest-tdx-export-index-daily", help="Read one TDX index text export")
     p.add_argument("--input", required=True)
     p.add_argument("--output", default="data/processed/index_daily.parquet")
@@ -632,9 +668,32 @@ def _assert_setup_action_allowed(root: Path, setup_id: str, action: str) -> None
     setup = _registered_setups(registry).get(setup_id)
     if setup is None:
         raise SystemExit(f"setup not registered: {setup_id}")
-    status = str(setup.get("status", ""))
+    permission_field = {
+        "account simulation": "account_simulation_allowed",
+        "formal ticket generation": "ticket_generation_allowed",
+    }.get(action)
+    if permission_field is not None and setup.get(permission_field) is not True:
+        raise SystemExit(f"{action} blocked by {permission_field}=false for setup {setup_id}")
+    status = str(setup.get("lifecycle_status", setup.get("status", "")))
     if is_archived(status):
         raise SystemExit(f"{action} blocked for archived setup {setup_id}: {status}")
+
+
+def _assert_full_recalculation_allowed(root: Path) -> None:
+    registry = load_yaml(root / "experiment_registry.yaml")
+    experiment_status = str(registry.get("Trading_Experiment", {}).get("status", ""))
+    task = registry.get("engine_remediation_tasks", {}).get("ENGINE_REMEDIATION_A_SHARE_EXECUTION_v1", {})
+    if experiment_status != "recalculation_authorized" or task.get("full_recalculation_allowed") is not True:
+        raise SystemExit(
+            "full backtest recalculation blocked until remediation sample audit authorizes recalculation"
+        )
+
+
+def _assert_recalculated_paths(*paths: str) -> None:
+    required = "STOCK_RS_PULLBACK_v1_RECALCULATED"
+    invalid = [str(path) for path in paths if required not in str(path)]
+    if invalid:
+        raise SystemExit(f"recalculation must use {required} paths; rejected: {invalid}")
 
 
 def _registered_setups(registry: dict) -> dict[str, dict]:
