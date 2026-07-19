@@ -56,16 +56,20 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert remediation["sample_audit"]["full_recalculation_performed"] is False
 
     implementation = registry["full_pipeline_recalculation_tasks"]["FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2"]
-    assert implementation["status"] == "recalculation_authorized"
+    assert implementation["status"] == "implementation_pending_reaudit"
     assert implementation["baseline_commit"] == "468bacc6fead27020e2dfce5f33368a623492122"
     assert implementation["implementation_commit"] == "a68770e151238fbf1b8f0050808cc877973dfd13"
-    assert implementation["implementation_frozen"] is True
-    assert implementation["implementation_audited"] is True
-    assert implementation["implementation_audit_decision"] == "IMPLEMENTATION_AUDIT_PASSED"
+    assert implementation["implementation_frozen"] is False
+    assert implementation["implementation_audited"] is False
+    assert implementation["implementation_audit_decision"] is None
+    assert implementation["historical_implementation_audit_decision"] == "IMPLEMENTATION_AUDIT_PASSED"
     assert implementation["remediation_1"]["status"] == "completed_pending_reaudit"
     assert implementation["reaudit_1"]["decision"] == "IMPLEMENTATION_ERROR_FOUND"
     assert implementation["remediation_2"]["status"] == "completed_pending_reaudit"
     assert implementation["reaudit_2"]["decision"] == "IMPLEMENTATION_AUDIT_PASSED"
+    assert implementation["remediation_3"]["status"] == "implementation_pending_reaudit"
+    assert implementation["remediation_3"]["implementation_commit"] == "508cece"
+    assert implementation["remediation_3"]["blocking_error"] == "ATOMIC_PUBLICATION_SEAL_ORDER_INCOMPATIBLE"
     assert implementation["contract_defined"] is True
     assert implementation["orchestration_skeleton_ready"] is True
     assert implementation["concrete_stages_implemented"] is True
@@ -81,13 +85,13 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
         "METRICS_REBUILD",
         "DELTA_AND_DECISION",
     ]
-    assert implementation["engine_full_recalculation_capable"] is True
+    assert implementation["engine_full_recalculation_capable"] is False
     assert implementation["formal_recalculation_run_authorized"] is False
     assert implementation["full_recalculation_allowed"] is False
     assert implementation["full_recalculation_performed"] is False
 
     manifest_task = registry["full_pipeline_recalculation_tasks"]["FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION"]
-    assert manifest_task["status"] == "implementation_remediation_regression_blocked"
+    assert manifest_task["status"] == "blocked_by_engine_reaudit"
     assert manifest_task["manifest_tool_commit"] == "616b6cdaf36def3fb85e03d82dc58e9884b7a50d"
     assert manifest_task["manifest_v2_implemented"] is True
     assert manifest_task["manifest_v2_audited"] is False
@@ -98,16 +102,18 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert manifest_task["formal_recalculation_run_authorized"] is False
     assert manifest_task["legacy_freezer_run_type"] == "SIGNAL_EXECUTION_REPLAY"
     assert manifest_task["remediation_1"]["implementation_commit"] == "b4a165a"
-    assert manifest_task["remediation_1"]["status"] == "regression_gate_failed"
+    assert manifest_task["remediation_1"]["status"] == "focused_tests_passed_waiting_engine_reaudit"
 
     core_inputs = registry["full_pipeline_recalculation_tasks"][
         "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION"
     ]
-    assert core_inputs["status"] == "CORE_INPUT_PAIR_VALIDATION_FAILED"
+    assert core_inputs["status"] == "CORE_INPUT_PAIR_REMEDIATION_PENDING_AUDIT"
     assert core_inputs["raw_daily_available"] is False
     assert core_inputs["qfq_pairing_verified"] is False
     assert core_inputs["input_hashes_frozen"] is False
     assert core_inputs["blocking_mismatches"] == 732776
+    assert core_inputs["remediation_1"]["status"] == "implementation_pending_audit"
+    assert core_inputs["remediation_1"]["implementation_commit"] == "84315e8"
 
 
 def test_full_recalculation_is_blocked_until_manifest_v2_audit():
