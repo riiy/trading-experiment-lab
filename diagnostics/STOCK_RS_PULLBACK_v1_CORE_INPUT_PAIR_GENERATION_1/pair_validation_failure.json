@@ -1,0 +1,54 @@
+{
+  "blocking_errors": [
+    "IndexError"
+  ],
+  "decision": "CORE_INPUT_PAIR_VALIDATION_FAILED",
+  "mapping_validation": {},
+  "pair_validation": {
+    "accepted": false
+  },
+  "paired_filter": {},
+  "publication": {
+    "atomic_rename_completed": false,
+    "candidate_published": false,
+    "transactional_temporary_output": true
+  },
+  "safety": {
+    "formal_manifest_generated": false,
+    "full_recalculation_performed": false,
+    "hfq_cross_validation_source": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/hfq",
+    "price_values_transformed": false,
+    "qfq_prices_used_to_infer_raw": false,
+    "qfq_source": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/qfq",
+    "raw_source": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/raw",
+    "trading_allowed": false
+  },
+  "source_key_diagnostics": {
+    "file_sets": {
+      "all_layer_common_files": 5534,
+      "hfq_outside_all_layer_common_files": 0,
+      "qfq_outside_all_layer_common_files": 0,
+      "raw_outside_all_layer_common_files": 0,
+      "raw_qfq_common_files": 5534
+    }
+  },
+  "source_profiles": {},
+  "source_snapshots": {
+    "hfq": {
+      "files": 5534,
+      "path": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/hfq",
+      "tree_sha256": "f0a055c17cdbc7da6d22c1e2dc0a5c9a41b335d8966968c76aaf6d9450d67919"
+    },
+    "qfq": {
+      "files": 5534,
+      "path": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/qfq",
+      "tree_sha256": "91da5169adb2caa234c3be98183eee5adb4cd84763c1ae539d3bf6abfadeafe1"
+    },
+    "raw": {
+      "files": 5534,
+      "path": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/raw",
+      "tree_sha256": "ef35d691c95c92f272903948e505a6ed4bef72a1234c055aac377224756c773a"
+    }
+  },
+  "task": "STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_2"
+}
