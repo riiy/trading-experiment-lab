@@ -32,6 +32,11 @@ from texperiment.indicators.a_share import (
     write_a_share_indicators_from_parquet,
     write_indicators,
 )
+from texperiment.full_recalculation.formal_cli import (
+    freeze_v2_from_args,
+    run_v2_from_args,
+    validate_v2_from_args,
+)
 from texperiment.guards.trading_permission import assert_trading_disabled
 from texperiment.guards.setup_status import is_archived
 from texperiment.metrics.validation import build_validation_artifacts, write_validation_outputs
@@ -507,33 +512,36 @@ def cmd_prepare_stock_rs_pullback_audit(args: argparse.Namespace) -> int:
 
 
 def cmd_freeze_stock_rs_pullback_recalculation(args: argparse.Namespace) -> int:
-    root = Path(args.root).resolve()
-    _assert_full_recalculation_allowed(root)
-    output = _resolve(root, args.output)
-    try:
-        manifest = build_recalculation_manifest(root, output)
-        write_recalculation_manifest(manifest, output)
-    except ValueError as exc:
-        raise SystemExit(str(exc)) from exc
-    print(f"freeze-stock-rs-pullback-recalculation: OK -> {output}")
-    print(json.dumps({
-        "engine_git_commit": manifest["engine_git_commit"],
-        "output_id": manifest["output_id"],
-        "input_count": len(manifest["inputs"]) + len(manifest["raw_inputs"]),
-    }, ensure_ascii=False, indent=2))
-    return 0
+    raise SystemExit(
+        "legacy freeze command is SIGNAL_EXECUTION_REPLAY only and cannot create a formal full-pipeline Manifest"
+    )
 
 
 def cmd_run_stock_rs_pullback_recalculation(args: argparse.Namespace) -> int:
-    root = Path(args.root).resolve()
-    _assert_full_recalculation_allowed(root)
+    raise SystemExit(
+        "legacy run command is SIGNAL_EXECUTION_REPLAY only and cannot enter the formal full-pipeline path"
+    )
+
+
+def cmd_freeze_stock_rs_pullback_recalculation_v2(args: argparse.Namespace) -> int:
     try:
-        paths = run_full_recalculation(root, _resolve(root, args.manifest))
-    except (FileExistsError, ValueError) as exc:
+        return freeze_v2_from_args(args)
+    except (FileExistsError, PermissionError, ValueError) as exc:
         raise SystemExit(str(exc)) from exc
-    print("run-stock-rs-pullback-recalculation: OK")
-    print(json.dumps({name: str(path) for name, path in paths.items()}, ensure_ascii=False, indent=2))
-    return 0
+
+
+def cmd_validate_stock_rs_pullback_recalculation_manifest_v2(args: argparse.Namespace) -> int:
+    try:
+        return validate_v2_from_args(args)
+    except (FileExistsError, PermissionError, ValueError) as exc:
+        raise SystemExit(str(exc)) from exc
+
+
+def cmd_run_stock_rs_pullback_recalculation_v2(args: argparse.Namespace) -> int:
+    try:
+        return run_v2_from_args(args)
+    except (FileExistsError, PermissionError, ValueError) as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -696,6 +704,44 @@ def build_parser() -> argparse.ArgumentParser:
         default="diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_RECALCULATED_manifest.json",
     )
     p.set_defaults(func=cmd_run_stock_rs_pullback_recalculation)
+
+    p = sub.add_parser(
+        "freeze-stock-rs-pullback-recalculation-v2",
+        help="Freeze a formal FULL_PIPELINE_RECALCULATION_V2 Manifest",
+    )
+    p.add_argument("--run-id", required=True)
+    p.add_argument("--raw-daily", default="data/processed/a_share_daily_raw.parquet")
+    p.add_argument("--qfq-daily", default="data/processed/a_share_daily.parquet")
+    p.add_argument("--benchmark", default="data/processed/index_daily.parquet")
+    p.add_argument("--setup-config", default="configs/setups/STOCK_RS_PULLBACK_v1.yaml")
+    p.add_argument("--cost-config", default="configs/setups/STOCK_RS_PULLBACK_v1.yaml")
+    p.add_argument(
+        "--st-overrides",
+        default="diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/STOCK_RS_PULLBACK_v1_remediation_manifest.json",
+    )
+    p.add_argument(
+        "--archive-manifest",
+        default="diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_audit_manifest.json",
+    )
+    p.add_argument(
+        "--output",
+        default="data/recalculations/manifests/STOCK_RS_PULLBACK_v1_RECALCULATED_manifest_v2.json",
+    )
+    p.set_defaults(func=cmd_freeze_stock_rs_pullback_recalculation_v2)
+
+    p = sub.add_parser(
+        "validate-stock-rs-pullback-recalculation-manifest-v2",
+        help="Validate a formal V2 recalculation Manifest without running it",
+    )
+    p.add_argument("--manifest", required=True)
+    p.set_defaults(func=cmd_validate_stock_rs_pullback_recalculation_manifest_v2)
+
+    p = sub.add_parser(
+        "run-stock-rs-pullback-recalculation-v2",
+        help="Run the audited eight-stage pipeline from a formal V2 Manifest",
+    )
+    p.add_argument("--manifest", required=True)
+    p.set_defaults(func=cmd_run_stock_rs_pullback_recalculation_v2)
 
     return parser
 

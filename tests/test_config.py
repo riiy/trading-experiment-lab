@@ -86,6 +86,13 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert implementation["full_recalculation_allowed"] is False
     assert implementation["full_recalculation_performed"] is False
 
+    manifest_task = registry["full_pipeline_recalculation_tasks"]["FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION"]
+    assert manifest_task["status"] == "implementation_pending_audit"
+    assert manifest_task["manifest_v2_implemented"] is True
+    assert manifest_task["manifest_v2_audited"] is False
+    assert manifest_task["formal_recalculation_run_authorized"] is False
+    assert manifest_task["legacy_freezer_run_type"] == "SIGNAL_EXECUTION_REPLAY"
+
 
 def test_full_recalculation_is_blocked_until_manifest_v2_audit():
     with pytest.raises(SystemExit, match="V2 implementation audit"):

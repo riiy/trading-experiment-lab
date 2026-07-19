@@ -170,13 +170,18 @@ full_pipeline_recalculation_tasks:
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false
   FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION:
-    status: implementation_active
-    manifest_v2_implemented: false
+    status: implementation_pending_audit
+    manifest_v2_implemented: true
     manifest_v2_audited: false
     manifest_v2_audit_decision: null
     formal_recalculation_run_authorized: false
     legacy_freezer_run_type: SIGNAL_EXECUTION_REPLAY
     legacy_strategy_validation_decision_allowed: false
+    commands:
+      freeze: freeze-stock-rs-pullback-recalculation-v2
+      validate: validate-stock-rs-pullback-recalculation-manifest-v2
+      run: run-stock-rs-pullback-recalculation-v2
+    contract: docs/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION.md
 archived_paths:
   - earnings_event
   - major_contract_event
