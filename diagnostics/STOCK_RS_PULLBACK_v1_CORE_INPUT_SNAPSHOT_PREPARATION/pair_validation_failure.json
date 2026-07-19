@@ -1,0 +1,56 @@
+{
+  "task": "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION",
+  "attempt": "CANONICAL_RAW_QFQ_PAIR_20260719",
+  "decision": "CORE_INPUT_PAIR_VALIDATION_FAILED",
+  "source": {
+    "raw_directory": "data/raw/tdx_text/raw",
+    "qfq_directory": "data/raw/tdx_text/qfq",
+    "raw_archive_sha256": "22b4260776acf89dcbcd3ebc3859b52ced6f6e7eacbb4cfc358f1d24a2b89529",
+    "qfq_archive_sha256": "b3857f916841650c43852e278de145662f51e5840f586d989f8091aea374cebf"
+  },
+  "candidates": {
+    "raw_daily": {
+      "path": "data/processed/formal_snapshots/STOCK_RS_PULLBACK_v1_20260717/.tmp/raw_daily.parquet",
+      "adjustment": "none",
+      "sha256": "967c723547788c455adc1aa9208d9cc7b2e896f8c73fded94ae62923cbd880c1",
+      "rows": 16666488,
+      "unique_codes": 5526,
+      "min_date": "1990-12-19",
+      "max_date": "2026-07-17",
+      "duplicate_keys": 0
+    },
+    "qfq_daily": {
+      "path": "data/processed/formal_snapshots/STOCK_RS_PULLBACK_v1_20260717/.tmp/qfq_daily.parquet",
+      "adjustment": "qfq",
+      "sha256": "f29c2b2b48c0b9fcb894bde60fa2d62bb067713b39b448c72168b141cab137d4",
+      "rows": 15933712,
+      "unique_codes": 5526,
+      "min_date": "1990-12-19",
+      "max_date": "2026-07-17",
+      "duplicate_keys": 0
+    }
+  },
+  "pair_validation": {
+    "code_groups": 5526,
+    "code_group_mismatches": 0,
+    "raw_only_keys": 732776,
+    "qfq_only_keys": 0,
+    "blocking_mismatches": 732776,
+    "exact_primary_key_equality": false,
+    "accepted": false
+  },
+  "publication": {
+    "temporary_candidates_retained": true,
+    "immutable_snapshot_published": false,
+    "input_hashes_frozen": false,
+    "formal_manifest_freeze_eligible": false
+  },
+  "safety": {
+    "intersection_filter_applied": false,
+    "remediation_parquet_used": false,
+    "qfq_prices_used_to_infer_raw": false,
+    "formal_manifest_generated": false,
+    "full_recalculation_performed": false,
+    "trading_allowed": false
+  }
+}
