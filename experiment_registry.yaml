@@ -293,6 +293,21 @@ full_pipeline_recalculation_tasks:
       raw_flat_ohlc_rows: 0
       formal_input_published: false
       report: diagnostics/STOCK_RS_PULLBACK_v1_MAPPING_UNEVALUABLE_DIAGNOSTICS_v1/diagnostics_report.md
+    rounding_interval_mapping_v2:
+      task: RAW_QFQ_ROUNDING_INTERVAL_MAPPING_V2
+      status: implementation_active
+      production_changes_allowed: true
+      candidate_generation_allowed: false
+      implementation_audited: false
+      formal_input_published: false
+      manifest_freeze_authorized: false
+      formal_recalculation_run_authorized: false
+      requirements:
+        target_rows: 3306
+        price_values_transformed: false
+        rows_silently_dropped: 0
+        global_tolerance_changed: false
+        security_specific_hardcodes: 0
 archived_paths:
   - earnings_event
   - major_contract_event

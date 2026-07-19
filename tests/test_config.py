@@ -141,6 +141,15 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert diagnostics["qfq_flat_ohlc_rows"] == 3306
     assert diagnostics["raw_flat_ohlc_rows"] == 0
     assert diagnostics["formal_input_published"] is False
+    rounding_v2 = core_inputs["rounding_interval_mapping_v2"]
+    assert rounding_v2["status"] == "implementation_active"
+    assert rounding_v2["candidate_generation_allowed"] is False
+    assert rounding_v2["implementation_audited"] is False
+    assert rounding_v2["requirements"]["target_rows"] == 3306
+    assert rounding_v2["requirements"]["price_values_transformed"] is False
+    assert rounding_v2["requirements"]["rows_silently_dropped"] == 0
+    assert rounding_v2["requirements"]["global_tolerance_changed"] is False
+    assert rounding_v2["requirements"]["security_specific_hardcodes"] == 0
 
 
 def test_full_recalculation_is_blocked_until_manifest_v2_audit():
