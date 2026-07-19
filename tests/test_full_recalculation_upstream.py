@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 import yaml
 
+import texperiment.full_recalculation.runner as runner_module
 from texperiment.audit.manifest import profile_table, sha256_file
 from texperiment.full_recalculation.contract import EXPECTED_STAGES, FORBIDDEN_PIPELINE_INPUTS
 from texperiment.full_recalculation.immutability import RecalculationAbort
@@ -365,7 +366,77 @@ def test_authorized_synthetic_run_atomically_publishes_read_only_tree(tmp_path):
     assert publication["status"] == "PUBLISHED"
     assert publication["atomic_move_verified"] is True
     assert publication["final_tree_sha256"] == _tree_sha256(context.final_root, excluded={"publication.json"})
-    assert context.final_root.stat().st_mode & 0o222 == 0
+    assert all(path.stat().st_mode & 0o222 == 0 for path in (context.final_root, *context.final_root.rglob("*")))
+
+
+def test_publication_moves_writable_tmp_before_sealing_final_tree(tmp_path, monkeypatch):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    fixture.manifest["permissions"]["full_recalculation_allowed"] = True
+    context = _context(fixture, "publish-order")
+    events = []
+    real_replace = runner_module.os.replace
+    real_seal = runner_module._make_tree_read_only
+
+    def track_replace(source, destination):
+        if Path(destination) == context.final_root:
+            assert Path(source) == context.work_root
+            assert Path(source).stat().st_mode & 0o200
+            events.append("rename")
+        return real_replace(source, destination)
+
+    def track_seal(root):
+        assert root == context.final_root
+        assert not context.work_root.exists()
+        events.append("seal")
+        real_seal(root)
+
+    monkeypatch.setattr(runner_module.os, "replace", track_replace)
+    monkeypatch.setattr(runner_module, "_make_tree_read_only", track_seal)
+
+    FullPipelineRunner(_all_stages()).run(context)
+
+    assert events == ["rename", "seal"]
+
+
+def test_seal_failure_removes_formal_root_and_preserves_diagnostics(tmp_path, monkeypatch):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    fixture.manifest["permissions"]["full_recalculation_allowed"] = True
+    context = _context(fixture, "seal-failure")
+    monkeypatch.setattr(
+        runner_module,
+        "_make_tree_read_only",
+        lambda root: (_ for _ in ()).throw(OSError("forced seal failure")),
+    )
+
+    with pytest.raises(Exception, match="publication failed"):
+        FullPipelineRunner(_all_stages()).run(context)
+
+    assert not context.final_root.exists()
+    assert not context.work_root.exists()
+    assert (context.failure_root / "publication.json").is_file()
+    assert (context.failure_root / "failure.json").is_file()
+
+
+def test_post_seal_verification_failure_removes_formal_root(tmp_path, monkeypatch):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    fixture.manifest["permissions"]["full_recalculation_allowed"] = True
+    context = _context(fixture, "post-seal-failure")
+    monkeypatch.setattr(
+        runner_module,
+        "_assert_tree_read_only",
+        lambda root: (_ for _ in ()).throw(OSError("forced post-seal verification failure")),
+    )
+
+    with pytest.raises(Exception, match="publication failed"):
+        FullPipelineRunner(_all_stages()).run(context)
+
+    assert not context.final_root.exists()
+    assert (context.failure_root / "publication.json").is_file()
+    assert (context.failure_root / "failure.json").is_file()
+    assert context.failure_root.stat().st_mode & 0o700 == 0o700
 
 
 def test_persisted_stage_records_rebuild_complete_hash_chain(tmp_path):
@@ -482,6 +553,41 @@ def test_fsync_failure_is_quarantined_before_publication(tmp_path, monkeypatch):
 
     assert not context.final_root.exists()
     assert not context.work_root.exists()
+    assert (context.failure_root / "failure.json").is_file()
+
+
+def test_final_parent_fsync_failure_removes_published_root(tmp_path, monkeypatch):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    fixture.manifest["permissions"]["full_recalculation_allowed"] = True
+    context = _context(fixture, "parent-fsync-failure")
+    monkeypatch.setattr(
+        runner_module,
+        "_fsync_directory",
+        lambda path: (_ for _ in ()).throw(OSError("forced parent fsync failure")),
+    )
+
+    with pytest.raises(Exception, match="publication failed"):
+        FullPipelineRunner(_all_stages()).run(context)
+
+    assert not context.final_root.exists()
+    assert not context.work_root.exists()
+    assert (context.failure_root / "failure.json").is_file()
+
+
+def test_existing_final_root_is_not_overwritten_or_quarantined(tmp_path):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    fixture.manifest["permissions"]["full_recalculation_allowed"] = True
+    context = _context(fixture, "existing-final")
+    context.final_root.mkdir(parents=True)
+    marker = context.final_root / "existing.txt"
+    marker.write_text("preserve", encoding="utf-8")
+
+    with pytest.raises(Exception, match="stage failed before completion: INPUT_SNAPSHOT"):
+        FullPipelineRunner(_all_stages()).run(context)
+
+    assert marker.read_text(encoding="utf-8") == "preserve"
     assert (context.failure_root / "failure.json").is_file()
 
 

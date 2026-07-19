@@ -29,6 +29,10 @@ class StageExecutionError(RuntimeError):
         self.results = results
 
 
+class _PublishedOutputQuarantined(RuntimeError):
+    """Signals that a failed post-rename output is already outside the formal path."""
+
+
 class FullPipelineRunner:
     """Order-only V2 orchestrator. Domain work remains in injected stage implementations."""
 
@@ -47,6 +51,14 @@ class FullPipelineRunner:
         results = self.run_until(context, StageId.DELTA_AND_DECISION)
         try:
             _publish_completed_run(context, results)
+        except _PublishedOutputQuarantined as exc:
+            error = StageExecutionError(
+                StageId.DELTA_AND_DECISION,
+                results,
+                "publication failed after all stages completed",
+            )
+            _write_failure_record(context, error)
+            raise error from exc
         except Exception as exc:
             error = StageExecutionError(
                 StageId.DELTA_AND_DECISION,
@@ -96,6 +108,12 @@ def _quarantine_failure(context: StageContext, error: StageExecutionError) -> No
     else:
         context.failure_root.mkdir()
     context.failure_root.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    _write_failure_record(context, error)
+
+
+def _write_failure_record(context: StageContext, error: StageExecutionError) -> None:
+    if context.failure_root is None or not context.failure_root.is_dir():
+        return
     (context.failure_root / "failure.json").write_text(
         json.dumps(
             {
@@ -141,13 +159,32 @@ def _publish_completed_run(context: StageContext, results: tuple[StageResult, ..
         json.dumps(publication, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8"
     )
     _fsync_tree(context.work_root)
-    _make_tree_read_only(context.work_root)
     context.final_root.parent.mkdir(parents=True, exist_ok=True)
     if os.stat(context.work_root).st_dev != os.stat(context.final_root.parent).st_dev:
         raise OSError("temporary and final roots are on different filesystems")
     os.replace(context.work_root, context.final_root)
-    if _tree_sha256(context.final_root, excluded={"publication.json"}) != tree_hash:
-        raise OSError("published final tree hash mismatch")
+    try:
+        _fsync_directory(context.final_root.parent)
+        _make_tree_read_only(context.final_root)
+        if _tree_sha256(context.final_root, excluded={"publication.json"}) != tree_hash:
+            raise OSError("published final tree hash mismatch")
+        _assert_tree_read_only(context.final_root)
+    except Exception as exc:
+        _quarantine_published_output(context)
+        raise _PublishedOutputQuarantined("post-rename publication verification failed") from exc
+
+
+def _quarantine_published_output(context: StageContext) -> None:
+    if context.final_root is None or context.failure_root is None:
+        raise RuntimeError("publication cleanup requires final and diagnostics roots")
+    if not context.final_root.exists():
+        raise FileNotFoundError("published output disappeared before quarantine")
+    if context.failure_root.exists():
+        raise FileExistsError(f"failure diagnostics already exist: {context.failure_root}")
+    context.failure_root.parent.mkdir(parents=True, exist_ok=True)
+    context.final_root.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    os.replace(context.final_root, context.failure_root)
+    context.failure_root.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
 
 def _build_and_verify_persisted_chain(context: StageContext) -> dict[str, object]:
@@ -256,9 +293,23 @@ def _fsync_tree(root: Path) -> None:
         os.close(descriptor)
 
 
+def _fsync_directory(path: Path) -> None:
+    descriptor = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _make_tree_read_only(root: Path) -> None:
     for path in (item for item in root.rglob("*") if item.is_file()):
         path.chmod(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
     for path in sorted((item for item in root.rglob("*") if item.is_dir()), reverse=True):
         path.chmod(stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
     root.chmod(stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+
+
+def _assert_tree_read_only(root: Path) -> None:
+    for path in (root, *root.rglob("*")):
+        if path.stat().st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH):
+            raise PermissionError(f"published path remains writable: {path}")

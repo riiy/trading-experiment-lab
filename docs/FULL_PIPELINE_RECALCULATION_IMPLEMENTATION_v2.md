@@ -59,6 +59,12 @@ alone freezes and registers them as producerless `EXTERNAL_COMPARISON_INPUT` roo
 only allowed consumer is `DELTA_AND_DECISION`. Missing or drifted archive inputs now fail
 after the first seven stages and prevent publication.
 
+Remediation 3 keeps the completed temporary tree writable through its fsync-backed atomic
+rename. The runner fsyncs the final parent directory, seals the renamed final tree read-only,
+then verifies its business hash and permissions. Any post-rename fsync, seal, or verification
+failure restores owner access on the root and atomically moves the failed tree to diagnostics;
+the formal path must be absent before the run returns failure.
+
 Trading, account simulation, and ticket generation remain disabled throughout this
 engineering phase. No strategy decision may be produced before the implementation audit
 passes and a new engine commit is frozen. Development runs may emit a non-authoritative
