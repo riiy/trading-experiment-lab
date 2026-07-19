@@ -20,9 +20,13 @@ reaudit_1: IMPLEMENTATION_ERROR_FOUND
 blocking_finding: COMPARISON_ONLY_INPUT_LEAKED_INTO_INPUT_SNAPSHOT
 remediation_2: completed_pending_reaudit
 reaudit_2: IMPLEMENTATION_AUDIT_PASSED
-full_recalculation_allowed: true
+engine_full_recalculation_capable: true
+formal_recalculation_run_authorized: false
 full_recalculation_performed: false
 ```
+
+The engine is audited and capable, but formal execution remains separately blocked until
+the V2 Manifest freezer and V2 CLI routing pass their own audit.
 
 Implementation progress after the contract baseline:
 

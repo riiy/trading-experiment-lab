@@ -1,0 +1,31 @@
+{
+  "attempt": {
+    "action": "freeze-stock-rs-pullback-recalculation-v2",
+    "created_at": "2026-07-19T17:08:58+08:00",
+    "repository_head": "bce5ab70fadc23d17d10145e9f7796dfe53eb4e7",
+    "audited_implementation_commit": "a68770e151238fbf1b8f0050808cc877973dfd13",
+    "git_dirty_at_start": false
+  },
+  "decision": "RECALCULATION_ABORTED_MANIFEST_VALIDATION_FAILURE",
+  "blocking_errors": [
+    "The installed freeze CLI calls the legacy STOCK_RS_PULLBACK_v1_RECALCULATION_MANIFEST_v1 builder.",
+    "The legacy manifest does not record head_commit, audited_implementation_commit, audit_record_commit, or audited production file hashes.",
+    "The legacy manifest does not persist the V2 comparison-only consumer boundary, atomic publication contract, or manifest self hash.",
+    "The paired legacy run command replays archived signals and is not the audited FULL_PIPELINE_RECALCULATION_V2 runner."
+  ],
+  "frozen_code_sha256": {
+    "legacy_recalculation": "6f76b58c9f48e59da6eebb206b45dcc30a3eb2a5443ec74d1287373e389271b6",
+    "cli": "6d48897be6bd5d3947d618aca9fb03f0bd365ad69e185281216e03e5db5ba74a",
+    "v2_schema": "1f1548acff247f772da8086b676b8a301e335a9868f615565d308af7dd5abf01",
+    "v2_runner": "7c501680e99ed84f64a6a28068d6d53d3c95a2f04b08c363ee99ba9bf78bbfde"
+  },
+  "outcome": {
+    "formal_manifest_generated": false,
+    "full_recalculation_performed": false,
+    "formal_outputs_generated": false,
+    "strategy_decision_generated": false,
+    "registry_changed": false,
+    "production_code_changed": false,
+    "trading_allowed": false
+  }
+}

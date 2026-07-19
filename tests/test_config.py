@@ -24,7 +24,7 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     experiment = registry["Trading_Experiment"]
     archived = registry["setups"]["STOCK_RS_PULLBACK_v1"]
 
-    assert experiment["status"] == "recalculation_authorized"
+    assert experiment["status"] == "manifest_v2_implementation_required"
     assert experiment["current_setup"] is None
     assert experiment["tradable_setups"] == 0
     assert experiment["trading_allowed"] is False
@@ -81,12 +81,15 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
         "METRICS_REBUILD",
         "DELTA_AND_DECISION",
     ]
-    assert implementation["full_recalculation_allowed"] is True
+    assert implementation["engine_full_recalculation_capable"] is True
+    assert implementation["formal_recalculation_run_authorized"] is False
+    assert implementation["full_recalculation_allowed"] is False
     assert implementation["full_recalculation_performed"] is False
 
 
-def test_full_recalculation_is_authorized_after_v2_reaudit():
-    _assert_full_recalculation_allowed(ROOT)
+def test_full_recalculation_is_blocked_until_manifest_v2_audit():
+    with pytest.raises(SystemExit, match="V2 implementation audit"):
+        _assert_full_recalculation_allowed(ROOT)
 
 
 def test_recalculation_cannot_overwrite_original_paths():

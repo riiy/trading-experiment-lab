@@ -1,5 +1,5 @@
 Trading_Experiment:
-  status: recalculation_authorized
+  status: manifest_v2_implementation_required
   capital_limit: 30000
   max_planned_loss_per_trade: 500
   instrument_scope:
@@ -11,8 +11,8 @@ Trading_Experiment:
   ticket_generation_allowed: false
   tradable_setups: 0
   next_action:
-    - generate_formal_recalculation_manifest
-    - execute_STOCK_RS_PULLBACK_v1_RECALCULATED
+    - implement_FULL_PIPELINE_RECALCULATION_MANIFEST_V2
+    - audit_FULL_PIPELINE_RECALCULATION_MANIFEST_V2
   allowed:
     - repair_execution_semantics
     - add_raw_price_schema
@@ -132,6 +132,8 @@ full_pipeline_recalculation_tasks:
     implementation_frozen: true
     implementation_audited: true
     implementation_audit_decision: IMPLEMENTATION_AUDIT_PASSED
+    engine_full_recalculation_capable: true
+    formal_recalculation_run_authorized: false
     remediation_1:
       status: completed_pending_reaudit
       findings_addressed:
@@ -163,10 +165,18 @@ full_pipeline_recalculation_tasks:
       - TRADE_REBUILD
       - METRICS_REBUILD
       - DELTA_AND_DECISION
-    full_recalculation_allowed: true
+    full_recalculation_allowed: false
     full_recalculation_performed: false
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false
+  FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION:
+    status: implementation_active
+    manifest_v2_implemented: false
+    manifest_v2_audited: false
+    manifest_v2_audit_decision: null
+    formal_recalculation_run_authorized: false
+    legacy_freezer_run_type: SIGNAL_EXECUTION_REPLAY
+    legacy_strategy_validation_decision_allowed: false
 archived_paths:
   - earnings_event
   - major_contract_event
