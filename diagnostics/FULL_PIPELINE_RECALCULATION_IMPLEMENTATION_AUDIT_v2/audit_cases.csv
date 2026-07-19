@@ -1,0 +1,10 @@
+case_id,area,status,evidence,result
+A00,audit_preflight,EXECUTED,HEAD and clean worktree verified,PASS
+A01,successful_atomic_publish,EXECUTED,runner.py run returns run_until result without moving work_root to final_root,FAIL
+A02,artifact_hash_chain_schema,EXECUTED,stage.json serializes StageResult only and omits artifact IDs and producer stages,FAIL
+A03,full_pipeline_execution,NOT_RUN,audit stopped after implementation error,NOT_EVALUATED
+A04,forbidden_input_perturbations,NOT_RUN,audit stopped after implementation error,NOT_EVALUATED
+A05,determinism,NOT_RUN,audit stopped after implementation error,NOT_EVALUATED
+A06,execution_regressions,NOT_RUN,audit stopped after implementation error,NOT_EVALUATED
+A07,failure_injection,NOT_RUN,audit stopped after implementation error,NOT_EVALUATED
+A08,permission_isolation,EXECUTED,config-check reports trading disabled,PASS

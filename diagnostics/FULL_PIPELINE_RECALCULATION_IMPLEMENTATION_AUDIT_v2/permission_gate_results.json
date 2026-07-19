@@ -1,0 +1,12 @@
+{
+  "status": "PASSED_AT_PREFLIGHT",
+  "config_check": "OK",
+  "current_setup": null,
+  "full_recalculation_allowed": false,
+  "strategy_validation_decision_allowed": false,
+  "account_simulation_allowed": false,
+  "ticket_generation_allowed": false,
+  "trading_allowed": false,
+  "registry_updated": false,
+  "formal_outputs_generated": false
+}

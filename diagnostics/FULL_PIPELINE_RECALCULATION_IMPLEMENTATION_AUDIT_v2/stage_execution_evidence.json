@@ -1,0 +1,10 @@
+{
+  "status": "NOT_RUN_AFTER_IMPLEMENTATION_ERROR",
+  "all_eight_stages_executed": false,
+  "reason": "Audit rules require stopping when an implementation error is found.",
+  "static_evidence": {
+    "expected_order_enforced_in_constructor": true,
+    "successful_atomic_publish_implemented": false,
+    "finding": "FullPipelineRunner.run() returns run_until() directly and never moves work_root to final_root."
+  }
+}

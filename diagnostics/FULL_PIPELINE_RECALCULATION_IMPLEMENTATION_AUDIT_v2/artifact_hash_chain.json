@@ -1,0 +1,16 @@
+{
+  "status": "FAILED_CONTRACT_CHECK",
+  "finding": "Stage records do not encode the required artifact identity and producer chain.",
+  "present_fields": [
+    "input_hashes",
+    "output_hashes"
+  ],
+  "missing_fields": [
+    "input_artifact_ids",
+    "verified_input_hashes",
+    "output_artifact_id",
+    "output_sha256",
+    "producer_stage"
+  ],
+  "runtime_registry_note": "RegisteredArtifact contains name, path, sha256, and producer, but these identities are not persisted in stage.json."
+}

@@ -1,0 +1,4 @@
+{
+  "status": "NOT_EVALUATED",
+  "reason": "Audit stopped after implementation error before executable determinism cases."
+}

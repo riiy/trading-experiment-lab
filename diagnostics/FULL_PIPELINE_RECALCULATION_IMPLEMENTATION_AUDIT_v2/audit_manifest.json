@@ -1,0 +1,26 @@
+{
+  "audit": {
+    "audit_id": "FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_AUDIT_v2",
+    "implementation_commit": "357ffcedeeaaa5763caea563ef17f423c489f8c2",
+    "contract": "FULL_PIPELINE_RECALCULATION_V2",
+    "timezone": "Asia/Shanghai",
+    "started_at": "2026-07-19T10:43:59+08:00",
+    "git_dirty_at_start": false,
+    "production_code_changes_allowed": false,
+    "formal_recalculation_allowed": false
+  },
+  "permissions": {
+    "full_recalculation_allowed": false,
+    "strategy_validation_decision_allowed": false,
+    "account_simulation_allowed": false,
+    "ticket_generation_allowed": false,
+    "trading_allowed": false
+  },
+  "frozen_hashes": {
+    "runner.py": "6ac3a73ed21f80539f9896d870be6939bb918f11a79748f8a3e2277f6146563a",
+    "upstream.py": "d8d93cacc95f23dca9d2e33e2b620451e8e45607b948c4927596397599caadb3",
+    "downstream.py": "5097d35d63f17e71962f033e4be3dbe96956006e867a14aa2039f3ba62ef66c6",
+    "experiment_registry.yaml": "35af28f37a3cd22a0701c5cda8f66ac2f696677a212b537ca0afb1cc0bc22a06",
+    "STOCK_RS_PULLBACK_v1.yaml": "424271e49a423fab4bcee0110cf32df4f4e91ecd4685669ef90f3bc8d1ef7e85"
+  }
+}

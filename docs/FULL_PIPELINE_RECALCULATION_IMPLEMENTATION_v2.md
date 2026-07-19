@@ -9,10 +9,11 @@ new Setup and not a strategy-rule change.
 Current implementation state:
 
 ```yaml
-status: implementation_pending_audit
+status: implementation_error_found
 baseline_commit: 468bacc6fead27020e2dfce5f33368a623492122
 implementation_frozen: false
 implementation_audited: false
+implementation_audit_decision: IMPLEMENTATION_ERROR_FOUND
 full_recalculation_allowed: false
 full_recalculation_performed: false
 ```

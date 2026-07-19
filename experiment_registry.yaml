@@ -125,13 +125,13 @@ engine_remediation_tasks:
       summary: diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/STOCK_RS_PULLBACK_v1_remediation_summary.json
 full_pipeline_recalculation_tasks:
   FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2:
-    status: implementation_pending_audit
+    status: implementation_error_found
     contract_id: FULL_PIPELINE_RECALCULATION_V2
     contract: docs/FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2.md
     baseline_commit: 468bacc6fead27020e2dfce5f33368a623492122
     implementation_frozen: false
     implementation_audited: false
-    implementation_audit_decision: null
+    implementation_audit_decision: IMPLEMENTATION_ERROR_FOUND
     contract_defined: true
     orchestration_skeleton_ready: true
     concrete_stages_implemented: true
