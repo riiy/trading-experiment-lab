@@ -9,7 +9,7 @@ new Setup and not a strategy-rule change.
 Current implementation state:
 
 ```yaml
-status: implementation_error_found
+status: implementation_pending_reaudit
 baseline_commit: 468bacc6fead27020e2dfce5f33368a623492122
 implementation_frozen: false
 implementation_audited: false
@@ -17,6 +17,7 @@ implementation_audit_decision: IMPLEMENTATION_ERROR_FOUND
 remediation_1: completed_pending_reaudit
 reaudit_1: IMPLEMENTATION_ERROR_FOUND
 blocking_finding: COMPARISON_ONLY_INPUT_LEAKED_INTO_INPUT_SNAPSHOT
+remediation_2: completed_pending_reaudit
 full_recalculation_allowed: false
 full_recalculation_performed: false
 ```
@@ -46,6 +47,11 @@ Remediation 1 adds a verified persistent artifact DAG and an fsync-backed atomic
 from the temporary run root to a read-only final root. Successful formal execution now
 requires all eight stage records, closed downstream permissions, matching on-disk hashes,
 and an absent final target. These changes require a new audit from the beginning.
+
+Remediation 2 removes archived comparison inputs from `INPUT_SNAPSHOT`. The Delta stage
+alone freezes and registers them as producerless `EXTERNAL_COMPARISON_INPUT` roots whose
+only allowed consumer is `DELTA_AND_DECISION`. Missing or drifted archive inputs now fail
+after the first seven stages and prevent publication.
 
 Trading, account simulation, and ticket generation remain disabled throughout this
 engineering phase. No strategy decision may be produced before the implementation audit

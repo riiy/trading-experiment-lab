@@ -299,22 +299,40 @@ def build_delta(new: RecalculatedArtifacts, original: ArchivedOriginalArtifacts)
 def _load_archived_inputs(context: StageContext) -> ArchivedOriginalArtifacts:
     specs = context.manifest.get("comparison_only_inputs")
     if not isinstance(specs, Mapping):
-        raise RecalculationAbort("RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH", "comparison-only inputs missing")
+        raise RecalculationAbort(
+            "RECALCULATION_ABORTED_ARCHIVE_MANIFEST_MISMATCH",
+            "comparison-only archive manifest missing",
+        )
     paths: dict[str, Path] = {}
     for name in ("original_signals", "original_trades", "original_metrics"):
         spec = specs.get(name)
         if not isinstance(spec, Mapping) or not spec.get("path") or not spec.get("sha256"):
-            raise RecalculationAbort("RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH", f"comparison input missing: {name}")
+            raise RecalculationAbort(
+                "RECALCULATION_ABORTED_ARCHIVE_MANIFEST_MISMATCH",
+                f"comparison archive manifest entry missing: {name}",
+            )
         path = Path(spec["path"])
         if not path.is_absolute():
             path = context.project_root / path
-        if not path.is_file() or sha256_file(path) != spec["sha256"]:
-            raise RecalculationAbort("RECALCULATION_ABORTED_INPUT_DRIFT", f"archived comparison changed: {name}")
+        if not path.is_file():
+            raise RecalculationAbort(
+                "RECALCULATION_ABORTED_COMPARISON_INPUT_MISSING",
+                f"archived comparison missing: {name}",
+            )
+        if sha256_file(path) != spec["sha256"]:
+            raise RecalculationAbort(
+                "RECALCULATION_ABORTED_COMPARISON_INPUT_DRIFT",
+                f"archived comparison changed: {name}",
+            )
         paths[name] = path
-        require_artifact(
+        register_artifact(
             context.artifacts,
-            f"comparison.{name}",
-            expected_producer=StageId.INPUT_SNAPSHOT,
+            name=f"comparison.{name}",
+            path=path,
+            producer=None,
+            source_class="EXTERNAL_COMPARISON_INPUT",
+            registered_by_stage=StageId.DELTA_AND_DECISION,
+            allowed_consumers=(StageId.DELTA_AND_DECISION,),
         )
     return ArchivedOriginalArtifacts(paths["original_signals"], paths["original_trades"], paths["original_metrics"])
 

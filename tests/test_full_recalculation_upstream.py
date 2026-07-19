@@ -258,6 +258,8 @@ def test_all_eight_stages_run_without_publishing_formal_output(tmp_path):
     assert preview["authoritative"] is False
     assert preview["published"] is False
     assert not context.final_root.exists()
+    snapshot_record = json.loads((context.work_root / "INPUT_SNAPSHOT" / "stage.json").read_text(encoding="utf-8"))
+    assert not any(item["artifact_id"].startswith("comparison.") for item in snapshot_record["inputs"] + snapshot_record["outputs"])
 
 
 def test_old_signals_change_only_delta_hash_not_new_pipeline_hashes(tmp_path):
@@ -289,7 +291,7 @@ def test_archived_comparison_hash_drift_fails_closed_at_delta(tmp_path):
     with pytest.raises(RecalculationAbort) as caught:
         stages[StageId.DELTA_AND_DECISION].run(context)
 
-    assert caught.value.decision == "RECALCULATION_ABORTED_INPUT_DRIFT"
+    assert caught.value.decision == "RECALCULATION_ABORTED_COMPARISON_INPUT_DRIFT"
 
 
 def test_missing_archived_comparisons_fails_closed_at_delta(tmp_path):
@@ -302,7 +304,50 @@ def test_missing_archived_comparisons_fails_closed_at_delta(tmp_path):
     with pytest.raises(RecalculationAbort) as caught:
         stages[StageId.DELTA_AND_DECISION].run(context)
 
-    assert caught.value.decision == "RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH"
+    assert caught.value.decision == "RECALCULATION_ABORTED_ARCHIVE_MANIFEST_MISMATCH"
+
+
+@pytest.mark.parametrize("missing_name", ["signals", "trades", "metrics"])
+def test_missing_comparison_input_fails_only_after_first_seven_stages(tmp_path, missing_name):
+    fixture = _fixture(tmp_path)
+    archived = _add_archived_comparisons(fixture)
+    archived[missing_name].unlink()
+    context = _context(fixture, f"missing-comparison-{missing_name}")
+
+    with pytest.raises(Exception) as caught:
+        FullPipelineRunner(_all_stages()).run_until(context, StageId.DELTA_AND_DECISION)
+
+    assert isinstance(caught.value.__cause__, RecalculationAbort)
+    assert caught.value.__cause__.decision == "RECALCULATION_ABORTED_COMPARISON_INPUT_MISSING"
+    failure = json.loads((context.failure_root / "failure.json").read_text(encoding="utf-8"))
+    assert failure["completed_stages"] == list(EXPECTED_STAGES[:7])
+    assert (context.failure_root / "SIGNAL_REBUILD" / "signals.parquet").is_file()
+    assert (context.failure_root / "TRADE_REBUILD" / "trades.parquet").is_file()
+    assert (context.failure_root / "METRICS_REBUILD" / "metrics.json").is_file()
+    assert not context.final_root.exists()
+
+
+@pytest.mark.parametrize("changed_name", ["signals", "trades", "metrics"])
+def test_consistent_comparison_change_only_changes_delta(tmp_path, changed_name):
+    fixture = _fixture(tmp_path)
+    archived = _add_archived_comparisons(fixture)
+    first, _ = _run_all(fixture, f"comparison-{changed_name}-first")
+    if changed_name == "signals":
+        archived["signals"].write_text(
+            "signal_id,status,code,pullback_date,trigger_date\nold,triggered_entry_next_open,000001.SZ,2025-01-02,2025-01-03\n",
+            encoding="utf-8",
+        )
+    elif changed_name == "trades":
+        pd.DataFrame([{"signal_id": "old", "status": "invalid_trade", "invalid_reason": "archived"}]).to_csv(archived["trades"], index=False)
+    else:
+        archived["metrics"].write_text(json.dumps({"overall": {"mean_net_return": 1.0}}), encoding="utf-8")
+    fixture.manifest["comparison_only_inputs"][f"original_{changed_name}"]["sha256"] = sha256_file(archived[changed_name])
+
+    second, _ = _run_all(fixture, f"comparison-{changed_name}-second")
+
+    for name in ("market_state.daily", "universe.daily", "indicators.daily", "signals.rebuilt", "trades.rebuilt", "metrics.rebuilt"):
+        assert first.artifacts[name].sha256 == second.artifacts[name].sha256
+    assert first.artifacts["delta.preview"].sha256 != second.artifacts["delta.preview"].sha256
 
 
 def test_authorized_synthetic_run_atomically_publishes_read_only_tree(tmp_path):
@@ -332,6 +377,30 @@ def test_persisted_stage_records_rebuild_complete_hash_chain(tmp_path):
 
     assert [record["stage"]["id"] for record in chain["stages"]] == list(EXPECTED_STAGES)
     assert all(record["outputs"] for record in chain["stages"])
+    comparison_inputs = [
+        item
+        for record in chain["stages"]
+        for item in record["inputs"]
+        if item.get("source_class") == "EXTERNAL_COMPARISON_INPUT"
+    ]
+    assert len(comparison_inputs) == 3
+    assert all(item["producer_stage"] is None for item in comparison_inputs)
+    assert all(item["registered_by_stage"] == "DELTA_AND_DECISION" for item in comparison_inputs)
+    assert all(item["allowed_consumers"] == ["DELTA_AND_DECISION"] for item in comparison_inputs)
+
+
+def test_persisted_chain_rejects_comparison_registered_by_upstream_stage(tmp_path):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    context, _ = _run_all(fixture, "comparison-boundary-tamper")
+    path = context.work_root / "DELTA_AND_DECISION" / "stage.json"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    comparison = next(item for item in record["inputs"] if item["artifact_id"].startswith("comparison."))
+    comparison["registered_by_stage"] = "INPUT_SNAPSHOT"
+    path.write_text(json.dumps(record), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="comparison artifact boundary violation"):
+        _build_and_verify_persisted_chain(context)
 
 
 @pytest.mark.parametrize("mutation", ["artifact_id", "producer", "hash", "sequence"])
@@ -398,6 +467,24 @@ def test_atomic_publication_failure_is_quarantined(tmp_path, monkeypatch):
     assert (context.failure_root / "failure.json").is_file()
 
 
+def test_fsync_failure_is_quarantined_before_publication(tmp_path, monkeypatch):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    fixture.manifest["permissions"]["full_recalculation_allowed"] = True
+    context = _context(fixture, "fsync-failure")
+    monkeypatch.setattr(
+        "texperiment.full_recalculation.runner._fsync_tree",
+        lambda root: (_ for _ in ()).throw(OSError("forced fsync failure")),
+    )
+
+    with pytest.raises(Exception, match="publication failed"):
+        FullPipelineRunner(_all_stages()).run(context)
+
+    assert not context.final_root.exists()
+    assert not context.work_root.exists()
+    assert (context.failure_root / "failure.json").is_file()
+
+
 def test_same_inputs_produce_identical_downstream_business_hashes(tmp_path):
     fixture = _fixture(tmp_path)
     _add_archived_comparisons(fixture)
@@ -407,6 +494,22 @@ def test_same_inputs_produce_identical_downstream_business_hashes(tmp_path):
 
     for name in ("signals.rebuilt", "trades.rebuilt", "metrics.rebuilt", "delta.preview"):
         assert first.artifacts[name].sha256 == second.artifacts[name].sha256
+
+
+def test_same_inputs_produce_identical_published_final_tree_hash(tmp_path):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    fixture.manifest["permissions"]["full_recalculation_allowed"] = True
+    contexts = [_context(fixture, run_id) for run_id in ("published-determinism-1", "published-determinism-2")]
+
+    for context in contexts:
+        FullPipelineRunner(_all_stages()).run(context)
+
+    hashes = [
+        json.loads((context.final_root / "publication.json").read_text(encoding="utf-8"))["publication"]["final_tree_sha256"]
+        for context in contexts
+    ]
+    assert hashes[0] == hashes[1]
 
 
 @dataclass

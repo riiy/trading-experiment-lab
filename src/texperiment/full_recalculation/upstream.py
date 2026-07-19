@@ -86,19 +86,6 @@ class InputSnapshotStage:
                 _assert_profile_matches(name, profile, spec)
                 profiles[name] = profile
 
-        for name, spec in context.manifest.get("comparison_only_inputs", {}).items():
-            path = _resolve(context.project_root, spec["path"])
-            if not path.is_file():
-                raise FileNotFoundError(path)
-            digest = sha256_file(path)
-            if digest != spec["sha256"]:
-                raise RecalculationAbort(
-                    "RECALCULATION_ABORTED_INPUT_DRIFT",
-                    f"comparison input hash changed: {name}",
-                )
-            input_hashes[f"comparison.{name}"] = digest
-            resolved[f"comparison.{name}"] = path
-
         _assert_table_keys_equal(resolved["raw_daily"], resolved["qfq_daily"], self.batch_size)
         context.work_root.mkdir(parents=True, exist_ok=False)
         snapshot_dir = context.work_root / self.stage_id.value
@@ -121,7 +108,7 @@ class InputSnapshotStage:
         for name, path in resolved.items():
             register_artifact(
                 context.artifacts,
-                name=name if name.startswith("comparison.") else f"input.{name}",
+                name=f"input.{name}",
                 path=path,
                 producer=self.stage_id,
             )
@@ -631,7 +618,12 @@ def _artifact_record(
             path = artifact.path
     record: dict[str, Any] = {
         "artifact_id": artifact.name,
-        "producer_stage": artifact.producer.value,
+        "producer_stage": artifact.producer.value if artifact.producer is not None else None,
+        "source_class": artifact.source_class,
+        "registered_by_stage": (
+            artifact.registered_by_stage.value if artifact.registered_by_stage is not None else None
+        ),
+        "allowed_consumers": [stage.value for stage in artifact.allowed_consumers],
         "path": str(path),
     }
     if output:

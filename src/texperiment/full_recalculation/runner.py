@@ -165,7 +165,16 @@ def _build_and_verify_persisted_chain(context: StageContext) -> dict[str, object
             if item["expected_sha256"] != item["verified_sha256"]:
                 raise ValueError(f"unverified input hash: {item['artifact_id']}")
             producer = produced.get(item["artifact_id"])
-            if producer is None and stage_name != StageId.INPUT_SNAPSHOT.value:
+            is_comparison = item.get("source_class") == "EXTERNAL_COMPARISON_INPUT"
+            if is_comparison:
+                if (
+                    stage_name != StageId.DELTA_AND_DECISION.value
+                    or item.get("producer_stage") is not None
+                    or item.get("registered_by_stage") != StageId.DELTA_AND_DECISION.value
+                    or item.get("allowed_consumers") != [StageId.DELTA_AND_DECISION.value]
+                ):
+                    raise ValueError(f"comparison artifact boundary violation: {item['artifact_id']}")
+            elif producer is None and stage_name != StageId.INPUT_SNAPSHOT.value:
                 raise ValueError(f"input has no prior producer: {item['artifact_id']}")
             if producer is not None and (
                 producer["producer_stage"] != item["producer_stage"]
@@ -178,6 +187,8 @@ def _build_and_verify_persisted_chain(context: StageContext) -> dict[str, object
                 raise ValueError(f"duplicate artifact producer: {artifact_id}")
             if output["producer_stage"] != stage_name:
                 raise ValueError(f"output producer mismatch: {artifact_id}")
+            if output.get("source_class") == "EXTERNAL_COMPARISON_INPUT":
+                raise ValueError(f"comparison artifact cannot be a stage output: {artifact_id}")
             artifact_path = _resolve_recorded_artifact_path(context, str(output["path"]))
             if not artifact_path.is_file() or sha256_file(artifact_path) != output["sha256"]:
                 raise ValueError(f"output artifact bytes changed: {artifact_id}")

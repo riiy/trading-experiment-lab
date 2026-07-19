@@ -56,13 +56,14 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert remediation["sample_audit"]["full_recalculation_performed"] is False
 
     implementation = registry["full_pipeline_recalculation_tasks"]["FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2"]
-    assert implementation["status"] == "implementation_error_found"
+    assert implementation["status"] == "implementation_pending_reaudit"
     assert implementation["baseline_commit"] == "468bacc6fead27020e2dfce5f33368a623492122"
     assert implementation["implementation_frozen"] is False
     assert implementation["implementation_audited"] is False
     assert implementation["implementation_audit_decision"] == "IMPLEMENTATION_ERROR_FOUND"
     assert implementation["remediation_1"]["status"] == "completed_pending_reaudit"
     assert implementation["reaudit_1"]["decision"] == "IMPLEMENTATION_ERROR_FOUND"
+    assert implementation["remediation_2"]["status"] == "completed_pending_reaudit"
     assert implementation["contract_defined"] is True
     assert implementation["orchestration_skeleton_ready"] is True
     assert implementation["concrete_stages_implemented"] is True

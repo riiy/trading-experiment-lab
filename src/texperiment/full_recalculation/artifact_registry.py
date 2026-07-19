@@ -21,7 +21,10 @@ class RegisteredArtifact:
     name: str
     path: Path
     sha256: str
-    producer: StageId
+    producer: StageId | None
+    source_class: str = "PIPELINE_ARTIFACT"
+    registered_by_stage: StageId | None = None
+    allowed_consumers: tuple[StageId, ...] = ()
 
 
 def build_artifact_registry(
@@ -46,12 +49,23 @@ def register_artifact(
     *,
     name: str,
     path: str | Path,
-    producer: StageId,
+    producer: StageId | None,
+    source_class: str = "PIPELINE_ARTIFACT",
+    registered_by_stage: StageId | None = None,
+    allowed_consumers: tuple[StageId, ...] = (),
 ) -> RegisteredArtifact:
     source = Path(path)
     if not source.is_file():
         raise FileNotFoundError(source)
-    artifact = RegisteredArtifact(name=name, path=source, sha256=sha256_file(source), producer=producer)
+    artifact = RegisteredArtifact(
+        name=name,
+        path=source,
+        sha256=sha256_file(source),
+        producer=producer,
+        source_class=source_class,
+        registered_by_stage=registered_by_stage or producer,
+        allowed_consumers=allowed_consumers,
+    )
     existing = artifacts.get(name)
     if existing is not None and existing != artifact:
         raise ValueError(f"artifact already registered with different identity: {name}")
@@ -69,7 +83,8 @@ def require_artifact(
         raise KeyError(f"artifact is not registered: {name}")
     artifact = artifacts[name]
     if expected_producer is not None and artifact.producer != expected_producer:
-        raise ValueError(f"artifact producer mismatch for {name}: {artifact.producer.value}")
+        actual = artifact.producer.value if artifact.producer is not None else None
+        raise ValueError(f"artifact producer mismatch for {name}: {actual}")
     if not artifact.path.is_file() or sha256_file(artifact.path) != artifact.sha256:
         raise RecalculationAbort(
             "RECALCULATION_ABORTED_INPUT_DRIFT",
