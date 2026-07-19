@@ -1,0 +1,10 @@
+{
+  "audit_id": "STOCK_RS_PULLBACK_RECENT_10Y_VALIDATION_SCOPE_AUDIT_v1",
+  "implementation_commit": "c3e8b68",
+  "checks": {
+    "config_check": "OK",
+    "full_test_suite": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "trading_allowed": false
+}

@@ -1,0 +1,58 @@
+{
+  "audit_id": "STOCK_RS_PULLBACK_RECENT_10Y_VALIDATION_SCOPE_AUDIT_v1",
+  "checks": {
+    "configured_exclusion_codes_match_diagnostics": true,
+    "formal_manifest_absent": true,
+    "paired_candidate_absent": true,
+    "recent_ambiguous_codes_is_21": true,
+    "recent_ambiguous_rows_is_30": true,
+    "warmup_is_60": true,
+    "window_is_fixed": true
+  },
+  "decision": "RECENT_10Y_VALIDATION_SCOPE_AUDIT_PASSED",
+  "formal_input_published": false,
+  "formal_recalculation_performed": false,
+  "hashes": {
+    "setup_config_sha256": "d593b60a8f62fb2ca7b8db37ac4d955424a643c2cc97daf334620887441d9179",
+    "signal_sha256": "24662443f0a090662cfe33f6ff60274e36561e299966831d2de684ed04d25c82",
+    "universe_sha256": "bcd026b1bf35a3bb0c5c60a009c5917db06c4bbbdd4d5aabb04ad659965865a0",
+    "validator_sha256": "40b81087f2635d8672ecf532ee4b8370e21a29d11cd869ac310a3a21a1c3bdfa"
+  },
+  "implementation_commit": "c3e8b68",
+  "mapping_ambiguity": {
+    "excluded_code_count": 21,
+    "excluded_codes": [
+      "000564.SZ",
+      "000615.SZ",
+      "000617.SZ",
+      "000981.SZ",
+      "002194.SZ",
+      "002936.SZ",
+      "300348.SZ",
+      "300371.SZ",
+      "300543.SZ",
+      "300587.SZ",
+      "300606.SZ",
+      "300639.SZ",
+      "600126.SH",
+      "601916.SH",
+      "603269.SH",
+      "603283.SH",
+      "603535.SH",
+      "603811.SH",
+      "920245.BJ",
+      "920395.BJ",
+      "920509.BJ"
+    ],
+    "rows_in_window": 30,
+    "source_diagnostics": "diagnostics/STOCK_RS_PULLBACK_v1_MAPPING_UNEVALUABLE_DIAGNOSTICS_v1/unevaluable_rows.parquet"
+  },
+  "production_changes_allowed": false,
+  "strategy_decision_generated": false,
+  "trading_allowed": false,
+  "validation_window": {
+    "end_date": "2026-07-17",
+    "indicator_warmup_trading_days": 60,
+    "start_date": "2016-07-17"
+  }
+}
