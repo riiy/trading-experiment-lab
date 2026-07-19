@@ -122,11 +122,24 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     core_inputs = registry["full_pipeline_recalculation_tasks"][
         "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION"
     ]
-    assert core_inputs["status"] == "CORE_INPUT_MAPPING_REMEDIATION_REQUIRED"
+    assert core_inputs["status"] == "RECENT_10Y_SCOPE_FROZEN_PENDING_PAIRED_CANDIDATE"
     assert core_inputs["raw_daily_available"] is False
     assert core_inputs["qfq_pairing_verified"] is False
     assert core_inputs["input_hashes_frozen"] is False
     assert core_inputs["blocking_mismatches"] == 3306
+    scope = core_inputs["recent_10y_validation_scope_v1"]
+    assert scope["status"] == "audit_passed"
+    assert scope["audit_decision"] == "RECENT_10Y_VALIDATION_SCOPE_AUDIT_PASSED"
+    assert scope["regression_record_commit"] == "3f2075b"
+    assert scope["validation_window"]["start_date"] == "2016-07-17"
+    assert scope["validation_window"]["end_date"] == "2026-07-17"
+    assert scope["validation_window"]["indicator_warmup_trading_days"] == 60
+    assert scope["mapping_ambiguity"] == {
+        "historical_rows": 3306,
+        "in_window_rows": 30,
+        "excluded_codes": 21,
+    }
+    assert scope["formal_input_published"] is False
     assert core_inputs["remediation_1"]["status"] == "implementation_error_found"
     assert core_inputs["remediation_1"]["implementation_commit"] == "84315e86ee48cc302a3c0512a988fb30adb0e7f1"
     assert core_inputs["remediation_1"]["audit"]["decision"] == "DATA_PAIR_IMPLEMENTATION_ERROR_FOUND"

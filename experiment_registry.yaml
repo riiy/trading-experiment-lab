@@ -225,7 +225,7 @@ full_pipeline_recalculation_tasks:
         audit_record_commit: ba442d9cd7f2df5014abd6c540f7c137ac56c26b
         report: diagnostics/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_2/audit_report.md
   STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION:
-    status: CORE_INPUT_MAPPING_REMEDIATION_REQUIRED
+    status: RECENT_10Y_SCOPE_FROZEN_PENDING_PAIRED_CANDIDATE
     raw_daily_available: false
     qfq_pairing_verified: false
     profiles_complete: false
@@ -233,6 +233,23 @@ full_pipeline_recalculation_tasks:
     formal_recalculation_run_authorized: false
     blocking_mismatches: 3306
     evidence: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_GENERATION_2/pair_validation_failure.json
+    recent_10y_validation_scope_v1:
+      status: audit_passed
+      implementation_commit: c3e8b68
+      audit_id: STOCK_RS_PULLBACK_RECENT_10Y_VALIDATION_SCOPE_AUDIT_v1
+      audit_decision: RECENT_10Y_VALIDATION_SCOPE_AUDIT_PASSED
+      audit_record_commit: 0cd69d9
+      regression_record_commit: 3f2075b
+      validation_window:
+        start_date: "2016-07-17"
+        end_date: "2026-07-17"
+        indicator_warmup_trading_days: 60
+      mapping_ambiguity:
+        historical_rows: 3306
+        in_window_rows: 30
+        excluded_codes: 21
+      formal_input_published: false
+      report: diagnostics/STOCK_RS_PULLBACK_RECENT_10Y_VALIDATION_SCOPE_AUDIT_v1/audit_report.md
     remediation_1:
       task: STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_1
       status: implementation_error_found
