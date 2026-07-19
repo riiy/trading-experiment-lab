@@ -93,7 +93,7 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert implementation["full_recalculation_performed"] is False
 
     manifest_task = registry["full_pipeline_recalculation_tasks"]["FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION"]
-    assert manifest_task["status"] == "engine_binding_update_required"
+    assert manifest_task["status"] == "implementation_pending_reaudit"
     assert manifest_task["manifest_tool_commit"] == "616b6cdaf36def3fb85e03d82dc58e9884b7a50d"
     assert manifest_task["manifest_v2_implemented"] is True
     assert manifest_task["manifest_v2_audited"] is False
@@ -103,8 +103,8 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert manifest_task["manifest_freeze_authorized"] is False
     assert manifest_task["formal_recalculation_run_authorized"] is False
     assert manifest_task["legacy_freezer_run_type"] == "SIGNAL_EXECUTION_REPLAY"
-    assert manifest_task["remediation_1"]["implementation_commit"] == "b4a165a"
-    assert manifest_task["remediation_1"]["status"] == "focused_tests_passed_waiting_engine_reaudit"
+    assert manifest_task["remediation_1"]["implementation_commit"] == "30523f4"
+    assert manifest_task["remediation_1"]["status"] == "implementation_pending_reaudit"
 
     core_inputs = registry["full_pipeline_recalculation_tasks"][
         "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION"

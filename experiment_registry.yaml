@@ -183,7 +183,7 @@ full_pipeline_recalculation_tasks:
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false
   FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION:
-    status: engine_binding_update_required
+    status: implementation_pending_reaudit
     manifest_tool_commit: 616b6cdaf36def3fb85e03d82dc58e9884b7a50d
     manifest_v2_implemented: true
     manifest_v2_audited: false
@@ -205,8 +205,8 @@ full_pipeline_recalculation_tasks:
       report: diagnostics/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_AUDIT_1/audit_report.md
     remediation_1:
       task: FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REMEDIATION_1
-      status: focused_tests_passed_waiting_engine_reaudit
-      implementation_commit: b4a165a
+      status: implementation_pending_reaudit
+      implementation_commit: 30523f4
       findings_addressed:
         - FREEZE_PERMISSION_SNAPSHOT_CONTRACT_MISMATCH
         - PUBLICATION_CONTRACT_INCOMPLETE
