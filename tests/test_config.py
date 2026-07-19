@@ -24,7 +24,7 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     experiment = registry["Trading_Experiment"]
     archived = registry["setups"]["STOCK_RS_PULLBACK_v1"]
 
-    assert experiment["status"] == "manifest_freeze_authorized"
+    assert experiment["status"] == "manifest_v2_remediation_and_core_input_preparation"
     assert experiment["current_setup"] is None
     assert experiment["tradable_setups"] == 0
     assert experiment["trading_allowed"] is False
@@ -87,14 +87,27 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert implementation["full_recalculation_performed"] is False
 
     manifest_task = registry["full_pipeline_recalculation_tasks"]["FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION"]
-    assert manifest_task["status"] == "manifest_freeze_authorized"
+    assert manifest_task["status"] == "implementation_remediation_regression_blocked"
     assert manifest_task["manifest_tool_commit"] == "616b6cdaf36def3fb85e03d82dc58e9884b7a50d"
     assert manifest_task["manifest_v2_implemented"] is True
-    assert manifest_task["manifest_v2_audited"] is True
-    assert manifest_task["manifest_v2_audit_decision"] == "MANIFEST_V2_AUDIT_PASSED"
-    assert manifest_task["manifest_freeze_authorized"] is True
+    assert manifest_task["manifest_v2_audited"] is False
+    assert manifest_task["manifest_v2_audit_decision"] is None
+    assert manifest_task["historical_audit_decision"] == "MANIFEST_V2_AUDIT_PASSED"
+    assert manifest_task["formal_contract_eligible"] is False
+    assert manifest_task["manifest_freeze_authorized"] is False
     assert manifest_task["formal_recalculation_run_authorized"] is False
     assert manifest_task["legacy_freezer_run_type"] == "SIGNAL_EXECUTION_REPLAY"
+    assert manifest_task["remediation_1"]["implementation_commit"] == "b4a165a"
+    assert manifest_task["remediation_1"]["status"] == "regression_gate_failed"
+
+    core_inputs = registry["full_pipeline_recalculation_tasks"][
+        "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION"
+    ]
+    assert core_inputs["status"] == "CORE_INPUT_PAIR_VALIDATION_FAILED"
+    assert core_inputs["raw_daily_available"] is False
+    assert core_inputs["qfq_pairing_verified"] is False
+    assert core_inputs["input_hashes_frozen"] is False
+    assert core_inputs["blocking_mismatches"] == 732776
 
 
 def test_full_recalculation_is_blocked_until_manifest_v2_audit():

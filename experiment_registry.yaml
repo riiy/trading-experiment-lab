@@ -1,5 +1,5 @@
 Trading_Experiment:
-  status: manifest_freeze_authorized
+  status: manifest_v2_remediation_and_core_input_preparation
   capital_limit: 30000
   max_planned_loss_per_trade: 500
   instrument_scope:
@@ -11,8 +11,8 @@ Trading_Experiment:
   ticket_generation_allowed: false
   tradable_setups: 0
   next_action:
-    - freeze_formal_recalculation_manifest_v2
-    - validate_frozen_manifest_before_run_authorization
+    - remediate_and_reaudit_formal_manifest_v2
+    - prepare_and_verify_core_input_snapshot
   allowed:
     - repair_execution_semantics
     - add_raw_price_schema
@@ -170,12 +170,14 @@ full_pipeline_recalculation_tasks:
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false
   FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION:
-    status: manifest_freeze_authorized
+    status: implementation_remediation_regression_blocked
     manifest_tool_commit: 616b6cdaf36def3fb85e03d82dc58e9884b7a50d
     manifest_v2_implemented: true
-    manifest_v2_audited: true
-    manifest_v2_audit_decision: MANIFEST_V2_AUDIT_PASSED
-    manifest_freeze_authorized: true
+    manifest_v2_audited: false
+    manifest_v2_audit_decision: null
+    historical_audit_decision: MANIFEST_V2_AUDIT_PASSED
+    formal_contract_eligible: false
+    manifest_freeze_authorized: false
     formal_recalculation_run_authorized: false
     legacy_freezer_run_type: SIGNAL_EXECUTION_REPLAY
     legacy_strategy_validation_decision_allowed: false
@@ -188,6 +190,25 @@ full_pipeline_recalculation_tasks:
       audit_id: FULL_PIPELINE_RECALCULATION_MANIFEST_V2_AUDIT_1
       decision: MANIFEST_V2_AUDIT_PASSED
       report: diagnostics/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_AUDIT_1/audit_report.md
+    remediation_1:
+      task: FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REMEDIATION_1
+      status: regression_gate_failed
+      implementation_commit: b4a165a
+      findings_addressed:
+        - FREEZE_PERMISSION_SNAPSHOT_CONTRACT_MISMATCH
+        - PUBLICATION_CONTRACT_INCOMPLETE
+        - AUDIT_IDENTITY_BINDING_INCOMPLETE
+      blocking_regression: READ_ONLY_BEFORE_ATOMIC_RENAME_EACCES
+      evidence: diagnostics/recalculation_attempts/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REMEDIATION_1_20260719T180501/regression_failure.json
+  STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION:
+    status: CORE_INPUT_PAIR_VALIDATION_FAILED
+    raw_daily_available: false
+    qfq_pairing_verified: false
+    profiles_complete: false
+    input_hashes_frozen: false
+    formal_recalculation_run_authorized: false
+    blocking_mismatches: 732776
+    evidence: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION/pair_validation_failure.json
 archived_paths:
   - earnings_event
   - major_contract_event
