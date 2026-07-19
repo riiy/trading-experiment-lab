@@ -65,9 +65,7 @@ def test_runner_executes_exact_stage_order():
     }
     runner = FullPipelineRunner(stages)
     context = _context()
-    context.manifest["permissions"]["full_recalculation_allowed"] = True
-
-    results = runner.run(context)
+    results = runner.run_until(context, StageId.DELTA_AND_DECISION)
 
     assert calls == list(EXPECTED_STAGES)
     assert [result.stage.value for result in results] == list(EXPECTED_STAGES)

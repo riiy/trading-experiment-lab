@@ -86,6 +86,19 @@ class InputSnapshotStage:
                 _assert_profile_matches(name, profile, spec)
                 profiles[name] = profile
 
+        for name, spec in context.manifest.get("comparison_only_inputs", {}).items():
+            path = _resolve(context.project_root, spec["path"])
+            if not path.is_file():
+                raise FileNotFoundError(path)
+            digest = sha256_file(path)
+            if digest != spec["sha256"]:
+                raise RecalculationAbort(
+                    "RECALCULATION_ABORTED_INPUT_DRIFT",
+                    f"comparison input hash changed: {name}",
+                )
+            input_hashes[f"comparison.{name}"] = digest
+            resolved[f"comparison.{name}"] = path
+
         _assert_table_keys_equal(resolved["raw_daily"], resolved["qfq_daily"], self.batch_size)
         context.work_root.mkdir(parents=True, exist_ok=False)
         snapshot_dir = context.work_root / self.stage_id.value
@@ -108,7 +121,7 @@ class InputSnapshotStage:
         for name, path in resolved.items():
             register_artifact(
                 context.artifacts,
-                name=f"input.{name}",
+                name=name if name.startswith("comparison.") else f"input.{name}",
                 path=path,
                 producer=self.stage_id,
             )
@@ -118,13 +131,18 @@ class InputSnapshotStage:
             path=snapshot_path,
             producer=self.stage_id,
         )
+        snapshot_outputs = {
+            name: artifact.sha256
+            for name, artifact in context.artifacts.items()
+            if artifact.producer == self.stage_id
+        }
         result = StageResult(
             stage=self.stage_id,
             status=StageStatus.PASSED,
             started_at=started,
             completed_at=_now(),
             input_hashes=input_hashes,
-            output_hashes={snapshot.name: snapshot.sha256},
+            output_hashes=snapshot_outputs,
             rows=profiles["raw_daily"]["rows"],
             min_date=profiles["raw_daily"]["min_date"],
             max_date=profiles["raw_daily"]["max_date"],
@@ -567,10 +585,65 @@ def _write_stage_record(context: StageContext, result: StageResult, *, extra: Ma
     payload["status"] = result.status.value
     payload["blocking_errors"] = list(result.blocking_errors)
     payload["warnings"] = list(result.warnings)
+    payload["stage"] = {
+        "id": result.stage.value,
+        "sequence": list(StageId).index(result.stage) + 1,
+        "status": result.status.value,
+    }
+    payload["inputs"] = [
+        _artifact_record(context, artifact_id, digest, output=False)
+        for artifact_id, digest in result.input_hashes.items()
+    ]
+    payload["outputs"] = [
+        _artifact_record(context, artifact_id, digest, output=True, result=result)
+        for artifact_id, digest in result.output_hashes.items()
+    ]
+    payload.pop("input_hashes", None)
+    payload.pop("output_hashes", None)
+    payload.pop("status", None)
     if extra:
         payload.update(extra)
     path = context.work_root / result.stage.value / "stage.json"
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def _artifact_record(
+    context: StageContext,
+    artifact_id: str,
+    digest: str,
+    *,
+    output: bool,
+    result: StageResult | None = None,
+) -> dict[str, Any]:
+    artifact = context.artifacts.get(artifact_id)
+    if artifact is None and not artifact_id.startswith("input."):
+        artifact = context.artifacts.get(f"input.{artifact_id}")
+    if artifact is None:
+        raise ValueError(f"stage record references unregistered artifact: {artifact_id}")
+    if artifact.sha256 != digest:
+        raise ValueError(f"stage record hash differs from registry: {artifact_id}")
+    try:
+        path = artifact.path.relative_to(context.work_root)
+    except ValueError:
+        try:
+            path = artifact.path.relative_to(context.project_root)
+        except ValueError:
+            path = artifact.path
+    record: dict[str, Any] = {
+        "artifact_id": artifact.name,
+        "producer_stage": artifact.producer.value,
+        "path": str(path),
+    }
+    if output:
+        record.update({
+            "sha256": digest,
+            "rows": result.rows if result else 0,
+            "min_date": result.min_date if result else None,
+            "max_date": result.max_date if result else None,
+        })
+    else:
+        record.update({"expected_sha256": digest, "verified_sha256": digest})
+    return record
 
 
 def _repository_state(root: Path) -> tuple[str, bool]:

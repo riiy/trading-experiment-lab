@@ -9,11 +9,12 @@ new Setup and not a strategy-rule change.
 Current implementation state:
 
 ```yaml
-status: implementation_error_found
+status: implementation_pending_reaudit
 baseline_commit: 468bacc6fead27020e2dfce5f33368a623492122
 implementation_frozen: false
 implementation_audited: false
 implementation_audit_decision: IMPLEMENTATION_ERROR_FOUND
+remediation_1: completed_pending_reaudit
 full_recalculation_allowed: false
 full_recalculation_performed: false
 ```
@@ -38,6 +39,11 @@ full_recalculation_allowed: false
 
 All eight stages are development-tested. The complete runner remains unaudited and
 cannot be frozen or authorized until the independent implementation audit passes.
+
+Remediation 1 adds a verified persistent artifact DAG and an fsync-backed atomic move
+from the temporary run root to a read-only final root. Successful formal execution now
+requires all eight stage records, closed downstream permissions, matching on-disk hashes,
+and an absent final target. These changes require a new audit from the beginning.
 
 Trading, account simulation, and ticket generation remain disabled throughout this
 engineering phase. No strategy decision may be produced before the implementation audit

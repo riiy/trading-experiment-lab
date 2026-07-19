@@ -17,7 +17,11 @@ from texperiment.full_recalculation.downstream import (
     SignalRebuildStage,
     TradeRebuildStage,
 )
-from texperiment.full_recalculation.runner import FullPipelineRunner
+from texperiment.full_recalculation.runner import (
+    FullPipelineRunner,
+    _build_and_verify_persisted_chain,
+    _tree_sha256,
+)
 from texperiment.full_recalculation.stages import StageContext, StageId
 from texperiment.full_recalculation.upstream import (
     IndicatorRebuildStage,
@@ -202,8 +206,10 @@ def test_each_completed_stage_writes_machine_record(tmp_path):
 
     for name in EXPECTED_STAGES[:4]:
         record = json.loads((context.work_root / name / "stage.json").read_text(encoding="utf-8"))
-        assert record["stage"] == name
-        assert record["status"] == "PASSED"
+        assert record["stage"]["id"] == name
+        assert record["stage"]["status"] == "PASSED"
+        assert record["stage"]["sequence"] == list(EXPECTED_STAGES).index(name) + 1
+        assert all("artifact_id" in item and "producer_stage" in item for item in record["outputs"])
         assert record["blocking_errors"] == []
 
 
@@ -297,6 +303,110 @@ def test_missing_archived_comparisons_fails_closed_at_delta(tmp_path):
         stages[StageId.DELTA_AND_DECISION].run(context)
 
     assert caught.value.decision == "RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH"
+
+
+def test_authorized_synthetic_run_atomically_publishes_read_only_tree(tmp_path):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    fixture.manifest["permissions"]["full_recalculation_allowed"] = True
+    context = _context(fixture, "publish-success")
+
+    results = FullPipelineRunner(_all_stages()).run(context)
+
+    assert len(results) == 8
+    assert not context.work_root.exists()
+    assert context.final_root.is_dir()
+    publication = json.loads((context.final_root / "publication.json").read_text(encoding="utf-8"))["publication"]
+    assert publication["status"] == "PUBLISHED"
+    assert publication["atomic_move_verified"] is True
+    assert publication["final_tree_sha256"] == _tree_sha256(context.final_root, excluded={"publication.json"})
+    assert context.final_root.stat().st_mode & 0o222 == 0
+
+
+def test_persisted_stage_records_rebuild_complete_hash_chain(tmp_path):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    context, _ = _run_all(fixture, "persisted-chain")
+
+    chain = _build_and_verify_persisted_chain(context)
+
+    assert [record["stage"]["id"] for record in chain["stages"]] == list(EXPECTED_STAGES)
+    assert all(record["outputs"] for record in chain["stages"])
+
+
+@pytest.mark.parametrize("mutation", ["artifact_id", "producer", "hash", "sequence"])
+def test_persisted_chain_rejects_tampered_stage_identity(tmp_path, mutation):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    context, _ = _run_all(fixture, f"tamper-{mutation}")
+    path = context.work_root / "SIGNAL_REBUILD" / "stage.json"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if mutation == "artifact_id":
+        record["outputs"][0]["artifact_id"] = "tampered.artifact"
+    elif mutation == "producer":
+        record["outputs"][0]["producer_stage"] = "TRADE_REBUILD"
+    elif mutation == "hash":
+        record["outputs"][0]["sha256"] = "0" * 64
+    else:
+        record["stage"]["sequence"] = 99
+    path.write_text(json.dumps(record), encoding="utf-8")
+
+    with pytest.raises(ValueError):
+        _build_and_verify_persisted_chain(context)
+
+
+def test_persisted_chain_rejects_missing_stage_record(tmp_path):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    context, _ = _run_all(fixture, "missing-record")
+    (context.work_root / "TRADE_REBUILD" / "stage.json").unlink()
+
+    with pytest.raises(ValueError, match="missing stage record"):
+        _build_and_verify_persisted_chain(context)
+
+
+def test_persisted_chain_rejects_modified_artifact_bytes(tmp_path):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    context, _ = _run_all(fixture, "artifact-byte-drift")
+    signals = context.artifacts["signals.rebuilt"].path
+    signals.write_bytes(signals.read_bytes() + b"drift")
+
+    with pytest.raises(ValueError, match="artifact bytes changed"):
+        _build_and_verify_persisted_chain(context)
+
+
+def test_atomic_publication_failure_is_quarantined(tmp_path, monkeypatch):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+    fixture.manifest["permissions"]["full_recalculation_allowed"] = True
+    context = _context(fixture, "publish-failure")
+    real_replace = __import__("os").replace
+
+    def fail_final_move(source, destination):
+        if Path(destination) == context.final_root:
+            raise OSError("forced atomic move failure")
+        return real_replace(source, destination)
+
+    monkeypatch.setattr("texperiment.full_recalculation.runner.os.replace", fail_final_move)
+
+    with pytest.raises(Exception, match="publication failed"):
+        FullPipelineRunner(_all_stages()).run(context)
+
+    assert not context.final_root.exists()
+    assert not context.work_root.exists()
+    assert (context.failure_root / "failure.json").is_file()
+
+
+def test_same_inputs_produce_identical_downstream_business_hashes(tmp_path):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+
+    first, _ = _run_all(fixture, "downstream-determinism-1")
+    second, _ = _run_all(fixture, "downstream-determinism-2")
+
+    for name in ("signals.rebuilt", "trades.rebuilt", "metrics.rebuilt", "delta.preview"):
+        assert first.artifacts[name].sha256 == second.artifacts[name].sha256
 
 
 @dataclass

@@ -311,6 +311,11 @@ def _load_archived_inputs(context: StageContext) -> ArchivedOriginalArtifacts:
         if not path.is_file() or sha256_file(path) != spec["sha256"]:
             raise RecalculationAbort("RECALCULATION_ABORTED_INPUT_DRIFT", f"archived comparison changed: {name}")
         paths[name] = path
+        require_artifact(
+            context.artifacts,
+            f"comparison.{name}",
+            expected_producer=StageId.INPUT_SNAPSHOT,
+        )
     return ArchivedOriginalArtifacts(paths["original_signals"], paths["original_trades"], paths["original_metrics"])
 
 
