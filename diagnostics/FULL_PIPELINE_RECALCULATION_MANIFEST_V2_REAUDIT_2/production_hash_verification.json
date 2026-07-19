@@ -1,0 +1,25 @@
+{
+  "manifest_tool": {
+    "implementation_commit": "30523f4baec7257e5014b6fd43f852891e31ae11",
+    "current_matches_implementation_commit": true,
+    "files": {
+      "src/texperiment/full_recalculation/formal_manifest.py": "166bccf1121a23dd033c55a4d68942ca149267346f66346cc05efc0a28e0b1d3",
+      "src/texperiment/full_recalculation/manifest_canonicalization.py": "bbdc88c5fabefc0cb28e25ef2d28f582b8792c122876afff67139862e87175af",
+      "src/texperiment/full_recalculation/manifest_validation.py": "ce410b9953170ea7eee78396f619ad3e85cc39d484e9dce70a867ae2c7451391",
+      "src/texperiment/full_recalculation/formal_cli.py": "3e30ac01fb31c474ef9d38fb79bed26431d7c8ad27d600d796eabf8968e12fa1",
+      "src/texperiment/cli.py": "5ca969a2a52261f7c890a1e92dffbd3f01b0cc590ae0e706b38b666e2da69900"
+    }
+  },
+  "engine": {
+    "implementation_commit": "508ceceafcfc4403bab746051f26d6ff23e78a9c",
+    "audit_record_commit": "62ad290ddb1f7fa30c539426c70395713189b641",
+    "current_matches_implementation_commit": true,
+    "files": {
+      "src/texperiment/full_recalculation/runner.py": "465df40179f2102b35e40be51dca5b66142022747268819475e36d2732eba3c4",
+      "src/texperiment/full_recalculation/upstream.py": "e07ca69dcd76d530c89ce1f6956892feb38f47907158b990eb0264e554628a5b",
+      "src/texperiment/full_recalculation/downstream.py": "d2cd43a5420b66214681809c239db9622fdfee089fe758233a838d324c292ac9",
+      "src/texperiment/full_recalculation/contract.py": "c796b7da529d5436a3b608539d1b407e2ba0ccf2c25c197acadea7b654a0ea07",
+      "src/texperiment/full_recalculation/schema.py": "1f1548acff247f772da8086b676b8a301e335a9868f615565d308af7dd5abf01"
+    }
+  }
+}

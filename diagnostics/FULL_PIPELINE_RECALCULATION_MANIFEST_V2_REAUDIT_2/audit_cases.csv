@@ -1,0 +1,21 @@
+case_id,area,status,evidence,authoritative
+PREFLIGHT_HEAD,preflight,PASSED,"HEAD=ca28ffb49b06ee72a365999f74b70f55f6e6432d",true
+PREFLIGHT_CLEAN,preflight,PASSED,"worktree clean at audit start",true
+TOOL_PRODUCTION_HASH,identity,PASSED,"five Manifest production files match 30523f4",true
+ENGINE_PRODUCTION_HASH,identity,PASSED,"five engine production files match 508cece; audit=62ad290",true
+AUTHORIZATION_CAPABILITY,targeted_tests,PASSED,"freeze authorization separated from future output capabilities",true
+PUBLICATION_CONTRACT,targeted_tests,PASSED,"six explicit publication flags required and negative-tested",true
+FOUR_WAY_IDENTITY,static_and_targeted,PASSED,"runtime head, engine implementation/audit, tool implementation/audit are distinct",true
+SELF_HASH,targeted_tests,PASSED,"canonical self-hash and field mutation rejection",true
+COMPARISON_BOUNDARY,targeted_tests,PASSED,"frozen archive references; Delta-only consumer",true
+CLI_ROUTING,targeted_tests,PASSED,"V1/replay rejected; V2 stage factory binds eight real stages",true
+EXTERNAL_AUTHORIZATION,targeted_tests,PASSED,"deep-copy runtime adapter preserves frozen hash and cannot expand declared capabilities",true
+DIRTY_AND_DRIFT,targeted_tests,PASSED,"dirty repository and audited engine/tool production drift fail closed",true
+OUTPUT_CONFLICT,targeted_tests,PASSED,"existing final root rejected",true
+ATOMIC_WRITE_FAILURE,targeted_tests,PASSED,"failed atomic Manifest write leaves no formal or temporary Manifest",true
+FOCUSED_TESTS,test,PASSED,"23 passed in 0.74s",true
+FULL_TESTS,test,PASSED,"241 passed in 64.80s",true
+CONFIG_CHECK,configuration,PASSED,"config-check: OK; trading_allowed=false; current_setup=null",true
+DIFF_CHECK,repository,PASSED,"git diff --check passed",true
+FORMAL_MANIFEST_GENERATION,safety,NOT_RUN,"prohibited during implementation reaudit",true
+FORMAL_RECALCULATION,safety,NOT_RUN,"prohibited during implementation reaudit",true

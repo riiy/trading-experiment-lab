@@ -1,0 +1,29 @@
+{
+  "audit": {
+    "audit_id": "FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_2",
+    "contract": "FULL_PIPELINE_RECALCULATION_V2",
+    "decision": "MANIFEST_V2_AUDIT_PASSED",
+    "implementation_commit": "30523f4baec7257e5014b6fd43f852891e31ae11",
+    "runtime_head_commit": "ca28ffb49b06ee72a365999f74b70f55f6e6432d",
+    "timezone": "Asia/Shanghai"
+  },
+  "engine_binding": {
+    "implementation_commit": "508ceceafcfc4403bab746051f26d6ff23e78a9c",
+    "audit_record_commit": "62ad290ddb1f7fa30c539426c70395713189b641"
+  },
+  "freeze": {
+    "git_dirty_at_start": false,
+    "production_changes_allowed": false,
+    "formal_manifest_generation_allowed": false,
+    "formal_recalculation_allowed": false,
+    "inherited_passes_allowed": false
+  },
+  "safety": {
+    "formal_manifest_generated": false,
+    "formal_recalculation_performed": false,
+    "strategy_decision_generated": false,
+    "account_simulation_allowed": false,
+    "ticket_generation_allowed": false,
+    "trading_allowed": false
+  }
+}

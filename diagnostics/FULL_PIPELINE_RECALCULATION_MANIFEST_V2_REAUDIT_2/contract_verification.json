@@ -1,0 +1,52 @@
+{
+  "authorization_capability_split": {
+    "status": "PASSED",
+    "freeze_authorized": true,
+    "run_authorized_in_frozen_manifest": false,
+    "classification_capability": true,
+    "account_simulation_capability": false,
+    "ticket_capability": false,
+    "trading_capability": false
+  },
+  "publication_contract": {
+    "status": "PASSED",
+    "required_true_fields": [
+      "final_root_must_not_exist",
+      "atomic_rename_required",
+      "fsync_required",
+      "read_only_after_publication",
+      "completion_record_required",
+      "artifact_hash_chain_required"
+    ]
+  },
+  "identity_binding": {
+    "status": "PASSED",
+    "runtime_head_separate": true,
+    "engine_implementation_and_audit_separate": true,
+    "manifest_tool_implementation_and_audit_separate": true
+  },
+  "self_hash": {
+    "status": "PASSED",
+    "canonicalization": "MANIFEST_CANONICAL_JSON_V1",
+    "covers_new_contract_fields": true
+  },
+  "comparison_boundary": {
+    "status": "PASSED",
+    "source": "frozen_archive_manifest",
+    "runtime_verification_stage": "DELTA_AND_DECISION",
+    "allowed_consumers": ["DELTA_AND_DECISION"]
+  },
+  "routing": {
+    "status": "PASSED",
+    "v1_and_replay_rejected": true,
+    "v2_runner": "FullPipelineRunner",
+    "stage_count": 8
+  },
+  "external_authorization": {
+    "status": "PASSED",
+    "frozen_manifest_mutated": false,
+    "self_hash_preserved": true,
+    "capability_expansion_detected": false,
+    "legacy_strategy_decision_permission_remains_false": true
+  }
+}
