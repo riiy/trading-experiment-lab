@@ -1,0 +1,11 @@
+{
+  "status": "PASSED",
+  "v2_freeze_command": "freeze-stock-rs-pullback-recalculation-v2",
+  "v2_validate_command": "validate-stock-rs-pullback-recalculation-manifest-v2",
+  "v2_run_command": "run-stock-rs-pullback-recalculation-v2",
+  "v2_run_stage_factory": "FullPipelineRunner with eight concrete stages",
+  "legacy_freeze_formal_access": "REJECTED_SIGNAL_EXECUTION_REPLAY",
+  "legacy_run_formal_access": "REJECTED_SIGNAL_EXECUTION_REPLAY",
+  "v1_manifest_formal_access": "REJECTED",
+  "missing_self_hash_formal_access": "REJECTED"
+}

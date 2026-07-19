@@ -1,0 +1,9 @@
+{
+  "status": "PASSED",
+  "canonicalization_version": "MANIFEST_CANONICAL_JSON_V1",
+  "hash_algorithm": "SHA256",
+  "offline_verification": true,
+  "recursive_hash_field_excluded": true,
+  "arbitrary_field_mutation_rejected": true,
+  "same_explicit_input_is_deterministic": true
+}

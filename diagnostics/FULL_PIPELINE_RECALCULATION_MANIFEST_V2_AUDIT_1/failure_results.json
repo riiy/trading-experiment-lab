@@ -1,0 +1,12 @@
+{
+  "status": "PASSED",
+  "dirty_worktree": "REJECTED",
+  "audited_engine_drift": "REJECTED",
+  "manifest_tool_drift": "REJECTED",
+  "invalid_comparison_consumer": "REJECTED",
+  "missing_atomic_publication_contract": "REJECTED",
+  "existing_output_root": "REJECTED",
+  "atomic_manifest_write_failure": "NO_FINAL_MANIFEST_LEFT",
+  "formal_run_stage_failures": "RUNNER_DIAGNOSTICS_QUARANTINE",
+  "strategy_decision_generated": false
+}

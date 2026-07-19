@@ -3,9 +3,11 @@
 ## Status
 
 ```yaml
-status: implementation_pending_audit
+status: manifest_freeze_authorized
+manifest_tool_commit: 616b6cdaf36def3fb85e03d82dc58e9884b7a50d
 manifest_v2_implemented: true
-manifest_v2_audited: false
+manifest_v2_audited: true
+manifest_v2_audit_decision: MANIFEST_V2_AUDIT_PASSED
 formal_recalculation_run_authorized: false
 ```
 

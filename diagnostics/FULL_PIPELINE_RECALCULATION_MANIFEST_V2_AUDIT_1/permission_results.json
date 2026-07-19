@@ -1,0 +1,12 @@
+{
+  "status": "PASSED",
+  "manifest_freeze_authorized_during_audit": false,
+  "formal_recalculation_run_authorized": false,
+  "formal_manifest_generated": false,
+  "formal_recalculation_performed": false,
+  "registry_strategy_status_changed_during_audit": false,
+  "original_artifacts_changed": false,
+  "account_simulation_allowed": false,
+  "ticket_generation_allowed": false,
+  "trading_allowed": false
+}

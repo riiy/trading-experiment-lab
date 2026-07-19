@@ -1,5 +1,5 @@
 Trading_Experiment:
-  status: manifest_v2_implementation_required
+  status: manifest_freeze_authorized
   capital_limit: 30000
   max_planned_loss_per_trade: 500
   instrument_scope:
@@ -11,8 +11,8 @@ Trading_Experiment:
   ticket_generation_allowed: false
   tradable_setups: 0
   next_action:
-    - implement_FULL_PIPELINE_RECALCULATION_MANIFEST_V2
-    - audit_FULL_PIPELINE_RECALCULATION_MANIFEST_V2
+    - freeze_formal_recalculation_manifest_v2
+    - validate_frozen_manifest_before_run_authorization
   allowed:
     - repair_execution_semantics
     - add_raw_price_schema
@@ -170,10 +170,12 @@ full_pipeline_recalculation_tasks:
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false
   FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION:
-    status: implementation_pending_audit
+    status: manifest_freeze_authorized
+    manifest_tool_commit: 616b6cdaf36def3fb85e03d82dc58e9884b7a50d
     manifest_v2_implemented: true
-    manifest_v2_audited: false
-    manifest_v2_audit_decision: null
+    manifest_v2_audited: true
+    manifest_v2_audit_decision: MANIFEST_V2_AUDIT_PASSED
+    manifest_freeze_authorized: true
     formal_recalculation_run_authorized: false
     legacy_freezer_run_type: SIGNAL_EXECUTION_REPLAY
     legacy_strategy_validation_decision_allowed: false
@@ -182,6 +184,10 @@ full_pipeline_recalculation_tasks:
       validate: validate-stock-rs-pullback-recalculation-manifest-v2
       run: run-stock-rs-pullback-recalculation-v2
     contract: docs/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION.md
+    audit:
+      audit_id: FULL_PIPELINE_RECALCULATION_MANIFEST_V2_AUDIT_1
+      decision: MANIFEST_V2_AUDIT_PASSED
+      report: diagnostics/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_AUDIT_1/audit_report.md
 archived_paths:
   - earnings_event
   - major_contract_event

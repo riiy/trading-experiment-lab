@@ -1,0 +1,12 @@
+{
+  "status": "PASSED",
+  "schema": "FULL_PIPELINE_RECALCULATION_MANIFEST_V2",
+  "contract": "FULL_PIPELINE_RECALCULATION_V2",
+  "required_git_identities": true,
+  "audited_engine_file_hashes": true,
+  "manifest_tool_file_hashes": true,
+  "core_input_profiles": true,
+  "comparison_boundary": true,
+  "atomic_output_contract": true,
+  "permissions_snapshot": true
+}

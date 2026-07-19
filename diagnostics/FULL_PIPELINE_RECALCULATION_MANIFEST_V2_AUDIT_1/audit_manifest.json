@@ -1,0 +1,30 @@
+{
+  "audit": {
+    "audit_id": "FULL_PIPELINE_RECALCULATION_MANIFEST_V2_AUDIT_1",
+    "implementation_commit": "616b6cdaf36def3fb85e03d82dc58e9884b7a50d",
+    "audited_engine_commit": "a68770e151238fbf1b8f0050808cc877973dfd13",
+    "engine_audit_record_commit": "bce5ab70fadc23d17d10145e9f7796dfe53eb4e7",
+    "started_at": "2026-07-19T17:27:24+08:00",
+    "timezone": "Asia/Shanghai",
+    "git_dirty_at_start": false,
+    "production_changes_allowed": false,
+    "formal_manifest_generation_allowed": false,
+    "formal_recalculation_allowed": false
+  },
+  "frozen_sha256": {
+    "formal_manifest": "f27f1d5122059d8a615bb831385a5793e26482cbaf8fea230a2881d3ce3297aa",
+    "canonicalization": "bbdc88c5fabefc0cb28e25ef2d28f582b8792c122876afff67139862e87175af",
+    "validation": "b1fa52658a209319e8ac936fee51152431be5e7b77a2c26196a4ad3beeb934f1",
+    "formal_cli": "846160d362d8946e10ff74e12c40c2033e52a6d842400c002df34446bf77184a",
+    "root_cli": "2fcd460562aa607c6f4e2c758437320b3895697d4e560178c26309f828204314",
+    "audited_runner": "7c501680e99ed84f64a6a28068d6d53d3c95a2f04b08c363ee99ba9bf78bbfde",
+    "registry": "2597dfe4c53857a8f7cad46f962022fec45b5f27e9926a4a6076b2ed7e69d225"
+  },
+  "permissions": {
+    "manifest_freeze_authorized": false,
+    "formal_recalculation_run_authorized": false,
+    "account_simulation_allowed": false,
+    "ticket_generation_allowed": false,
+    "trading_allowed": false
+  }
+}

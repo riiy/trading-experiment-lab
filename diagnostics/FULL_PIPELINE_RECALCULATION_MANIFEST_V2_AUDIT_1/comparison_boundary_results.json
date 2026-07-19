@@ -1,0 +1,10 @@
+{
+  "status": "PASSED",
+  "freezer_reads_archive_manifest": true,
+  "freezer_opens_original_signals": false,
+  "freezer_opens_original_trades": false,
+  "freezer_opens_original_metrics": false,
+  "runtime_verification_stage": "DELTA_AND_DECISION",
+  "allowed_consumers": ["DELTA_AND_DECISION"],
+  "archive_manifest_registered_as_external_delta_root": true
+}
