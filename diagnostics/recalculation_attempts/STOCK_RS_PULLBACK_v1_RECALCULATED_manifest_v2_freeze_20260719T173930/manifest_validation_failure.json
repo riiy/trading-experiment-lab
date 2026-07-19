@@ -1,0 +1,61 @@
+{
+  "attempt": {
+    "action": "freeze-stock-rs-pullback-recalculation-v2",
+    "phase": "pre_manifest",
+    "created_at": "2026-07-19T17:39:30+08:00",
+    "repository_head": "52c5d940f6f10a3373c86a1824e820003fd77896",
+    "git_dirty_at_start": false,
+    "audited_engine_implementation_commit": "a68770e151238fbf1b8f0050808cc877973dfd13",
+    "engine_audit_record_commit": "bce5ab70fadc23d17d10145e9f7796dfe53eb4e7",
+    "audited_manifest_tool_implementation_commit": "616b6cdaf36def3fb85e03d82dc58e9884b7a50d",
+    "manifest_tool_audit_record_commit": "52c5d940f6f10a3373c86a1824e820003fd77896"
+  },
+  "decision": "RECALCULATION_ABORTED_MANIFEST_VALIDATION_FAILURE",
+  "blocking_errors": [
+    {
+      "code": "FREEZE_PERMISSION_SNAPSHOT_CONTRACT_MISMATCH",
+      "detail": "The audited builder and validator require strategy_validation_decision_allowed=true, while the authorized freeze-only contract requires it to remain false and formal_recalculation_run_authorized=false."
+    },
+    {
+      "code": "PUBLICATION_CONTRACT_INCOMPLETE",
+      "detail": "The audited Manifest schema does not persist explicit fsync_required, completion_record_required, or artifact_hash_chain_required fields."
+    },
+    {
+      "code": "AUDIT_IDENTITY_BINDING_INCOMPLETE",
+      "detail": "The audited builder records the Manifest tool implementation commit but does not persist its audit record commit as a distinct audited_manifest_tool identity."
+    },
+    {
+      "code": "CORE_RAW_INPUT_UNAVAILABLE",
+      "detail": "The default canonical raw input data/processed/a_share_daily_raw.parquet is absent; the available remediation dataset is not a frozen canonical raw input matching the qfq snapshot contract."
+    }
+  ],
+  "acceptance": {
+    "schema_valid": false,
+    "self_hash_valid": false,
+    "git_worktree_clean": true,
+    "audited_engine_hashes_match": null,
+    "audited_manifest_tool_hashes_match": null,
+    "core_input_profiles_complete": false,
+    "core_input_hashes_match": false,
+    "comparison_boundary_valid": true,
+    "output_root_absent": true,
+    "publication_contract_complete": false,
+    "permissions_safe": false,
+    "v2_runner_binding_valid": null,
+    "replay_path_rejected": null
+  },
+  "outcome": {
+    "formal_manifest_generated": false,
+    "formal_manifest_accepted": false,
+    "formal_manifest_frozen": false,
+    "formal_recalculation_run_authorized": false,
+    "full_recalculation_performed": false,
+    "formal_outputs_generated": false,
+    "strategy_decision_generated": false,
+    "registry_changed": false,
+    "production_code_changed": false,
+    "trading_allowed": false,
+    "account_simulation_allowed": false,
+    "ticket_generation_allowed": false
+  }
+}
