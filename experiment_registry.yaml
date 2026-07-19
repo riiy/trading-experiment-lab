@@ -225,14 +225,14 @@ full_pipeline_recalculation_tasks:
         audit_record_commit: ba442d9cd7f2df5014abd6c540f7c137ac56c26b
         report: diagnostics/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_2/audit_report.md
   STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION:
-    status: CORE_INPUT_PAIR_GENERATION_AUTHORIZED
+    status: CORE_INPUT_MAPPING_VALIDATION_FAILED
     raw_daily_available: false
     qfq_pairing_verified: false
     profiles_complete: false
     input_hashes_frozen: false
     formal_recalculation_run_authorized: false
-    blocking_mismatches: 732776
-    evidence: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION/pair_validation_failure.json
+    blocking_mismatches: 3306
+    evidence: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_GENERATION_2/pair_validation_failure.json
     remediation_1:
       task: STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_1
       status: implementation_error_found
@@ -270,6 +270,15 @@ full_pipeline_recalculation_tasks:
         decision: DATA_PAIR_IMPLEMENTATION_AUDIT_PASSED
         audit_record_commit: 0f12a8b4c6c36deb50c258f0480c5576362a6a51
         report: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_REAUDIT_3/audit_report.md
+    generation_attempt_2:
+      status: CORE_INPUT_PAIR_VALIDATION_FAILED
+      blocking_error: RAW_QFQ_MAPPING_NOT_EVALUABLE
+      source_raw_only_keys: 0
+      source_qfq_only_keys: 0
+      unevaluable_mapping_rows: 3306
+      evidence_commit: d843eeb
+      evidence: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_GENERATION_2/pair_validation_failure.json
+      formal_input_published: false
 archived_paths:
   - earnings_event
   - major_contract_event

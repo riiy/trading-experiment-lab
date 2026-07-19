@@ -112,11 +112,11 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     core_inputs = registry["full_pipeline_recalculation_tasks"][
         "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION"
     ]
-    assert core_inputs["status"] == "CORE_INPUT_PAIR_GENERATION_AUTHORIZED"
+    assert core_inputs["status"] == "CORE_INPUT_MAPPING_VALIDATION_FAILED"
     assert core_inputs["raw_daily_available"] is False
     assert core_inputs["qfq_pairing_verified"] is False
     assert core_inputs["input_hashes_frozen"] is False
-    assert core_inputs["blocking_mismatches"] == 732776
+    assert core_inputs["blocking_mismatches"] == 3306
     assert core_inputs["remediation_1"]["status"] == "implementation_error_found"
     assert core_inputs["remediation_1"]["implementation_commit"] == "84315e86ee48cc302a3c0512a988fb30adb0e7f1"
     assert core_inputs["remediation_1"]["audit"]["decision"] == "DATA_PAIR_IMPLEMENTATION_ERROR_FOUND"
@@ -128,6 +128,11 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert core_inputs["remediation_3"]["status"] == "implementation_audit_passed"
     assert core_inputs["remediation_3"]["implementation_commit"] == "7faf0784eece73021dd7e58ec3de9136658276d4"
     assert core_inputs["remediation_3"]["audit"]["decision"] == "DATA_PAIR_IMPLEMENTATION_AUDIT_PASSED"
+    assert core_inputs["generation_attempt_2"]["blocking_error"] == "RAW_QFQ_MAPPING_NOT_EVALUABLE"
+    assert core_inputs["generation_attempt_2"]["source_raw_only_keys"] == 0
+    assert core_inputs["generation_attempt_2"]["source_qfq_only_keys"] == 0
+    assert core_inputs["generation_attempt_2"]["unevaluable_mapping_rows"] == 3306
+    assert core_inputs["generation_attempt_2"]["formal_input_published"] is False
 
 
 def test_full_recalculation_is_blocked_until_manifest_v2_audit():
