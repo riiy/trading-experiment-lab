@@ -110,6 +110,8 @@ def prepare_tdx_core_input_pair(
         nonpositive = Counter()
         unsafe_pre_close = Counter()
         unsafe_pre_close_rows = 0
+        fully_filtered_codes: list[str] = []
+        fully_filtered_source_rows = 0
         rows_written = mapping_evaluable = mapping_unknown = volume_mismatches = 0
         raw_source_duplicates = qfq_source_duplicates = hfq_source_duplicates = 0
 
@@ -211,9 +213,12 @@ def prepare_tdx_core_input_pair(
             filtered_year.update(str(date.year) for date in rejected)
             filtered_exchange.update([market.upper()] * len(rejected))
 
-            raw_frame, qfq_frame = _split_canonical_pair(merged.loc[valid].copy(), raw_file, qfq_file)
-            if raw_frame.empty:
+            retained = merged.loc[valid].copy()
+            if retained.empty:
+                fully_filtered_codes.append(code)
+                fully_filtered_source_rows += len(merged)
                 continue
+            raw_frame, qfq_frame = _split_canonical_pair(retained, raw_file, qfq_file)
             mappings = _evaluate_mapping(raw_frame, qfq_frame)
             mapping_evaluable += int(mappings["evaluable"].sum())
             mapping_unknown += int((~mappings["evaluable"]).sum())
@@ -253,6 +258,9 @@ def prepare_tdx_core_input_pair(
             "synchronously_dropped_keys": sum(filtered_year.values()),
             "dropped_by_year": dict(sorted(filtered_year.items())),
             "dropped_by_exchange": dict(sorted(filtered_exchange.items())),
+            "fully_filtered_codes": fully_filtered_codes,
+            "fully_filtered_code_count": len(fully_filtered_codes),
+            "fully_filtered_source_rows": fully_filtered_source_rows,
             "price_values_transformed": False,
         }
         report["pre_close_policy"] = {

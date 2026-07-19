@@ -77,6 +77,27 @@ def test_pair_drops_row_with_unsafe_source_pre_close_without_earlier_fallback(tm
     assert policy["fallback_to_earlier_retained_close"] is False
 
 
+def test_fully_filtered_security_reports_stable_no_valid_rows_failure(tmp_path):
+    sources = _write_sources(tmp_path)
+    _replace_row(sources["qfq"], 0, "2026-01-02,-1.00,-0.50,-1.50,-0.75,1000,10000.00")
+    _replace_row(sources["qfq"], 1, "2026-01-03,-1.00,-0.50,-1.50,-0.75,1200,13000.00")
+
+    with pytest.raises(CoreInputPairError, match="validation failed") as caught:
+        prepare_tdx_core_input_pair(
+            sources["raw"].parent,
+            sources["qfq"].parent,
+            tmp_path / "candidate",
+            hfq_input=sources["hfq"].parent,
+        )
+
+    report = caught.value.report
+    assert "NO_VALID_PAIRED_ROWS" in report["blocking_errors"]
+    assert report["paired_filter"]["fully_filtered_codes"] == ["600000.SH"]
+    assert report["paired_filter"]["fully_filtered_code_count"] == 1
+    assert report["paired_filter"]["fully_filtered_source_rows"] == 2
+    assert not (tmp_path / "candidate").exists()
+
+
 def test_atomic_rename_failure_reports_candidate_not_published(tmp_path, monkeypatch):
     sources = _write_sources(tmp_path)
     output = tmp_path / "candidate"
