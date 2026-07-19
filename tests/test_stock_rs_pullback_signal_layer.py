@@ -72,6 +72,20 @@ def test_build_signals_joins_universe_and_rejects_non_executable_trigger():
     assert out.empty
 
 
+def test_validation_window_filters_signal_outputs_but_not_signal_state_history():
+    df = pd.DataFrame([
+        _row(0, close=106, high=110, low=105, drawdown=0.00, volume=120),
+        _row(1, close=104, high=108, low=103, drawdown=0.05, volume=80),
+        _row(2, close=107, high=108, low=105, drawdown=0.02, volume=90),
+        _row(3, close=109, high=110, low=106, drawdown=0.01, volume=95),
+    ])
+    config = {"validation_window": {"start_date": "2026-01-05", "end_date": "2026-12-31"}}
+
+    out = build_stock_rs_pullback_signals(df, setup_config=config)
+
+    assert out.empty
+
+
 def test_include_candidates_reports_pending_and_expired_reclaim():
     rows = [_row(0, close=106, high=110, low=105, drawdown=0.00, volume=120)]
     rows.append(_row(1, close=104, high=108, low=103, drawdown=0.05, volume=80))

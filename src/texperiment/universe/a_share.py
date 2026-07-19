@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, FrozenSet
 
 import pandas as pd
 import pyarrow as pa
@@ -21,6 +21,7 @@ class AShareUniverseConfig:
     exclude_st: bool = True
     exclude_suspended: bool = True
     exclude_limit_up_down: bool = True
+    data_quality_excluded_codes: FrozenSet[str] = frozenset()
 
     @classmethod
     def from_setup_config(cls, setup_config: dict[str, Any]) -> "AShareUniverseConfig":
@@ -33,6 +34,9 @@ class AShareUniverseConfig:
             exclude_st=bool(universe.get("exclude_st", True)),
             exclude_suspended=bool(universe.get("exclude_suspended", True)),
             exclude_limit_up_down=bool(universe.get("exclude_limit_up_down", True)),
+            data_quality_excluded_codes=frozenset(
+                str(code) for code in universe.get("data_quality_excluded_codes", [])
+            ),
         )
 
 
@@ -145,6 +149,7 @@ def annotate_a_share_universe(
         out["pass_not_limit_up_down"] = True
     out["pass_avg_amount_20d"] = (out["avg_amount_20d"] >= cfg.min_avg_amount_20d).fillna(False)
     out["pass_one_lot_value"] = (out["one_lot_value"] <= cfg.max_one_lot_value).fillna(False)
+    out["pass_data_quality"] = ~out["code"].isin(cfg.data_quality_excluded_codes)
 
     # Stable V2 stage-contract aliases. Keep the original columns for existing callers.
     out["pass_st"] = out["pass_non_st"]
@@ -160,6 +165,7 @@ def annotate_a_share_universe(
         "pass_not_limit_up_down",
         "pass_avg_amount_20d",
         "pass_one_lot_value",
+        "pass_data_quality",
     ]
     out["is_tradable_universe"] = out[pass_cols].all(axis=1)
     out["reject_reasons"] = out.apply(_reject_reasons, axis=1)
@@ -336,6 +342,7 @@ def _reject_reasons(row: pd.Series) -> str:
         "pass_not_limit_up_down": "limit_up_or_limit_down",
         "pass_avg_amount_20d": "avg_amount_20d_below_min",
         "pass_one_lot_value": "one_lot_value_above_max",
+        "pass_data_quality": "data_quality_raw_qfq_mapping_ambiguity",
     }
     for col, reason in mapping.items():
         if not bool(row[col]):
@@ -354,6 +361,7 @@ def _empty_universe_frame(source: pd.DataFrame) -> pd.DataFrame:
         "pass_not_limit_up_down",
         "pass_avg_amount_20d",
         "pass_one_lot_value",
+        "pass_data_quality",
         "is_tradable_universe",
         "reject_reasons",
     ]:

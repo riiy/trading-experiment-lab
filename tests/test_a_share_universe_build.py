@@ -108,6 +108,22 @@ def test_unknown_historical_status_and_limit_rule_fail_closed():
     assert "limit_up_or_limit_down" in out.loc[0, "reject_reasons"]
 
 
+def test_data_quality_excluded_code_is_rejected_for_every_date():
+    rows = [_row("000564.SZ", "2016-07-18", 10, 1_000_000, listing_days=300, avg_amount_20d=1_000_000)]
+    config = AShareUniverseConfig(
+        min_listing_days=1,
+        min_avg_amount_20d=1,
+        max_one_lot_value=2_000,
+        data_quality_excluded_codes=frozenset({"000564.SZ"}),
+    )
+
+    out = annotate_a_share_universe(pd.DataFrame(rows), config=config)
+
+    assert bool(out.loc[0, "pass_data_quality"]) is False
+    assert bool(out.loc[0, "is_tradable_universe"]) is False
+    assert "data_quality_raw_qfq_mapping_ambiguity" in out.loc[0, "reject_reasons"]
+
+
 def test_streaming_universe_matches_full_history_calculation(tmp_path):
     rows = []
     dates = pd.date_range("2026-01-01", periods=25, freq="D")

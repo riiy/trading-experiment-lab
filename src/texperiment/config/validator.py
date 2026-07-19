@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from texperiment.exceptions import ConfigError
+import pandas as pd
 
 def validate_global_account_config(config: dict) -> None:
     account = config.get("account", {})
@@ -32,3 +33,17 @@ def validate_setup_config(config: dict) -> None:
     missing = [k for k in required if k not in thresholds]
     if missing:
         raise ConfigError(f"validation_threshold missing keys: {missing}")
+    window = config.get("validation_window", {})
+    required_window = ["start_date", "end_date", "indicator_warmup_trading_days"]
+    missing_window = [key for key in required_window if key not in window]
+    if missing_window:
+        raise ConfigError(f"validation_window missing keys: {missing_window}")
+    start = pd.Timestamp(window["start_date"])
+    end = pd.Timestamp(window["end_date"])
+    if start > end:
+        raise ConfigError("validation_window.start_date must not be after end_date")
+    if int(window["indicator_warmup_trading_days"]) < 60:
+        raise ConfigError("validation_window.indicator_warmup_trading_days must be at least 60")
+    excluded = config.get("universe", {}).get("data_quality_excluded_codes", [])
+    if len(excluded) != 21 or len(set(excluded)) != 21:
+        raise ConfigError("universe.data_quality_excluded_codes must contain 21 unique codes")

@@ -43,6 +43,16 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert archived["audit"]["full_recalculation_performed"] is False
     assert archived["audit"]["new_setup_started"] is False
 
+    setup = load_yaml(ROOT / "configs" / "setups" / "STOCK_RS_PULLBACK_v1.yaml")
+    assert setup["validation_window"] == {
+        "start_date": "2016-07-17",
+        "end_date": "2026-07-17",
+        "indicator_warmup_trading_days": 60,
+        "exclusion_reason": "DATA_QUALITY_RAW_QFQ_MAPPING_AMBIGUITY",
+    }
+    assert len(setup["universe"]["data_quality_excluded_codes"]) == 21
+    assert "000564.SZ" in setup["universe"]["data_quality_excluded_codes"]
+
     remediation = registry["engine_remediation_tasks"]["ENGINE_REMEDIATION_A_SHARE_EXECUTION_v1"]
     assert remediation["status"] == "REMEDIATION_AUDIT_PASSED_V1_RECALCULATION_REVOKED"
     assert remediation["is_new_setup"] is False

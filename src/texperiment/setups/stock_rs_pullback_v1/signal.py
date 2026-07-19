@@ -30,12 +30,15 @@ class StockRSPullbackSignalConfig:
     require_first_pullback_in_strength_regime: bool = True
     trigger_window_days: int = 5
     entry_execution: str = "next_day_open"
+    validation_start_date: str | None = None
+    validation_end_date: str | None = None
 
     @classmethod
     def from_setup_config(cls, setup_config: dict[str, Any]) -> "StockRSPullbackSignalConfig":
         strength = setup_config.get("strength_filter", {})
         pullback = setup_config.get("pullback_filter", {})
         entry = setup_config.get("entry", {})
+        validation_window = setup_config.get("validation_window", {})
         return cls(
             setup_id=str(setup_config.get("setup_id", "STOCK_RS_PULLBACK_v1")),
             excess_return_min=float(strength.get("excess_return_min", 0.05)),
@@ -53,6 +56,8 @@ class StockRSPullbackSignalConfig:
             ),
             trigger_window_days=int(entry.get("trigger_window_days", entry.get("reclaim_window_days", 5))),
             entry_execution=str(entry.get("execution", "next_day_open")),
+            validation_start_date=_optional_date(validation_window.get("start_date")),
+            validation_end_date=_optional_date(validation_window.get("end_date")),
         )
 
 
@@ -214,7 +219,7 @@ def build_stock_rs_pullback_signals(
     for col in SIGNAL_OUTPUT_COLUMNS:
         if col not in out.columns:
             out[col] = pd.NA
-    return out[SIGNAL_OUTPUT_COLUMNS].sort_values(["code", "signal_date", "status"]).reset_index(drop=True)
+    return _apply_validation_window(out[SIGNAL_OUTPUT_COLUMNS], cfg)
 
 
 def validate_universe_coverage(indicators: pd.DataFrame, universe: pd.DataFrame) -> None:
@@ -320,7 +325,18 @@ def build_stock_rs_pullback_signals_from_parquet(
     for col in SIGNAL_OUTPUT_COLUMNS:
         if col not in out.columns:
             out[col] = pd.NA
-    return out[SIGNAL_OUTPUT_COLUMNS].sort_values(["code", "signal_date", "status"]).reset_index(drop=True)
+    return _apply_validation_window(out[SIGNAL_OUTPUT_COLUMNS], config)
+
+
+def _apply_validation_window(df: pd.DataFrame, config: StockRSPullbackSignalConfig) -> pd.DataFrame:
+    out = df.copy()
+    dates = pd.to_datetime(out["signal_date"], errors="coerce").dt.normalize()
+    if config.validation_start_date is not None:
+        out = out.loc[dates >= pd.Timestamp(config.validation_start_date)].copy()
+        dates = dates.loc[out.index]
+    if config.validation_end_date is not None:
+        out = out.loc[dates <= pd.Timestamp(config.validation_end_date)].copy()
+    return out.sort_values(["code", "signal_date", "status"]).reset_index(drop=True)
 
 
 def _validate_stream_keys(indicators: pd.DataFrame, universe: pd.DataFrame) -> None:
@@ -536,6 +552,12 @@ def _trading_day_distance(start_row_number: Any, end_row_number: Any) -> int:
 
 def _date_str(value: Any) -> str:
     return str(pd.Timestamp(value).date())
+
+
+def _optional_date(value: Any) -> str | None:
+    if value is None or str(value).strip() in {"", "None", "none"}:
+        return None
+    return str(pd.Timestamp(value).normalize().date())
 
 
 def _optional_str(value: Any) -> str | None:

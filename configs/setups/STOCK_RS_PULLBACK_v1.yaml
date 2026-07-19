@@ -17,6 +17,34 @@ universe:
   min_avg_amount_20d: 300000000
   max_one_lot_value: 15000
   lot_size: 100
+  data_quality_excluded_codes:
+    - 000564.SZ
+    - 000615.SZ
+    - 000617.SZ
+    - 000981.SZ
+    - 002194.SZ
+    - 002936.SZ
+    - 300348.SZ
+    - 300371.SZ
+    - 300543.SZ
+    - 300587.SZ
+    - 300606.SZ
+    - 300639.SZ
+    - 600126.SH
+    - 601916.SH
+    - 603269.SH
+    - 603283.SH
+    - 603535.SH
+    - 603811.SH
+    - 920245.BJ
+    - 920395.BJ
+    - 920509.BJ
+
+validation_window:
+  start_date: "2016-07-17"
+  end_date: "2026-07-17"
+  indicator_warmup_trading_days: 60
+  exclusion_reason: DATA_QUALITY_RAW_QFQ_MAPPING_AMBIGUITY
 
 strength_filter:
   lookback_days: 20
