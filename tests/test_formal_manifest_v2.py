@@ -7,7 +7,11 @@ import pandas as pd
 import pytest
 
 from texperiment.cli import build_parser, cmd_freeze_stock_rs_pullback_recalculation, cmd_run_stock_rs_pullback_recalculation
-from texperiment.full_recalculation.formal_cli import ArchiveVerifiedDeltaStage, _formal_stages
+from texperiment.full_recalculation.formal_cli import (
+    ArchiveVerifiedDeltaStage,
+    _authorized_runtime_view,
+    _formal_stages,
+)
 from texperiment.full_recalculation.formal_manifest import FormalManifestSpec, build_formal_manifest_v2, write_formal_manifest_atomic
 from texperiment.full_recalculation.manifest_canonicalization import manifest_self_sha256, verify_manifest_self_hash
 from texperiment.full_recalculation.manifest_validation import validate_formal_manifest_v2
@@ -24,9 +28,26 @@ def test_builder_emits_complete_self_hashed_v2_manifest_without_opening_comparis
     assert manifest["manifest"]["schema"] == "FULL_PIPELINE_RECALCULATION_MANIFEST_V2"
     assert manifest["repository"]["audited_engine_commit"].startswith("a68770e")
     assert manifest["repository"]["engine_audit_record_commit"].startswith("bce5ab7")
-    assert set(manifest["audited_engine"]) == {
+    assert set(manifest["audited_engine"]["files"]) == {
         "runner_sha256", "upstream_sha256", "downstream_sha256", "contract_sha256", "schema_sha256"
     }
+    assert manifest["repository"]["runtime_head_commit"] == "c" * 40
+    assert manifest["audited_engine"]["implementation_commit"].startswith("a68770e")
+    assert manifest["audited_engine"]["audit_record_commit"].startswith("bce5ab7")
+    assert manifest["audited_manifest_tool"]["implementation_commit"] == "d" * 40
+    assert manifest["audited_manifest_tool"]["audit_record_commit"] == "e" * 40
+    assert manifest["authorization_snapshot"] == {
+        "manifest_freeze_authorized": True,
+        "formal_recalculation_run_authorized": False,
+        "account_simulation_allowed": False,
+        "ticket_generation_allowed": False,
+        "trading_allowed": False,
+    }
+    assert manifest["run_capabilities"]["strategy_validation_classification_output"] is True
+    assert all(value is False for value in manifest["permissions"].values())
+    assert manifest["publication"]["fsync_required"] is True
+    assert manifest["publication"]["completion_record_required"] is True
+    assert manifest["publication"]["artifact_hash_chain_required"] is True
     assert manifest["comparison_inputs"]["allowed_consumers"] == ["DELTA_AND_DECISION"]
     assert not (root / "data/signals/STOCK_RS_PULLBACK_v1_signals.csv").exists()
     assert manifest["integrity"]["manifest_self_sha256"] == manifest_self_sha256(manifest)
@@ -59,7 +80,9 @@ def test_formal_validator_accepts_complete_manifest(tmp_path, monkeypatch):
     "mutation",
     [
         lambda value: value["strategy"].update({"rules_changed": True}),
-        lambda value: value["outputs"].pop("atomic_publication_required"),
+        lambda value: value["publication"].pop("fsync_required"),
+        lambda value: value["authorization_snapshot"].update({"formal_recalculation_run_authorized": True}),
+        lambda value: value["run_capabilities"].update({"trading_output": True}),
         lambda value: value["comparison_inputs"].update({"allowed_consumers": ["INPUT_SNAPSHOT"]}),
     ],
 )
@@ -146,6 +169,69 @@ def test_formal_stage_factory_binds_all_eight_real_stages(tmp_path):
     assert isinstance(stages[StageId.DELTA_AND_DECISION], ArchiveVerifiedDeltaStage)
 
 
+def test_external_authorization_adapter_does_not_mutate_frozen_manifest(tmp_path, monkeypatch):
+    root, spec = _fixture(tmp_path)
+    _identity(monkeypatch)
+    manifest = build_formal_manifest_v2(root, spec)
+    frozen_hash = manifest["integrity"]["manifest_self_sha256"]
+
+    runtime = _authorized_runtime_view(manifest)
+
+    assert manifest["permissions"]["full_recalculation_allowed"] is False
+    assert manifest["authorization_snapshot"]["formal_recalculation_run_authorized"] is False
+    assert manifest["integrity"]["manifest_self_sha256"] == frozen_hash
+    verify_manifest_self_hash(manifest)
+    assert runtime["permissions"]["full_recalculation_allowed"] is True
+    assert runtime["permissions"]["strategy_validation_decision_allowed"] is False
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "value"),
+    [
+        ("authorization_snapshot", "formal_recalculation_run_authorized", True),
+        ("authorization_snapshot", "trading_allowed", True),
+        ("run_capabilities", "strategy_validation_classification_output", False),
+        ("run_capabilities", "account_simulation_output", True),
+        ("publication", "atomic_rename_required", False),
+        ("publication", "fsync_required", False),
+        ("publication", "completion_record_required", False),
+        ("publication", "artifact_hash_chain_required", False),
+    ],
+)
+def test_validator_rejects_unsafe_authorization_capabilities_and_publication(
+    tmp_path, monkeypatch, section, field, value
+):
+    root, spec = _fixture(tmp_path)
+    _identity(monkeypatch)
+    manifest = build_formal_manifest_v2(root, spec)
+    manifest[section][field] = value
+    manifest["integrity"]["manifest_self_sha256"] = manifest_self_sha256(manifest)
+
+    with pytest.raises(ValueError):
+        validate_formal_manifest_v2(
+            root,
+            manifest,
+            require_clean_repository=False,
+            require_manifest_tool_audited=False,
+        )
+
+
+def test_validator_rejects_manifest_tool_audit_identity_tamper(tmp_path, monkeypatch):
+    root, spec = _fixture(tmp_path)
+    _identity(monkeypatch)
+    manifest = build_formal_manifest_v2(root, spec)
+    manifest["audited_manifest_tool"]["audit_record_commit"] = "not-a-commit"
+    manifest["integrity"]["manifest_self_sha256"] = manifest_self_sha256(manifest)
+
+    with pytest.raises(ValueError, match="audit record"):
+        validate_formal_manifest_v2(
+            root,
+            manifest,
+            require_clean_repository=False,
+            require_manifest_tool_audited=False,
+        )
+
+
 def _identity(monkeypatch):
     hashes = {
         "runner_sha256": "1" * 64,
@@ -208,6 +294,7 @@ def _fixture(tmp_path):
         temporary_root=root / "data/recalculations/.tmp/run",
         final_root=root / "data/recalculations/STOCK_RS_PULLBACK_v1_RECALCULATED/run",
         manifest_tool_commit="d" * 40,
+        manifest_tool_audit_record_commit="e" * 40,
         created_at="2026-07-19T00:00:00+08:00",
     )
     return root, spec

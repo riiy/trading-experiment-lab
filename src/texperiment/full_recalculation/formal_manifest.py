@@ -56,6 +56,7 @@ class FormalManifestSpec:
     temporary_root: Path
     final_root: Path
     manifest_tool_commit: str
+    manifest_tool_audit_record_commit: str
     created_at: str | None = None
 
 
@@ -66,6 +67,8 @@ def build_formal_manifest_v2(project_root: str | Path, spec: FormalManifestSpec)
         raise ValueError("Git worktree must be clean before freezing a formal Manifest")
     if len(spec.manifest_tool_commit) != 40:
         raise ValueError("manifest_tool_commit must be a full Git commit")
+    if len(spec.manifest_tool_audit_record_commit) != 40:
+        raise ValueError("manifest_tool_audit_record_commit must be a full Git commit")
     _validate_run_id(spec.run_id)
     if spec.final_root.exists():
         raise FileExistsError(f"formal output already exists: {spec.final_root}")
@@ -108,6 +111,7 @@ def build_formal_manifest_v2(project_root: str | Path, spec: FormalManifestSpec)
         "repository": {
             "commit": head,
             "head_commit": head,
+            "runtime_head_commit": head,
             "audited_engine_commit": AUDITED_ENGINE_COMMIT,
             "engine_audit_record_commit": ENGINE_AUDIT_RECORD_COMMIT,
             "manifest_tool_commit": spec.manifest_tool_commit,
@@ -119,9 +123,14 @@ def build_formal_manifest_v2(project_root: str | Path, spec: FormalManifestSpec)
             "frozen_sample_count": 50,
             "material_blockers": 0,
         },
-        "audited_engine": current_hashes,
-        "manifest_tool": {
-            "commit": spec.manifest_tool_commit,
+        "audited_engine": {
+            "implementation_commit": AUDITED_ENGINE_COMMIT,
+            "audit_record_commit": ENGINE_AUDIT_RECORD_COMMIT,
+            "files": current_hashes,
+        },
+        "audited_manifest_tool": {
+            "implementation_commit": spec.manifest_tool_commit,
+            "audit_record_commit": spec.manifest_tool_audit_record_commit,
             "files": current_tool,
         },
         "strategy": {
@@ -131,9 +140,24 @@ def build_formal_manifest_v2(project_root: str | Path, spec: FormalManifestSpec)
             "rules_changed": False,
             "validation_thresholds_sha256": threshold_hash,
         },
+        "authorization_snapshot": {
+            "manifest_freeze_authorized": True,
+            "formal_recalculation_run_authorized": False,
+            "account_simulation_allowed": False,
+            "ticket_generation_allowed": False,
+            "trading_allowed": False,
+        },
+        "run_capabilities": {
+            "strategy_validation_classification_output": True,
+            "account_simulation_output": False,
+            "ticket_generation_output": False,
+            "trading_output": False,
+        },
+        # Compatibility view for the audited runner's generic schema. It is an
+        # authorization snapshot, not a declaration of future capabilities.
         "permissions": {
-            "full_recalculation_allowed": True,
-            "strategy_validation_decision_allowed": True,
+            "full_recalculation_allowed": False,
+            "strategy_validation_decision_allowed": False,
             "account_simulation_allowed": False,
             "ticket_generation_allowed": False,
             "trading_allowed": False,
@@ -159,17 +183,23 @@ def build_formal_manifest_v2(project_root: str | Path, spec: FormalManifestSpec)
             "raw_qfq_mapping_version": "AFFINE_WITH_GENERIC_DAILY_RATIO_FALLBACK_V1",
             "cost_model_version": COST_MODEL_VERSION,
         },
-        "outputs": {
+        "publication": {
             "temporary_root": _relative(root, spec.temporary_root),
             "final_root": _relative(root, spec.final_root),
             "final_root_must_not_exist": True,
-            "atomic_publication_required": True,
+            "atomic_rename_required": True,
+            "fsync_required": True,
             "read_only_after_publication": True,
+            "completion_record_required": True,
+            "artifact_hash_chain_required": True,
         },
         "forbidden_inputs": list(FORBIDDEN_PIPELINE_INPUTS),
         "expected_stages": list(EXPECTED_STAGES),
         "integrity": {},
     }
+    # Compatibility alias consumed by the already-audited runner adapter.
+    manifest["outputs"] = dict(manifest["publication"])
+    manifest["outputs"]["atomic_publication_required"] = manifest["publication"]["atomic_rename_required"]
     return attach_manifest_self_hash(manifest)
 
 
