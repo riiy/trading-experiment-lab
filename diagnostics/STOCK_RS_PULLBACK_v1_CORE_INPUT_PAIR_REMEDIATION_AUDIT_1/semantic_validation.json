@@ -1,0 +1,26 @@
+{
+  "decision": "DATA_PAIR_IMPLEMENTATION_ERROR_FOUND",
+  "passed": {
+    "all_supplied_layers_synchronously_filter_non_positive_ohlc": true,
+    "listing_date_preserves_first_source_observation": true,
+    "listing_trading_day_preserves_source_sequence": true,
+    "output_primary_keys_equal": true,
+    "price_values_transformed": false,
+    "suspension_status_preserved": true,
+    "volume_mismatch_blocks": true,
+    "mapping_unevaluable_blocks": true
+  },
+  "blocking_finding": {
+    "id": "FILTERED_SOURCE_CLOSE_LEAKS_INTO_RETAINED_RAW_PRE_CLOSE",
+    "severity": "BLOCKING",
+    "fixture": {
+      "filtered_date": "2026-01-02",
+      "filtered_raw_close": -1.0,
+      "retained_date": "2026-01-03",
+      "retained_listing_trading_day": 2,
+      "retained_pre_close": -1.0,
+      "retained_raw_pre_close": -1.0
+    },
+    "impact": "The retained canonical raw row carries a non-positive previous unadjusted close into price-limit evaluation. The paired OHLC filter therefore does not produce an execution-safe raw snapshot."
+  }
+}

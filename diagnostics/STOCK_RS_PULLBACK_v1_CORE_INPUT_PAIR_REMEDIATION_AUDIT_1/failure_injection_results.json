@@ -1,0 +1,22 @@
+{
+  "rename_failure": {
+    "exception": "CoreInputPairError",
+    "final_root_exists": false,
+    "temporary_root_exists": false,
+    "diagnostic_candidate_published": true,
+    "status": "FAILED"
+  },
+  "finding": {
+    "id": "PUBLICATION_FAILURE_DIAGNOSTIC_FALSE_POSITIVE",
+    "severity": "BLOCKING",
+    "description": "candidate_published is set before os.replace. When the atomic rename is injected to fail, the durable failure diagnostic says candidate_published=true although no final root exists."
+  },
+  "existing_output": {
+    "preexisting_nonempty_root_preserved": true,
+    "status": "PASSED"
+  },
+  "temporary_cleanup": {
+    "rename_failure_tmp_removed": true,
+    "status": "PASSED"
+  }
+}

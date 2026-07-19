@@ -1,0 +1,24 @@
+{
+  "audit_id": "STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_AUDIT_1",
+  "completed_at": "2026-07-19T19:04:59+08:00",
+  "decision": "DATA_PAIR_IMPLEMENTATION_ERROR_FOUND",
+  "implementation_commit": "84315e86ee48cc302a3c0512a988fb30adb0e7f1",
+  "runtime_head_commit": "18001bc803e67b3d8c5b0bfecf4819a12b953a01",
+  "production_changes_allowed": false,
+  "formal_manifest_allowed": false,
+  "formal_recalculation_allowed": false,
+  "full_source_generation_performed": false,
+  "temporary_candidate_accepted": false,
+  "production_hashes": {
+    "src/texperiment/cli.py": "5ca969a2a52261f7c890a1e92dffbd3f01b0cc590ae0e706b38b666e2da69900",
+    "src/texperiment/data/core_input_pair.py": "e86da617475e0f879a10c432e0dda5e12910e6623482e4dee2742cafacdd2281",
+    "src/texperiment/data/tdx_paired_source.py": "5b5e884828edcc3e39b794882fcd764051e33051cced5312b73454a25d8edc05"
+  },
+  "permissions": {
+    "account_simulation_allowed": false,
+    "formal_recalculation_run_authorized": false,
+    "manifest_freeze_authorized": false,
+    "ticket_generation_allowed": false,
+    "trading_allowed": false
+  }
+}
