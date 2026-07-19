@@ -18,8 +18,8 @@ validate-stock-rs-pullback-recalculation-manifest-v2
 run-stock-rs-pullback-recalculation-v2
 ```
 
-The V2 freezer binds the runtime repository HEAD, the audited `a68770e` engine, its
-`bce5ab7` audit record, and separate Manifest-tool implementation and audit-record
+The V2 freezer binds the runtime repository HEAD, the audited `508cece` engine, its
+`62ad290` audit record, and separate Manifest-tool implementation and audit-record
 commits. It records
 audited engine and Manifest-tool file hashes, profiles and hashes core inputs, copies
 comparison references only from the frozen archive manifest, and writes a canonical

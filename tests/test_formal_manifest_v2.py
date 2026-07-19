@@ -26,14 +26,14 @@ def test_builder_emits_complete_self_hashed_v2_manifest_without_opening_comparis
 
     verify_manifest_self_hash(manifest)
     assert manifest["manifest"]["schema"] == "FULL_PIPELINE_RECALCULATION_MANIFEST_V2"
-    assert manifest["repository"]["audited_engine_commit"].startswith("a68770e")
-    assert manifest["repository"]["engine_audit_record_commit"].startswith("bce5ab7")
+    assert manifest["repository"]["audited_engine_commit"].startswith("508cece")
+    assert manifest["repository"]["engine_audit_record_commit"].startswith("62ad290")
     assert set(manifest["audited_engine"]["files"]) == {
         "runner_sha256", "upstream_sha256", "downstream_sha256", "contract_sha256", "schema_sha256"
     }
     assert manifest["repository"]["runtime_head_commit"] == "c" * 40
-    assert manifest["audited_engine"]["implementation_commit"].startswith("a68770e")
-    assert manifest["audited_engine"]["audit_record_commit"].startswith("bce5ab7")
+    assert manifest["audited_engine"]["implementation_commit"].startswith("508cece")
+    assert manifest["audited_engine"]["audit_record_commit"].startswith("62ad290")
     assert manifest["audited_manifest_tool"]["implementation_commit"] == "d" * 40
     assert manifest["audited_manifest_tool"]["audit_record_commit"] == "e" * 40
     assert manifest["authorization_snapshot"] == {

@@ -24,8 +24,8 @@ from texperiment.full_recalculation.contract import (
 from texperiment.full_recalculation.manifest_canonicalization import attach_manifest_self_hash
 from texperiment.market_rules.price_limit import PRICE_LIMIT_RULE_VERSION
 
-AUDITED_ENGINE_COMMIT = "a68770e151238fbf1b8f0050808cc877973dfd13"
-ENGINE_AUDIT_RECORD_COMMIT = "bce5ab70fadc23d17d10145e9f7796dfe53eb4e7"
+AUDITED_ENGINE_COMMIT = "508ceceafcfc4403bab746051f26d6ff23e78a9c"
+ENGINE_AUDIT_RECORD_COMMIT = "62ad290ddb1f7fa30c539426c70395713189b641"
 AUDIT_ID = "FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_AUDIT_v2_REAUDIT_2"
 ENGINE_FILES = {
     "runner_sha256": "src/texperiment/full_recalculation/runner.py",
