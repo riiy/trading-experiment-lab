@@ -1,0 +1,22 @@
+{
+  "decision": "PRODUCTION_BINDING_VERIFIED",
+  "implementation_commit": "f90bd7c863b635f942b89fa60e1955ae8a112c9c",
+  "runtime_head": "3792484bb268a5039a52defdf9e9002a5c31afd4",
+  "git_diff_frozen_to_runtime": {
+    "production_module_changed": false,
+    "core_pair_tests_changed": false,
+    "later_changes_limited_to_audit_registry_config_records": true
+  },
+  "hashes": {
+    "production_module": {
+      "frozen": "4a0506008836c70f9f0bd616bb3e904bf46ab91e4017043129b456c49a10f314",
+      "runtime": "4a0506008836c70f9f0bd616bb3e904bf46ab91e4017043129b456c49a10f314",
+      "matches": true
+    },
+    "focused_tests": {
+      "frozen": "fad0f8de3f492493dfe786e03cc48abd741aa8f9aee5d9e11cf412d527170d09",
+      "runtime": "fad0f8de3f492493dfe786e03cc48abd741aa8f9aee5d9e11cf412d527170d09",
+      "matches": true
+    }
+  }
+}

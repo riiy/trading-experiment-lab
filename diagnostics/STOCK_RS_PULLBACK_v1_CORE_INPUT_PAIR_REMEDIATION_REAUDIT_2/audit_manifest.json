@@ -1,0 +1,32 @@
+{
+  "audit": {
+    "audit_id": "STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_REAUDIT_2",
+    "contract_scope": "canonical raw/qfq paired filtering and candidate publication",
+    "created_at": "2026-07-19T19:34:00+08:00",
+    "completed_at": "2026-07-19T19:42:51+08:00",
+    "inherited_passes_allowed": false,
+    "production_changes_allowed": false,
+    "full_source_generation_allowed": false,
+    "formal_input_publication_allowed": false
+  },
+  "repository": {
+    "runtime_head": "3792484bb268a5039a52defdf9e9002a5c31afd4",
+    "implementation_commit": "f90bd7c863b635f942b89fa60e1955ae8a112c9c",
+    "git_clean_at_start": true,
+    "implementation_files_match_frozen_commit": true,
+    "post_audit_tracked_changes": false,
+    "post_audit_untracked_scope": "diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_REAUDIT_2/"
+  },
+  "production_hashes": {
+    "src/texperiment/data/core_input_pair.py": "4a0506008836c70f9f0bd616bb3e904bf46ab91e4017043129b456c49a10f314",
+    "tests/test_core_input_pair.py": "fad0f8de3f492493dfe786e03cc48abd741aa8f9aee5d9e11cf412d527170d09"
+  },
+  "permissions": {
+    "formal_manifest_generated": false,
+    "formal_recalculation_run_authorized": false,
+    "formal_core_input_published": false,
+    "account_simulation_allowed": false,
+    "ticket_generation_allowed": false,
+    "trading_allowed": false
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "decision": "STATIC_CONTRACT_VERIFIED",
+  "source_keys": {
+    "file_sets_must_match": true,
+    "per_code_dates_must_match": true,
+    "one_to_one_merge_required": true,
+    "source_mismatch_blocks_publication": true
+  },
+  "paired_filter": {
+    "policy": "PAIRED_NON_POSITIVE_OHLC_FILTER_V1",
+    "layers": ["raw", "qfq", "hfq"],
+    "finite_positive_ohlc_required": true,
+    "synchronous_output_key_filter": true,
+    "price_values_transformed": false
+  },
+  "pre_close": {
+    "policy": "IMMEDIATE_SOURCE_PREDECESSOR_V1",
+    "raw_expression": "raw_close.shift(1)",
+    "qfq_expression": "adj_close.shift(1)",
+    "computed_before_filter": true,
+    "unsafe_source_predecessor_rejects_current_row": true,
+    "fallback_to_earlier_retained_close": false
+  },
+  "validation": {
+    "volume_mismatch_blocks": true,
+    "mapping_unevaluable_blocks": true,
+    "duplicate_keys_block": true,
+    "exact_output_key_and_order_equality_required": true,
+    "batched_output_verification": true
+  },
+  "publication": {
+    "preexisting_final_rejected": true,
+    "transactional_tmp": true,
+    "atomic_rename": true,
+    "success_flags_written_after_rename": true,
+    "failure_cleans_final_and_tmp": true
+  },
+  "hardcoded_security_codes_found": false
+}

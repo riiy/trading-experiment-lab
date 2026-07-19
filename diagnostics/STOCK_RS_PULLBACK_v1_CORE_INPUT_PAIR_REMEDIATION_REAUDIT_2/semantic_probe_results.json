@@ -1,0 +1,52 @@
+{
+  "cases": {
+    "failed_publication": {
+      "atomic_rename_completed": false,
+      "candidate_published": false,
+      "final_exists": false,
+      "passed": true,
+      "temporary_exists": false,
+      "transactional_temporary_output": true
+    },
+    "qfq_only_filter_keeps_positive_immediate_pre_close": {
+      "passed": true,
+      "qfq_pre_close": 6.25,
+      "raw_pre_close": 10.5,
+      "retained_date": "2026-01-03"
+    },
+    "successful_publication": {
+      "atomic_rename_completed": true,
+      "candidate_published": true,
+      "passed": true,
+      "transactional_temporary_output": true
+    },
+    "three_layer_sync_filter_hfq": {
+      "passed": true,
+      "prices_transformed": false,
+      "retained_rows": 2
+    },
+    "three_layer_sync_filter_qfq": {
+      "passed": true,
+      "prices_transformed": false,
+      "retained_rows": 2
+    },
+    "three_layer_sync_filter_raw": {
+      "passed": true,
+      "prices_transformed": false,
+      "retained_rows": 2
+    },
+    "unsafe_qfq_pre_close_synchronously_rejected": {
+      "passed": true,
+      "qfq_pre_close": 6.75,
+      "raw_pre_close": 11.5,
+      "retained_date": "2026-01-04"
+    },
+    "unsafe_raw_pre_close_synchronously_rejected": {
+      "passed": true,
+      "qfq_pre_close": 6.75,
+      "raw_pre_close": 11.5,
+      "retained_date": "2026-01-04"
+    }
+  },
+  "decision": "PROBE_PASSED"
+}

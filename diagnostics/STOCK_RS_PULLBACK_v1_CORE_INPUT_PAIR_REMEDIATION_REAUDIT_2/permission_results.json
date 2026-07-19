@@ -1,0 +1,13 @@
+{
+  "decision": "PERMISSION_GATES_PASSED",
+  "formal_core_input_published": false,
+  "formal_manifest_generated": false,
+  "formal_recalculation_run_authorized": false,
+  "full_recalculation_performed": false,
+  "strategy_decision_generated": false,
+  "account_simulation_allowed": false,
+  "ticket_generation_allowed": false,
+  "trading_allowed": false,
+  "registry_modified_by_audit": false,
+  "production_modified_by_audit": false
+}

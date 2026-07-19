@@ -1,0 +1,20 @@
+{
+  "decision": "REGRESSION_GATE_PASSED",
+  "focused": {
+    "command": "uv run pytest tests/test_core_input_pair.py -q",
+    "passed": 11,
+    "failed": 0
+  },
+  "full": {
+    "command": "uv run pytest -q",
+    "passed": 241,
+    "failed": 0,
+    "duration_seconds": 64.35
+  },
+  "config_check": {
+    "status": "OK",
+    "trading_allowed": false,
+    "current_setup": null
+  },
+  "git_diff_check": "passed"
+}
