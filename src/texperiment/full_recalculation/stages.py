@@ -3,7 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Mapping, MutableMapping, Protocol
+from typing import TYPE_CHECKING, Any, Mapping, MutableMapping, Protocol
+
+if TYPE_CHECKING:
+    from texperiment.full_recalculation.artifact_registry import RegisteredArtifact
 
 
 class StageId(StrEnum):
@@ -28,7 +31,9 @@ class StageContext:
     project_root: Path
     work_root: Path
     manifest: Mapping[str, Any]
-    artifacts: MutableMapping[str, Path] = field(default_factory=dict)
+    final_root: Path | None = None
+    failure_root: Path | None = None
+    artifacts: MutableMapping[str, "RegisteredArtifact"] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

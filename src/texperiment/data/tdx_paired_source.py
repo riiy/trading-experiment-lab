@@ -184,26 +184,59 @@ def refit_affine_adjustment_fields(frame: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def apply_daily_ratio_mapping(frame: pd.DataFrame, codes: set[str]) -> pd.DataFrame:
-    """Apply explicit close-ratio mapping only to flat bars for user-approved codes."""
+def fit_raw_qfq_mapping(frame: pd.DataFrame) -> pd.DataFrame:
+    """Fit the audited affine mapping using raw and qfq OHLC layers only."""
+    out = frame.copy()
+    required = {
+        *(f"raw_{field}" for field in _PRICE_COLUMNS),
+        *(f"adj_{field}" for field in _PRICE_COLUMNS),
+    }
+    missing = sorted(required - set(out.columns))
+    if missing:
+        raise ValueError(f"raw/qfq mapping missing columns: {missing}")
+    raw_prices = out[[f"raw_{field}" for field in _PRICE_COLUMNS]].to_numpy(dtype=float)
+    adjusted_prices = out[[f"adj_{field}" for field in _PRICE_COLUMNS]].to_numpy(dtype=float)
+    factor, offset, error, known = _fit_affine_rows(raw_prices, adjusted_prices)
+    out["adj_factor"] = factor
+    out["adj_offset"] = offset
+    out["adjustment_fit_error"] = error
+    out["adjustment_status"] = np.where(
+        known,
+        "KNOWN_AFFINE_RAW_QFQ_VALIDATED",
+        "UNKNOWN_AFFINE_FIT",
+    )
+    out.loc[~known, ["adj_factor", "adj_offset"]] = np.nan
+    return out
+
+
+def apply_daily_ratio_mapping(
+    frame: pd.DataFrame,
+    codes: set[str] | None = None,
+    *,
+    ratio_tolerance: float = 1e-6,
+) -> pd.DataFrame:
+    """Recover unknown affine rows when raw/qfq OHLC imply one stable ratio."""
     out = frame.copy()
     raw_prices = out[[f"raw_{field}" for field in _PRICE_COLUMNS]]
     adjusted_prices = out[[f"adj_{field}" for field in _PRICE_COLUMNS]]
-    raw_flat = raw_prices.nunique(axis=1, dropna=False).eq(1)
-    adjusted_flat = adjusted_prices.nunique(axis=1, dropna=False).eq(1)
+    ratios = adjusted_prices.to_numpy(dtype=float) / raw_prices.to_numpy(dtype=float)
+    finite_positive = np.isfinite(ratios).all(axis=1) & (ratios > 0).all(axis=1)
+    ratio_spread = np.nanmax(ratios, axis=1) - np.nanmin(ratios, axis=1)
+    ratio_scale = np.maximum(np.nanmax(np.abs(ratios), axis=1), 1.0)
+    stable_ratio = finite_positive & (ratio_spread <= ratio_tolerance * ratio_scale)
+    code_selected = pd.Series(True, index=out.index)
+    if codes is not None:
+        code_selected = out["code"].astype(str).isin(codes)
     selected = (
-        out["code"].astype(str).isin(codes)
+        code_selected
         & out["adjustment_status"].eq("UNKNOWN_AFFINE_FIT")
-        & raw_flat
-        & adjusted_flat
-        & out["raw_close"].gt(0)
-        & out["adj_close"].gt(0)
+        & stable_ratio
     )
     factor = out.loc[selected, "adj_close"] / out.loc[selected, "raw_close"]
     out.loc[selected, "adj_factor"] = factor
     out.loc[selected, "adj_offset"] = 0.0
     out.loc[selected, "adjustment_fit_error"] = 0.0
-    out.loc[selected, "adjustment_status"] = "KNOWN_DAILY_CLOSE_RATIO_USER_DIRECTED"
+    out.loc[selected, "adjustment_status"] = "DAILY_RATIO_FALLBACK"
     return out
 
 

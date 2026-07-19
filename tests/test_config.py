@@ -60,6 +60,16 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert implementation["baseline_commit"] == "468bacc6fead27020e2dfce5f33368a623492122"
     assert implementation["implementation_frozen"] is False
     assert implementation["implementation_audited"] is False
+    assert implementation["contract_defined"] is True
+    assert implementation["orchestration_skeleton_ready"] is True
+    assert implementation["concrete_stages_implemented"] is False
+    assert implementation["upstream_stages_implemented"] == [
+        "INPUT_SNAPSHOT",
+        "MARKET_STATE_REBUILD",
+        "UNIVERSE_REBUILD",
+        "INDICATOR_REBUILD",
+    ]
+    assert implementation["downstream_stages_implemented"] is False
     assert implementation["full_recalculation_allowed"] is False
     assert implementation["full_recalculation_performed"] is False
 

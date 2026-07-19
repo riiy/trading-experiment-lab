@@ -160,7 +160,6 @@ def run_full_recalculation(
         prepared = prepare_remediation_bars(
             bars,
             frozen,
-            daily_ratio_fallback_codes={"600114.SH"},
             historical_st_overrides=st_overrides,
             enrich=False,
         )

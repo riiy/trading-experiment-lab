@@ -132,6 +132,15 @@ full_pipeline_recalculation_tasks:
     implementation_frozen: false
     implementation_audited: false
     implementation_audit_decision: null
+    contract_defined: true
+    orchestration_skeleton_ready: true
+    concrete_stages_implemented: false
+    upstream_stages_implemented:
+      - INPUT_SNAPSHOT
+      - MARKET_STATE_REBUILD
+      - UNIVERSE_REBUILD
+      - INDICATOR_REBUILD
+    downstream_stages_implemented: false
     full_recalculation_allowed: false
     full_recalculation_performed: false
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH

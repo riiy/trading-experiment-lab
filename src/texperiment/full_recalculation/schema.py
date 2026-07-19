@@ -84,6 +84,8 @@ def validate_manifest_v2(manifest: Mapping[str, Any]) -> None:
         _require_fields(item, {"path", "sha256"}, f"inputs.{name}")
         if not str(item["path"]).strip() or not _is_sha256(item["sha256"]):
             raise ManifestValidationError(f"inputs.{name} path or hash is invalid")
+    if strategy["config_sha256"] != inputs["setup_config"]["sha256"]:
+        raise ManifestValidationError("strategy config hash does not match setup_config input")
 
     policies = _mapping(manifest["policies"], "policies")
     _require_fields(policies, set(REQUIRED_POLICY_FIELDS), "policies")

@@ -146,6 +146,13 @@ def annotate_a_share_universe(
     out["pass_avg_amount_20d"] = (out["avg_amount_20d"] >= cfg.min_avg_amount_20d).fillna(False)
     out["pass_one_lot_value"] = (out["one_lot_value"] <= cfg.max_one_lot_value).fillna(False)
 
+    # Stable V2 stage-contract aliases. Keep the original columns for existing callers.
+    out["pass_st"] = out["pass_non_st"]
+    out["pass_avg_amount"] = out["pass_avg_amount_20d"]
+    out["pass_one_lot"] = out["pass_one_lot_value"]
+    out["pass_suspension"] = out["pass_not_suspended"]
+    out["pass_execution_state"] = out["pass_not_suspended"] & out["pass_not_limit_up_down"]
+
     pass_cols = [
         "pass_non_st",
         "pass_listing_days",

@@ -17,6 +17,24 @@ full_recalculation_allowed: false
 full_recalculation_performed: false
 ```
 
+Implementation progress after the contract baseline:
+
+```yaml
+upstream_stages_implemented:
+  - INPUT_SNAPSHOT
+  - MARKET_STATE_REBUILD
+  - UNIVERSE_REBUILD
+  - INDICATOR_REBUILD
+downstream_stages_implemented: false
+concrete_stages_implemented: false
+implementation_audited: false
+full_recalculation_allowed: false
+```
+
+The upstream stages are development-tested only. `SIGNAL_REBUILD`, `TRADE_REBUILD`,
+`METRICS_REBUILD`, and `DELTA_AND_DECISION` remain unimplemented, so the complete runner
+cannot be audited, frozen, or authorized.
+
 Trading, account simulation, and ticket generation remain disabled throughout this
 engineering phase. No strategy decision may be produced before the implementation audit
 passes and a new engine commit is frozen.

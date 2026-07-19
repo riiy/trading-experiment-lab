@@ -7,6 +7,7 @@ import pytest
 
 from texperiment.data.tdx_paired_source import (
     apply_daily_ratio_mapping,
+    fit_raw_qfq_mapping,
     read_tdx_paired_export_files,
     write_tdx_paired_export_parquet,
 )
@@ -90,7 +91,37 @@ def test_flat_ohlc_adjustment_remains_unknown(tmp_path):
     mapped = apply_daily_ratio_mapping(out, {"600000.SH"})
     assert mapped.loc[0, "adj_factor"] == pytest.approx(0.6)
     assert mapped.loc[0, "adj_offset"] == 0.0
-    assert mapped.loc[0, "adjustment_status"] == "KNOWN_DAILY_CLOSE_RATIO_USER_DIRECTED"
+    assert mapped.loc[0, "adjustment_status"] == "DAILY_RATIO_FALLBACK"
+
+
+def test_600114_daily_ratio_fallback_remains_explicit(tmp_path):
+    paths = _write_layers(tmp_path)
+    frame = read_tdx_paired_export_files(paths["qfq"], paths["raw"], paths["hfq"])
+    frame["code"] = "600114.SH"
+    for prefix, value in (("raw", 10.0), ("adj", 6.0)):
+        for field in ("open", "high", "low", "close"):
+            frame.loc[0, f"{prefix}_{field}"] = value
+    frame = fit_raw_qfq_mapping(frame)
+
+    mapped = apply_daily_ratio_mapping(frame)
+
+    assert frame.loc[0, "adjustment_status"] == "UNKNOWN_AFFINE_FIT"
+    assert mapped.loc[0, "adjustment_status"] == "DAILY_RATIO_FALLBACK"
+
+
+def test_daily_ratio_fallback_is_code_agnostic(tmp_path):
+    paths = _write_layers(tmp_path)
+    frame = read_tdx_paired_export_files(paths["qfq"], paths["raw"], paths["hfq"])
+    frame["code"] = "999999.SZ"
+    for field in ("open", "high", "low", "close"):
+        frame[f"raw_{field}"] = [10.0, 12.0]
+        frame[f"adj_{field}"] = [5.0, 6.0]
+    frame = fit_raw_qfq_mapping(frame)
+
+    mapped = apply_daily_ratio_mapping(frame)
+
+    assert mapped["adjustment_status"].eq("DAILY_RATIO_FALLBACK").all()
+    assert mapped["adj_factor"].eq(0.5).all()
 
 
 def _write_layers(root: Path) -> dict[str, Path]:

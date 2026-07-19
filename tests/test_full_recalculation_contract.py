@@ -64,8 +64,10 @@ def test_runner_executes_exact_stage_order():
         for name in EXPECTED_STAGES
     }
     runner = FullPipelineRunner(stages)
+    context = _context()
+    context.manifest["permissions"]["full_recalculation_allowed"] = True
 
-    results = runner.run(_context())
+    results = runner.run(context)
 
     assert calls == list(EXPECTED_STAGES)
     assert [result.stage.value for result in results] == list(EXPECTED_STAGES)
@@ -82,8 +84,10 @@ def test_stage_failure_stops_all_downstream_stages():
         for name in EXPECTED_STAGES
     }
 
+    context = _context()
+    context.manifest["permissions"]["full_recalculation_allowed"] = True
     with pytest.raises(StageExecutionError) as caught:
-        FullPipelineRunner(stages).run(_context())
+        FullPipelineRunner(stages).run(context)
 
     assert caught.value.stage == StageId.UNIVERSE_REBUILD
     assert calls == ["INPUT_SNAPSHOT", "MARKET_STATE_REBUILD", "UNIVERSE_REBUILD"]
@@ -116,6 +120,24 @@ def test_artifact_registry_separates_temporary_formal_and_failure_paths(tmp_path
 def test_signal_replay_cannot_emit_strategy_decision():
     with pytest.raises(PermissionError, match="cannot produce"):
         assert_decision_allowed(RunType.SIGNAL_EXECUTION_REPLAY, "CONFIRMED_FAILED_ARCHIVED")
+
+
+def test_full_runner_rejects_closed_recalculation_permission():
+    calls: list[str] = []
+    stages = {StageId(name): _Stage(StageId(name), calls) for name in EXPECTED_STAGES}
+
+    with pytest.raises(PermissionError, match="not authorized"):
+        FullPipelineRunner(stages).run(_context())
+
+    assert calls == []
+
+
+def test_manifest_requires_strategy_and_setup_hash_identity():
+    manifest = _manifest()
+    manifest["strategy"]["config_sha256"] = "0" * 64
+
+    with pytest.raises(ManifestValidationError, match="setup_config"):
+        validate_manifest_v2(manifest)
 
 
 class _Stage:
@@ -167,7 +189,7 @@ def _manifest() -> dict:
         "strategy": {
             "source_setup": "STOCK_RS_PULLBACK_v1",
             "output_setup": "STOCK_RS_PULLBACK_v1_RECALCULATED",
-            "config_sha256": "c" * 64,
+            "config_sha256": "e" * 64,
             "rules_changed": False,
         },
         "inputs": {
