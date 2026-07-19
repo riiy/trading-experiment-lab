@@ -1,0 +1,28 @@
+{
+  "status": "PASSED",
+  "implementation_commit": "508ceceafcfc4403bab746051f26d6ff23e78a9c",
+  "observed_order": [
+    "WRITE_COMPLETION_AND_HASH_CHAIN",
+    "FSYNC_TMP_TREE",
+    "ATOMIC_RENAME_TMP_TO_FINAL",
+    "FSYNC_FINAL_PARENT",
+    "SEAL_FINAL_TREE_READ_ONLY",
+    "VERIFY_FINAL_TREE_HASH",
+    "VERIFY_READ_ONLY"
+  ],
+  "actual_filesystem_execution": {
+    "all_eight_stages_completed": true,
+    "temporary_root_writable_at_rename": true,
+    "atomic_rename_completed_without_eacces": true,
+    "temporary_root_absent_after_publish": true,
+    "final_root_exists": true,
+    "final_tree_read_only": true,
+    "recorded_tree_sha256": "2468ea8fba0169c0490ef87fe82e77dcea240c376289bb02dd57fbd689116597",
+    "recomputed_tree_sha256": "2468ea8fba0169c0490ef87fe82e77dcea240c376289bb02dd57fbd689116597",
+    "hash_unchanged_across_rename": true
+  },
+  "prior_finding": {
+    "id": "ATOMIC_PUBLICATION_SEAL_ORDER_INCOMPATIBLE",
+    "status": "VERIFIED_FIXED"
+  }
+}

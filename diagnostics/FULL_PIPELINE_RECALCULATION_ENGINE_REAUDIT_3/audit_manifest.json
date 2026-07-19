@@ -1,0 +1,37 @@
+{
+  "audit": {
+    "audit_id": "FULL_PIPELINE_RECALCULATION_ENGINE_REAUDIT_3",
+    "decision_scope": "ENGINE_IMPLEMENTATION_ONLY",
+    "implementation_commit": "508ceceafcfc4403bab746051f26d6ff23e78a9c",
+    "start_head_commit": "18001bc803e67b3d8c5b0bfecf4819a12b953a01",
+    "final_evidence_head_commit": "51106dd325b6785daa7bf66ad7438a0d2e10827d",
+    "contract": "FULL_PIPELINE_RECALCULATION_V2",
+    "timezone": "Asia/Shanghai",
+    "started_with_clean_worktree": true,
+    "production_changes_allowed": false,
+    "formal_recalculation_allowed": false,
+    "completed_at": "2026-07-19T19:06:48+08:00"
+  },
+  "head_transition": {
+    "between_start_and_final": "INDEPENDENT_CORE_INPUT_PAIR_AUDIT_EVIDENCE_ONLY",
+    "engine_production_files_changed": false,
+    "runner_hash_changed": false
+  },
+  "production_bindings": {
+    "runner_git_blob": "9eea4ecea08edae05cdb8de28a20556f80362ce8",
+    "runner_sha256": "465df40179f2102b35e40be51dca5b66142022747268819475e36d2732eba3c4",
+    "contract_sha256": "c796b7da529d5436a3b608539d1b407e2ba0ccf2c25c197acadea7b654a0ea07",
+    "upstream_sha256": "e07ca69dcd76d530c89ce1f6956892feb38f47907158b990eb0264e554628a5b",
+    "downstream_sha256": "d2cd43a5420b66214681809c239db9622fdfee089fe758233a838d324c292ac9",
+    "schema_sha256": "1f1548acff247f772da8086b676b8a301e335a9868f615565d308af7dd5abf01",
+    "current_runner_matches_implementation_commit": true,
+    "engine_scope_diff_from_implementation_commit": []
+  },
+  "safety": {
+    "formal_full_recalculation_performed": false,
+    "strategy_decision_generated": false,
+    "account_simulation_performed": false,
+    "trade_tickets_generated": false,
+    "trading_enabled": false
+  }
+}

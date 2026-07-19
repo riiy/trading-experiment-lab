@@ -1,0 +1,14 @@
+{
+  "status": "PASSED",
+  "formal_recalculation_executed": false,
+  "authoritative_strategy_decision_generated": false,
+  "registry_strategy_status_updated": false,
+  "account_simulation_executed": false,
+  "trade_tickets_generated": false,
+  "trading_allowed": false,
+  "original_artifacts_modified": false,
+  "archived_original_hashes": {
+    "signals": "6cb6895305f8f0c7b1fe6e90c9752db4acc203e987b4408b5b1dd9f2d1729d61",
+    "trades": "69dc2498d679bc43bcdd903b6206bde0ee9f6ef8a43c50e851a807032d7746d2"
+  }
+}

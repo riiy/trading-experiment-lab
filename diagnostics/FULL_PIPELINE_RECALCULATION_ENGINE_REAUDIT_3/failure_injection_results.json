@@ -1,0 +1,15 @@
+{
+  "status": "PASSED",
+  "cases": {
+    "stage_failure": "QUARANTINED_NO_FORMAL_ROOT",
+    "tmp_tree_fsync_failure": "QUARANTINED_NO_FORMAL_ROOT",
+    "final_parent_fsync_failure": "PUBLISHED_ROOT_REMOVED_TO_DIAGNOSTICS",
+    "atomic_rename_failure": "QUARANTINED_NO_FORMAL_ROOT",
+    "seal_failure": "PUBLISHED_ROOT_REMOVED_TO_DIAGNOSTICS",
+    "post_seal_verification_failure": "PUBLISHED_ROOT_REMOVED_TO_DIAGNOSTICS",
+    "final_root_preexists": "REJECTED_WITH_EXISTING_CONTENT_PRESERVED",
+    "second_publication_conflict": "REJECTED"
+  },
+  "success_returned_on_failure": false,
+  "partial_formal_output_left_behind": false
+}

@@ -1,0 +1,18 @@
+{
+  "status": "PASSED",
+  "comparison_artifact_source_class": "EXTERNAL_COMPARISON_INPUT",
+  "comparison_artifact_producer_stage": null,
+  "comparison_artifact_consumers": [
+    "DELTA_AND_DECISION"
+  ],
+  "missing_comparison_semantics": {
+    "first_seven_stages": "PASSED",
+    "delta_and_decision": "FAILED_CLOSED",
+    "formal_publication": false
+  },
+  "consistent_comparison_replacement": {
+    "upstream_business_hashes_unchanged": true,
+    "delta_hash_changed": true
+  },
+  "comparison_hash_drift": "REJECTED_AT_DELTA"
+}

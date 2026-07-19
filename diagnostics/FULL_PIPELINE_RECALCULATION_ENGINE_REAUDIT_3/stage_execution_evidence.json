@@ -1,0 +1,18 @@
+{
+  "status": "PASSED",
+  "executed_stages": [
+    "INPUT_SNAPSHOT",
+    "MARKET_STATE_REBUILD",
+    "UNIVERSE_REBUILD",
+    "INDICATOR_REBUILD",
+    "SIGNAL_REBUILD",
+    "TRADE_REBUILD",
+    "METRICS_REBUILD",
+    "DELTA_AND_DECISION"
+  ],
+  "stage_count": 8,
+  "exact_order_verified": true,
+  "downstream_reads_registered_upstream_artifacts": true,
+  "formal_dataset_used": false,
+  "fixture_type": "FROZEN_SYNTHETIC_FULL_PIPELINE"
+}

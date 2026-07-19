@@ -1,0 +1,21 @@
+{
+  "status": "PASSED",
+  "run_count": 2,
+  "same_commit_config_inputs": true,
+  "business_artifact_hashes_equal": true,
+  "signal_hash_equal": true,
+  "trade_hash_equal": true,
+  "metrics_hash_equal": true,
+  "delta_hash_equal": true,
+  "normalized_final_tree_hash_equal": true,
+  "final_tree_sha256_run_1": "2468ea8fba0169c0490ef87fe82e77dcea240c376289bb02dd57fbd689116597",
+  "final_tree_sha256_run_2": "2468ea8fba0169c0490ef87fe82e77dcea240c376289bb02dd57fbd689116597",
+  "selected_artifacts": {
+    "universe.daily": "dd0251f610159b4d468e84d22ac12db9b49930ff62a8f73e87b2b5814f5fd944",
+    "indicators.daily": "b1a6c16e8ec49e49184e19ea3e25ce6fea9263e27949212a8e541842a09f5313",
+    "signals.rebuilt": "ff03003b068309b17f39f446feda85ab874b6cd00d55e7f7a0925481e8c58c84",
+    "trades.rebuilt": "c21dd55cc2e53d7cff21c2de31dd8c8ff525c07fa47859be7fe3dfbfcdd0c588",
+    "metrics.rebuilt": "928982a949b12079d7b23c0327e25280da1732c36fde9503021e4e5a6da68625",
+    "delta.preview": "92dc51d938da6a25e603715c86fbdc70ea6faac0629ae4f601f8f6ffe5d93207"
+  }
+}

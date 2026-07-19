@@ -1,0 +1,40 @@
+{
+  "status": "PASSED",
+  "locked_sample_rerun": {
+    "sample_count": 50,
+    "decision": "REMEDIATION_AUDIT_PASSED",
+    "valid_trades": 50,
+    "five_limit_up_errors_resolved": 5,
+    "critical_failures": 0,
+    "material_blocking_trades": 0,
+    "trades_sha256": "ca1b89e5de89caf48ad5cf7a6ffd101bf8eca0dfbb576e5b1204efe860686947",
+    "summary_sha256": "77b9b86614b2798a58ce4949ff462735735e39d6c13532fdab318db3c2227d9e",
+    "matches_prior_frozen_rerun": true
+  },
+  "historical_cases": {
+    "300137.SZ": {
+      "scheduled_exit": "2015-05-28",
+      "actual_exit": "2015-05-29",
+      "holding_days": 6
+    },
+    "600037.SH": {
+      "scheduled_exit": "2015-05-28",
+      "actual_exit": "2015-05-29",
+      "holding_days": 6
+    },
+    "600114.SH": {
+      "mapping": "GENERIC_DAILY_RATIO_FALLBACK",
+      "status": "valid_trade"
+    }
+  },
+  "semantic_tests": {
+    "t_plus_one": "PASS",
+    "gap_stop_uses_open": "PASS",
+    "stop_first": "PASS",
+    "d5_boundary": "PASS",
+    "d10_boundary": "PASS",
+    "cost_deducted_once": "PASS",
+    "st_branch_invariant": "PASS",
+    "material_st_ambiguity_fail_closed": "PASS"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "status": "PASSED",
+  "offline_dag_reconstructed": true,
+  "stage_records_complete": true,
+  "unique_producer_per_pipeline_artifact": true,
+  "producer_consumer_hashes_match": true,
+  "artifact_content_hashes_match": true,
+  "tamper_rejections": {
+    "artifact_bytes": true,
+    "artifact_id": true,
+    "producer_stage": true,
+    "verified_input_sha256": true,
+    "stage_sequence": true,
+    "missing_stage_record": true
+  }
+}
