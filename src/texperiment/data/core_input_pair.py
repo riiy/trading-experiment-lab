@@ -27,6 +27,7 @@ from texperiment.data.tdx_paired_source import (
 
 _PRICE_COLUMNS = ("open", "high", "low", "close")
 PAIRING_POLICY = "PAIRED_NON_POSITIVE_OHLC_FILTER_V1"
+PRE_CLOSE_POLICY = "IMMEDIATE_SOURCE_PREDECESSOR_V1"
 
 
 @dataclass(frozen=True)
@@ -75,6 +76,7 @@ def prepare_tdx_core_input_pair(
     raw_path = tmp_root / "raw_daily.parquet"
     qfq_path = tmp_root / "qfq_daily.parquet"
     audit_path = tmp_root / "pair_audit.json"
+    renamed_to_final = False
 
     try:
         roots = {"raw": raw_root, "qfq": qfq_root}
@@ -106,6 +108,8 @@ def prepare_tdx_core_input_pair(
         filtered_year: Counter[str] = Counter()
         filtered_exchange: Counter[str] = Counter()
         nonpositive = Counter()
+        unsafe_pre_close = Counter()
+        unsafe_pre_close_rows = 0
         rows_written = mapping_evaluable = mapping_unknown = volume_mismatches = 0
         raw_source_duplicates = qfq_source_duplicates = hfq_source_duplicates = 0
 
@@ -191,6 +195,18 @@ def prepare_tdx_core_input_pair(
                 )
                 nonpositive[layer] += int((~layer_valid).sum())
                 valid &= layer_valid
+            # Price-limit semantics require the immediate source predecessor.
+            # Never substitute an earlier retained row after synchronous filtering.
+            ohlc_valid = valid.copy()
+            has_source_predecessor = pd.Series(range(len(merged)), index=merged.index).gt(0)
+            any_unsafe_pre_close = pd.Series(False, index=merged.index)
+            for layer, column in (("raw", "raw_pre_close"), ("qfq", "adj_pre_close")):
+                pre_close_valid = merged[column].notna() & (merged[column] > 0)
+                layer_unsafe = ohlc_valid & has_source_predecessor & ~pre_close_valid
+                unsafe_pre_close[layer] += int(layer_unsafe.sum())
+                any_unsafe_pre_close |= layer_unsafe
+            valid &= ~any_unsafe_pre_close
+            unsafe_pre_close_rows += int(any_unsafe_pre_close.sum())
             rejected = merged.loc[~valid, "date"]
             filtered_year.update(str(date.year) for date in rejected)
             filtered_exchange.update([market.upper()] * len(rejected))
@@ -238,6 +254,18 @@ def prepare_tdx_core_input_pair(
             "dropped_by_year": dict(sorted(filtered_year.items())),
             "dropped_by_exchange": dict(sorted(filtered_exchange.items())),
             "price_values_transformed": False,
+        }
+        report["pre_close_policy"] = {
+            "method": PRE_CLOSE_POLICY,
+            "rule": "use the immediate source predecessor close; never substitute an earlier retained close",
+            "source_pre_close_fields": {
+                "raw": "raw_close.shift(1)",
+                "qfq": "adj_close.shift(1)",
+            },
+            "first_source_observation_may_have_missing_pre_close": True,
+            "non_positive_or_missing_source_pre_close_rows_by_layer": dict(unsafe_pre_close),
+            "synchronously_dropped_unsafe_pre_close_rows": unsafe_pre_close_rows,
+            "fallback_to_earlier_retained_close": False,
         }
         report["mapping_validation"] = {
             "method": "AFFINE_THEN_DAILY_RATIO_FALLBACK",
@@ -287,9 +315,12 @@ def prepare_tdx_core_input_pair(
             "qfq_only_keys_after_projection": 0,
             "price_values_transformed": False,
         }
-        report["publication"]["candidate_published"] = True
         _write_json(audit_path, report)
         os.replace(tmp_root, final_root)
+        renamed_to_final = True
+        report["publication"]["atomic_rename_completed"] = True
+        report["publication"]["candidate_published"] = True
+        _write_json(final_root / audit_path.name, report)
         return CoreInputPairResult(
             output_root=final_root,
             raw_daily=final_root / raw_path.name,
@@ -298,6 +329,10 @@ def prepare_tdx_core_input_pair(
             report=report,
         )
     except Exception as exc:
+        if renamed_to_final and final_root.exists():
+            shutil.rmtree(final_root)
+        report["publication"]["atomic_rename_completed"] = False
+        report["publication"]["candidate_published"] = False
         if not isinstance(exc, CoreInputPairError):
             report["blocking_errors"] = sorted(set([*report["blocking_errors"], type(exc).__name__]))
             failure = CoreInputPairError(str(exc), report)
@@ -455,7 +490,7 @@ def _max_optional(left: Any, right: Any) -> Any:
 
 def _base_report(raw: Path, qfq: Path, hfq: Path | None) -> dict[str, Any]:
     return {
-        "task": "STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_1",
+        "task": "STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_2",
         "decision": "CORE_INPUT_PAIR_VALIDATION_IN_PROGRESS",
         "source_snapshots": {},
         "source_profiles": {},
@@ -463,7 +498,11 @@ def _base_report(raw: Path, qfq: Path, hfq: Path | None) -> dict[str, Any]:
         "paired_filter": {},
         "mapping_validation": {},
         "pair_validation": {"accepted": False},
-        "publication": {"transactional_temporary_output": True, "candidate_published": False},
+        "publication": {
+            "transactional_temporary_output": True,
+            "atomic_rename_completed": False,
+            "candidate_published": False,
+        },
         "safety": {
             "raw_source": str(raw),
             "qfq_source": str(qfq),

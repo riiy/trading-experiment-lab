@@ -12,7 +12,7 @@ from texperiment.data.core_input_pair import CoreInputPairError, prepare_tdx_cor
 
 def test_pair_synchronously_filters_nonpositive_qfq_without_transforming_prices(tmp_path):
     sources = _write_sources(tmp_path)
-    _replace_row(sources["qfq"], 0, "2026-01-02,-1.00,-0.50,-1.50,-0.75,1000,10000.00")
+    _replace_row(sources["qfq"], 0, "2026-01-02,-1.00,6.50,5.50,6.25,1000,10000.00")
     output = tmp_path / "candidate"
 
     result = prepare_tdx_core_input_pair(
@@ -28,6 +28,8 @@ def test_pair_synchronously_filters_nonpositive_qfq_without_transforming_prices(
     assert len(raw) == 1
     assert raw.loc[0, "open"] == 10.5
     assert qfq.loc[0, "open"] == 6.25
+    assert raw.loc[0, "pre_close"] == 10.5
+    assert qfq.loc[0, "pre_close"] == 6.25
     assert raw.loc[0, "listing_date"] == pd.Timestamp("2026-01-02")
     assert raw.loc[0, "listing_trading_day"] == 2
     assert raw.loc[0, "listing_days"] == 2
@@ -40,6 +42,68 @@ def test_pair_synchronously_filters_nonpositive_qfq_without_transforming_prices(
     assert result.report["paired_filter"]["price_values_transformed"] is False
     assert result.report["pair_validation"]["exact_primary_key_equality"] is True
     assert result.report["publication"]["candidate_published"] is True
+    assert json.loads(result.audit.read_text(encoding="utf-8"))["publication"] == {
+        "atomic_rename_completed": True,
+        "candidate_published": True,
+        "transactional_temporary_output": True,
+    }
+
+
+def test_pair_drops_row_with_unsafe_source_pre_close_without_earlier_fallback(tmp_path):
+    sources = _write_sources(tmp_path)
+    _append_row(sources["raw"], "2026-01-04,11.50,12.50,11.00,12.00,1300,15000.00")
+    _append_row(sources["qfq"], "2026-01-04,5.75,6.25,5.50,6.00,1300,15000.00")
+    _append_row(sources["hfq"], "2026-01-04,26.00,28.00,25.00,27.00,1300,15000.00")
+    _replace_row(sources["raw"], 0, "2026-01-02,10.00,11.00,9.00,-1.00,1000,10000.00")
+
+    result = prepare_tdx_core_input_pair(
+        sources["raw"].parent,
+        sources["qfq"].parent,
+        tmp_path / "candidate",
+        hfq_input=sources["hfq"].parent,
+    )
+
+    raw = pd.read_parquet(result.raw_daily)
+    qfq = pd.read_parquet(result.qfq_daily)
+    assert raw["date"].tolist() == [pd.Timestamp("2026-01-04")]
+    assert qfq["date"].tolist() == [pd.Timestamp("2026-01-04")]
+    # The actual immediate source predecessor is used even though that positive
+    # predecessor was itself synchronously excluded from the paired output.
+    assert raw.loc[0, "pre_close"] == 11.5
+    assert qfq.loc[0, "pre_close"] == 6.75
+    policy = result.report["pre_close_policy"]
+    assert policy["non_positive_or_missing_source_pre_close_rows_by_layer"] == {"qfq": 0, "raw": 1}
+    assert policy["synchronously_dropped_unsafe_pre_close_rows"] == 1
+    assert policy["fallback_to_earlier_retained_close"] is False
+
+
+def test_atomic_rename_failure_reports_candidate_not_published(tmp_path, monkeypatch):
+    sources = _write_sources(tmp_path)
+    output = tmp_path / "candidate"
+    diagnostic = tmp_path / "diagnostics" / "failure.json"
+    original_replace = core_input_pair.os.replace
+
+    def fail_candidate_rename(source, destination):
+        if Path(destination) == output:
+            raise OSError("forced candidate rename failure")
+        return original_replace(source, destination)
+
+    monkeypatch.setattr(core_input_pair.os, "replace", fail_candidate_rename)
+
+    with pytest.raises(CoreInputPairError, match="forced candidate rename failure"):
+        prepare_tdx_core_input_pair(
+            sources["raw"].parent,
+            sources["qfq"].parent,
+            output,
+            hfq_input=sources["hfq"].parent,
+            diagnostics_path=diagnostic,
+        )
+
+    report = json.loads(diagnostic.read_text(encoding="utf-8"))
+    assert report["publication"]["candidate_published"] is False
+    assert report["publication"]["atomic_rename_completed"] is False
+    assert not output.exists()
+    assert not list(tmp_path.glob(".candidate.*.tmp"))
 
 
 def test_pair_audit_contains_profiles_breakdowns_and_frozen_source_hashes(tmp_path):
@@ -239,3 +303,8 @@ def _replace_row(path: Path, row: int, replacement: str) -> None:
     lines = path.read_text(encoding="gb18030").splitlines()
     lines[row + 2] = replacement
     path.write_text("\n".join(lines) + "\n", encoding="gb18030")
+
+
+def _append_row(path: Path, row: str) -> None:
+    with path.open("a", encoding="gb18030") as handle:
+        handle.write(row + "\n")
