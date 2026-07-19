@@ -1,0 +1,17 @@
+{
+  "diagnostics_id": "STOCK_RS_PULLBACK_v1_MAPPING_UNEVALUABLE_DIAGNOSTICS_v1",
+  "source_commit": "6b29ca2d384a54cda76022ee466bd8fcdabfd467",
+  "failure_evidence_commit": "d843eeb",
+  "raw_tree_sha256": "ef35d691c95c92f272903948e505a6ed4bef72a1234c055aac377224756c773a",
+  "qfq_tree_sha256": "91da5169adb2caa234c3be98183eee5adb4cd84763c1ae539d3bf6abfadeafe1",
+  "hfq_tree_sha256": "f0a055c17cdbc7da6d22c1e2dc0a5c9a41b335d8966968c76aaf6d9450d67919",
+  "paired_filter_rule": "PAIRED_NON_POSITIVE_OHLC_FILTER_V1",
+  "pre_close_policy": "IMMEDIATE_SOURCE_PREDECESSOR_V1",
+  "mapping_method": "AFFINE_THEN_DAILY_RATIO_FALLBACK",
+  "unevaluable_row_count": 3306,
+  "production_changes_allowed": false,
+  "formal_input_published": false,
+  "formal_manifest_generated": false,
+  "full_recalculation_performed": false,
+  "trading_allowed": false
+}
