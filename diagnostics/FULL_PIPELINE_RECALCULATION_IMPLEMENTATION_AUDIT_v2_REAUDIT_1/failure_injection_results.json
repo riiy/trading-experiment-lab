@@ -1,0 +1,8 @@
+{
+  "status": "PARTIALLY_EXECUTED_BEFORE_AUDIT_STOP",
+  "intermediate_stage_failure": "PASS",
+  "atomic_rename_failure": "PASS",
+  "final_root_preexisting": "PASS",
+  "fsync_failure": "NOT_EVALUATED_AFTER_IMPLEMENTATION_ERROR",
+  "formal_outputs_generated": false
+}

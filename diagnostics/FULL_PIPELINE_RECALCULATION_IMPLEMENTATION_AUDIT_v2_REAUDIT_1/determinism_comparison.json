@@ -1,0 +1,9 @@
+{
+  "status": "PARTIALLY_EXECUTED_BEFORE_AUDIT_STOP",
+  "upstream_business_hashes_equal": true,
+  "signals_hash_equal": true,
+  "trades_hash_equal": true,
+  "metrics_hash_equal": true,
+  "delta_hash_equal": true,
+  "published_final_tree_double_run": "NOT_EVALUATED_AFTER_IMPLEMENTATION_ERROR"
+}

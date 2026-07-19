@@ -1,0 +1,20 @@
+{
+  "prior_findings": {
+    "atomic_publication": {
+      "status": "VERIFIED_FIXED",
+      "evidence": [
+        "authorized synthetic eight-stage test publishes by atomic rename",
+        "temporary root disappears and final root exists",
+        "publication record tree hash matches the read-only final tree",
+        "atomic move failure is quarantined and does not create final_root"
+      ]
+    },
+    "durable_artifact_chain": {
+      "status": "VERIFIED_FIXED",
+      "evidence": [
+        "persisted stage records rebuild all eight ordered stages",
+        "artifact byte, artifact ID, producer, hash, sequence, and missing-record tampering are rejected"
+      ]
+    }
+  }
+}

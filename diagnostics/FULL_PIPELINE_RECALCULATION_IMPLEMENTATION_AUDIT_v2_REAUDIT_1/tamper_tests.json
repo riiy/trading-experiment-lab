@@ -1,0 +1,10 @@
+{
+  "status": "PASSED",
+  "artifact_content": "REJECTED",
+  "artifact_id": "REJECTED",
+  "producer_stage": "REJECTED",
+  "input_or_output_hash": "REJECTED",
+  "stage_order": "REJECTED",
+  "missing_stage_record": "REJECTED",
+  "publication_allowed_after_tamper": false
+}

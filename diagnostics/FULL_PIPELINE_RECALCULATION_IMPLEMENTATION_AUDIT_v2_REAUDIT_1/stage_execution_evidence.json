@@ -1,0 +1,19 @@
+{
+  "status": "PASSED_BEFORE_LATER_AUDIT_FAILURE",
+  "test_suite": {
+    "collected": 193,
+    "passed": 193
+  },
+  "executed_stages": [
+    "INPUT_SNAPSHOT",
+    "MARKET_STATE_REBUILD",
+    "UNIVERSE_REBUILD",
+    "INDICATOR_REBUILD",
+    "SIGNAL_REBUILD",
+    "TRADE_REBUILD",
+    "METRICS_REBUILD",
+    "DELTA_AND_DECISION"
+  ],
+  "formal_recalculation_performed": false,
+  "fixture_only": true
+}

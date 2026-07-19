@@ -1,0 +1,7 @@
+{
+  "status": "FAILED",
+  "finding": "INPUT_SNAPSHOT reads and hashes comparison_only_inputs.",
+  "contract_violation": "Archived original signals, trades, and metrics are permitted only in DELTA_AND_DECISION.",
+  "impact": "Deleting or drifting archived signals aborts INPUT_SNAPSHOT, so SIGNAL_REBUILD and TRADE_REBUILD cannot complete independently before Delta fails closed.",
+  "decision_impact": "blocking"
+}

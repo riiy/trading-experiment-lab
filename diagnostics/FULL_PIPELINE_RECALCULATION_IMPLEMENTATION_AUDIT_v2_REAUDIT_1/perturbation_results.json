@@ -1,0 +1,8 @@
+{
+  "status": "FAILED_CONTRACT_REVIEW",
+  "original_signals": "incorrectly consumed by INPUT_SNAPSHOT",
+  "original_trades": "incorrectly consumed by INPUT_SNAPSHOT",
+  "original_metrics": "incorrectly consumed by INPUT_SNAPSHOT",
+  "expected_boundary": "DELTA_AND_DECISION only",
+  "remaining_dynamic_cases": "NOT_RUN_AFTER_IMPLEMENTATION_ERROR"
+}

@@ -125,7 +125,7 @@ engine_remediation_tasks:
       summary: diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/STOCK_RS_PULLBACK_v1_remediation_summary.json
 full_pipeline_recalculation_tasks:
   FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2:
-    status: implementation_pending_reaudit
+    status: implementation_error_found
     contract_id: FULL_PIPELINE_RECALCULATION_V2
     contract: docs/FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2.md
     baseline_commit: 468bacc6fead27020e2dfce5f33368a623492122
@@ -137,6 +137,10 @@ full_pipeline_recalculation_tasks:
       findings_addressed:
         - successful_atomic_publication
         - persistent_artifact_hash_chain
+    reaudit_1:
+      implementation_commit: 4802d8303e5a60e393becfafc961c686b9144e49
+      decision: IMPLEMENTATION_ERROR_FOUND
+      blocking_finding: COMPARISON_ONLY_INPUT_LEAKED_INTO_INPUT_SNAPSHOT
     contract_defined: true
     orchestration_skeleton_ready: true
     concrete_stages_implemented: true

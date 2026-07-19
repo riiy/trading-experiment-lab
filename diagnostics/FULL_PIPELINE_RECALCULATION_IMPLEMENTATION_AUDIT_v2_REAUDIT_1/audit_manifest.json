@@ -1,0 +1,39 @@
+{
+  "reaudit": {
+    "audit_id": "FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_AUDIT_v2_REAUDIT_1",
+    "implementation_commit": "4802d8303e5a60e393becfafc961c686b9144e49",
+    "prior_failure_record_commit": "1e5d16b",
+    "contract": "FULL_PIPELINE_RECALCULATION_V2",
+    "timezone": "Asia/Shanghai",
+    "started_at": "2026-07-19T11:04:49+08:00",
+    "git_dirty_at_start": false,
+    "production_changes_allowed": false,
+    "formal_recalculation_allowed": false
+  },
+  "permissions": {
+    "full_recalculation_allowed": false,
+    "strategy_validation_decision_allowed": false,
+    "account_simulation_allowed": false,
+    "ticket_generation_allowed": false,
+    "trading_allowed": false
+  },
+  "frozen_sha256": {
+    "setup_config": "424271e49a423fab4bcee0110cf32df4f4e91ecd4685669ef90f3bc8d1ef7e85",
+    "runner": "bcf6bc9d3792aa853510ab4ad6835c34ee0c285f46d386610400a8d1ca1777aa",
+    "upstream": "cad24f47e0c8bd3e18d2d05f1ae4e8a6532bceae5645cbc5c1b5dcb025a10db3",
+    "downstream": "6a829aa066b8b666f5d0d7c675f5fec00d6b3ce19225d906e14668250d1e2ee4",
+    "raw_qfq_mapping": "14b71430df97ccba9e08c89722f7e5a627ec09ba3c946b8afa104e3e8923206d",
+    "backtest_engine": "e0c6791033b84dbca216d6206d8cc8c926114c46d34da9ab2ccd2e4adb09311f",
+    "execution_model": "8d3c5bd6864a1ea24bed9bf3f9d76b9c4cb756872da9fa26311f9a1e70ea370e",
+    "signal_model": "d91a26da8d473f9a9b285de8f1a66cca46b3308ba6894b9e43ec7211fa5ff0f4",
+    "validation_model": "c0892004a5642405b49b6534fb1f0dbf24a110ff877d7d21728c478c89889b41",
+    "registry": "d701ef01b7559d5822a3f8f103a7dc3dbd29bc8dfb9d7c539f41a7b66e8c7213"
+  },
+  "preflight": {
+    "head_matches": true,
+    "worktree_clean": true,
+    "formal_output_absent": true,
+    "config_check": "OK",
+    "current_setup": null
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "status": "VERIFIED_FIXED",
+  "persisted_dag_reconstructed": true,
+  "unique_producer_required": true,
+  "producer_consumer_hash_equality_required": true,
+  "on_disk_bytes_rehashed_before_publish": true,
+  "tamper_rejection": {
+    "artifact_bytes": true,
+    "artifact_id": true,
+    "producer_stage": true,
+    "sha256": true,
+    "stage_sequence": true,
+    "missing_stage_record": true
+  }
+}

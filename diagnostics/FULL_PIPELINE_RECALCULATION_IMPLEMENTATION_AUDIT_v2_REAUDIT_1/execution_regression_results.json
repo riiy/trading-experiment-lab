@@ -1,0 +1,15 @@
+{
+  "status": "PASSED_IN_COMPLETE_TEST_SUITE",
+  "cases": {
+    "five_historical_limit_up_cases": "PASS",
+    "300137_close_limit_carry": "PASS",
+    "600037_close_limit_carry": "PASS",
+    "600114_generic_ratio_fallback": "PASS",
+    "t_plus_one": "PASS",
+    "gap_stop_open_price": "PASS",
+    "stop_first": "PASS",
+    "d5_d10_boundaries": "PASS",
+    "cost_once": "PASS",
+    "st_branch_invariant_and_material_block": "PASS"
+  }
+}
