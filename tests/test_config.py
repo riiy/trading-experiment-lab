@@ -150,6 +150,11 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert rounding_v2["requirements"]["rows_silently_dropped"] == 0
     assert rounding_v2["requirements"]["global_tolerance_changed"] is False
     assert rounding_v2["requirements"]["security_specific_hardcodes"] == 0
+    assert rounding_v2["preflight"]["status"] == "completed"
+    assert rounding_v2["preflight"]["interval_feasible_rows"] == 3306
+    assert rounding_v2["preflight"]["set_valued_rows"] == 3306
+    assert rounding_v2["preflight"]["unbounded_affine_slope_rows"] == 90
+    assert rounding_v2["preflight"]["execution_referenced_rows"] == 0
 
 
 def test_full_recalculation_is_blocked_until_manifest_v2_audit():

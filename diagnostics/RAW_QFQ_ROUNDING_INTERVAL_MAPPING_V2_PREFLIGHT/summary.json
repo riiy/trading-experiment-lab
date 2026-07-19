@@ -1,0 +1,16 @@
+{
+  "target_rows": 3306,
+  "interval_feasible_rows": 3306,
+  "uniquely_identified_rows": 0,
+  "set_valued_rows": 3306,
+  "affine_feasible_rows": 3295,
+  "ratio_feasible_rows": 2533,
+  "unbounded_affine_slope_rows": 90,
+  "execution_referenced_rows": 0,
+  "branch_invariant_rows": 0,
+  "materially_ambiguous_rows": 0,
+  "price_values_transformed": false,
+  "rows_silently_dropped": 0,
+  "global_tolerance_changed": false,
+  "security_specific_hardcodes": 0
+}
