@@ -1,0 +1,19 @@
+{
+  "status": "PASSED",
+  "success": {
+    "tmp_removed": true,
+    "same_filesystem_atomic_rename": true,
+    "completion_record_present": true,
+    "final_tree_hash_verified": true,
+    "final_tree_read_only": true
+  },
+  "failure_isolation": {
+    "stage_failure": "PASS",
+    "fsync_failure": "PASS",
+    "atomic_rename_failure": "PASS",
+    "final_root_preexisting": "PASS",
+    "second_publication_conflict": "PASS",
+    "failure_returns_success": false,
+    "partial_formal_output_created": false
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "status": "PASSED",
+  "test_suite": {"collected": 202, "passed": 202},
+  "stage_order": [
+    "INPUT_SNAPSHOT",
+    "MARKET_STATE_REBUILD",
+    "UNIVERSE_REBUILD",
+    "INDICATOR_REBUILD",
+    "SIGNAL_REBUILD",
+    "TRADE_REBUILD",
+    "METRICS_REBUILD",
+    "DELTA_AND_DECISION"
+  ],
+  "all_stages_executed": true,
+  "old_signal_replay_used": false,
+  "formal_recalculation_performed": false,
+  "fixture_only": true
+}

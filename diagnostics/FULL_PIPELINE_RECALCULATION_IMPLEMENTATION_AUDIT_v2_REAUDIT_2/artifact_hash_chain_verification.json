@@ -1,0 +1,13 @@
+{
+  "status": "PASSED",
+  "offline_dag_reconstructed": true,
+  "unique_producer_verified": true,
+  "producer_consumer_hashes_match": true,
+  "on_disk_bytes_rehashed": true,
+  "comparison_roots": {
+    "source_class": "EXTERNAL_COMPARISON_INPUT",
+    "producer_stage": null,
+    "registered_by_stage": "DELTA_AND_DECISION",
+    "allowed_consumers": ["DELTA_AND_DECISION"]
+  }
+}

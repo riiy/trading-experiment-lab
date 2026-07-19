@@ -1,0 +1,17 @@
+{
+  "status": "PASSED",
+  "missing_inputs": {
+    "signals": {"first_seven_stages": "PASSED", "delta": "FAILED_CLOSED"},
+    "trades": {"first_seven_stages": "PASSED", "delta": "FAILED_CLOSED"},
+    "metrics": {"first_seven_stages": "PASSED", "delta": "FAILED_CLOSED"}
+  },
+  "hash_drift": {
+    "failure_stage": "DELTA_AND_DECISION",
+    "formal_publication": false
+  },
+  "consistent_replacements": {
+    "signals": "ONLY_DELTA_HASH_CHANGED",
+    "trades": "ONLY_DELTA_HASH_CHANGED",
+    "metrics": "ONLY_DELTA_HASH_CHANGED"
+  }
+}

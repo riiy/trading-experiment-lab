@@ -1,0 +1,10 @@
+{
+  "status": "PASSED",
+  "artifact_content": "PUBLICATION_BLOCKED",
+  "artifact_id": "PUBLICATION_BLOCKED",
+  "producer_stage": "PUBLICATION_BLOCKED",
+  "input_or_output_hash": "PUBLICATION_BLOCKED",
+  "stage_order": "PUBLICATION_BLOCKED",
+  "missing_stage_record": "PUBLICATION_BLOCKED",
+  "comparison_registered_by_upstream": "PUBLICATION_BLOCKED"
+}

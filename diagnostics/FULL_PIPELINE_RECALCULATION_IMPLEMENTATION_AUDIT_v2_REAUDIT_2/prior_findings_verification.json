@@ -1,0 +1,7 @@
+{
+  "status": "PASSED",
+  "atomic_publication": "VERIFIED_FIXED",
+  "durable_artifact_chain": "VERIFIED_FIXED",
+  "comparison_input_boundary": "VERIFIED_FIXED",
+  "comparison_allowed_consumers": ["DELTA_AND_DECISION"]
+}

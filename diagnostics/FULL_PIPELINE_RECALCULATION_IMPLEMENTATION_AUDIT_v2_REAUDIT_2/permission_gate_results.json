@@ -1,0 +1,13 @@
+{
+  "status": "PASSED",
+  "config_check": "OK",
+  "current_setup": null,
+  "registry_strategy_decision_changed_during_audit": false,
+  "account_simulation_executed": false,
+  "trade_tickets_generated": false,
+  "authoritative_strategy_decision_generated": false,
+  "full_recalculation_allowed_during_audit": false,
+  "account_simulation_allowed": false,
+  "ticket_generation_allowed": false,
+  "trading_allowed": false
+}

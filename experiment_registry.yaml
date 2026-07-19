@@ -1,5 +1,5 @@
 Trading_Experiment:
-  status: recalculation_implementation_required
+  status: recalculation_authorized
   capital_limit: 30000
   max_planned_loss_per_trade: 500
   instrument_scope:
@@ -11,9 +11,8 @@ Trading_Experiment:
   ticket_generation_allowed: false
   tradable_setups: 0
   next_action:
-    - implement_FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2
-    - audit_FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2
-    - freeze_new_engine_commit_after_audit
+    - generate_formal_recalculation_manifest
+    - execute_STOCK_RS_PULLBACK_v1_RECALCULATED
   allowed:
     - repair_execution_semantics
     - add_raw_price_schema
@@ -125,13 +124,14 @@ engine_remediation_tasks:
       summary: diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/STOCK_RS_PULLBACK_v1_remediation_summary.json
 full_pipeline_recalculation_tasks:
   FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2:
-    status: implementation_pending_reaudit
+    status: recalculation_authorized
     contract_id: FULL_PIPELINE_RECALCULATION_V2
     contract: docs/FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2.md
     baseline_commit: 468bacc6fead27020e2dfce5f33368a623492122
-    implementation_frozen: false
-    implementation_audited: false
-    implementation_audit_decision: IMPLEMENTATION_ERROR_FOUND
+    implementation_commit: a68770e151238fbf1b8f0050808cc877973dfd13
+    implementation_frozen: true
+    implementation_audited: true
+    implementation_audit_decision: IMPLEMENTATION_AUDIT_PASSED
     remediation_1:
       status: completed_pending_reaudit
       findings_addressed:
@@ -145,6 +145,11 @@ full_pipeline_recalculation_tasks:
       status: completed_pending_reaudit
       finding_addressed: COMPARISON_ONLY_INPUT_LEAKED_INTO_INPUT_SNAPSHOT
       comparison_consumer_stage: DELTA_AND_DECISION
+    reaudit_2:
+      audit_id: FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_AUDIT_v2_REAUDIT_2
+      implementation_commit: a68770e151238fbf1b8f0050808cc877973dfd13
+      decision: IMPLEMENTATION_AUDIT_PASSED
+      report: diagnostics/FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_AUDIT_v2_REAUDIT_2/audit_report.md
     contract_defined: true
     orchestration_skeleton_ready: true
     concrete_stages_implemented: true
@@ -158,7 +163,7 @@ full_pipeline_recalculation_tasks:
       - TRADE_REBUILD
       - METRICS_REBUILD
       - DELTA_AND_DECISION
-    full_recalculation_allowed: false
+    full_recalculation_allowed: true
     full_recalculation_performed: false
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false

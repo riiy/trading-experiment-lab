@@ -1,0 +1,11 @@
+{
+  "status": "PASSED",
+  "intermediate_stage_failure": "QUARANTINED",
+  "artifact_tamper": "QUARANTINED_OR_REJECTED",
+  "fsync_failure": "QUARANTINED",
+  "atomic_rename_failure": "QUARANTINED",
+  "final_root_preexisting": "REJECTED",
+  "second_publication_conflict": "REJECTED",
+  "formal_output_created_on_failure": false,
+  "failure_evidence_location": "diagnostics/recalculation_attempts/<run_id>"
+}

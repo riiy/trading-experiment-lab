@@ -1,0 +1,8 @@
+{
+  "status": "PASSED",
+  "input_snapshot_comparison_references": 0,
+  "comparison_registration_stage": "DELTA_AND_DECISION",
+  "comparison_consumer_stages": ["DELTA_AND_DECISION"],
+  "comparison_marked_as_pipeline_output": false,
+  "upstream_comparison_dependency": false
+}

@@ -1,0 +1,47 @@
+{
+  "reaudit": {
+    "audit_id": "FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_AUDIT_v2_REAUDIT_2",
+    "implementation_commit": "a68770e151238fbf1b8f0050808cc877973dfd13",
+    "prior_reaudit_record_commit": "be40365",
+    "contract": "FULL_PIPELINE_RECALCULATION_V2",
+    "timezone": "Asia/Shanghai",
+    "started_at": "2026-07-19T16:44:40+08:00",
+    "git_dirty_at_start": false,
+    "production_changes_allowed": false,
+    "formal_recalculation_allowed": false,
+    "inherited_passes_allowed": false
+  },
+  "permissions": {
+    "full_recalculation_allowed": false,
+    "strategy_validation_decision_allowed": false,
+    "account_simulation_allowed": false,
+    "ticket_generation_allowed": false,
+    "trading_allowed": false
+  },
+  "frozen_sha256": {
+    "setup_config": "424271e49a423fab4bcee0110cf32df4f4e91ecd4685669ef90f3bc8d1ef7e85",
+    "registry": "bb6d590e007d36fc665a5c964a86e5b256aa83d3ce9209d212d32a2aef8a93bf",
+    "artifact_registry": "2cd0a172bc2f44d6c7e40d2a6bc0bb941dd0f8791db927b342165c009721e57f",
+    "runner": "7c501680e99ed84f64a6a28068d6d53d3c95a2f04b08c363ee99ba9bf78bbfde",
+    "upstream": "e07ca69dcd76d530c89ce1f6956892feb38f47907158b990eb0264e554628a5b",
+    "downstream": "d2cd43a5420b66214681809c239db9622fdfee089fe758233a838d324c292ac9",
+    "raw_qfq_mapping": "14b71430df97ccba9e08c89722f7e5a627ec09ba3c946b8afa104e3e8923206d",
+    "backtest_engine": "e0c6791033b84dbca216d6206d8cc8c926114c46d34da9ab2ccd2e4adb09311f",
+    "execution_model": "8d3c5bd6864a1ea24bed9bf3f9d76b9c4cb756872da9fa26311f9a1e70ea370e",
+    "signal_model": "d91a26da8d473f9a9b285de8f1a66cca46b3308ba6894b9e43ec7211fa5ff0f4",
+    "validation_model": "c0892004a5642405b49b6534fb1f0dbf24a110ff877d7d21728c478c89889b41"
+  },
+  "original_artifact_sha256": {
+    "signals": "6cb6895305f8f0c7b1fe6e90c9752db4acc203e987b4408b5b1dd9f2d1729d61",
+    "trades": "69dc2498d679bc43bcdd903b6206bde0ee9f6ef8a43c50e851a807032d7746d2",
+    "metrics": "151289d38e49cd691eefc1c69a5d8981e7462d8d80d7473293659a78c46e2af6",
+    "validation_report": "af5f29105cfef5e9609887acab3e5ce72b5b884439d7b15f21a0cff22af331bc"
+  },
+  "preflight": {
+    "head_matches": true,
+    "worktree_clean": true,
+    "formal_output_absent": true,
+    "config_check": "OK",
+    "current_setup": null
+  }
+}

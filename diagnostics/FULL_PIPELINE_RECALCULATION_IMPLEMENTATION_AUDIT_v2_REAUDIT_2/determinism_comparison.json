@@ -1,0 +1,12 @@
+{
+  "status": "PASSED",
+  "same_input_runs": 2,
+  "universe_hash_equal": true,
+  "indicator_hash_equal": true,
+  "signal_hash_equal": true,
+  "trade_hash_equal": true,
+  "metrics_hash_equal": true,
+  "delta_hash_equal": true,
+  "normalized_final_tree_hash_equal": true,
+  "runtime_timestamps_excluded_from_normalized_hash": true
+}

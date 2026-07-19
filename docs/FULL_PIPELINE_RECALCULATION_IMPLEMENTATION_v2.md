@@ -9,16 +9,18 @@ new Setup and not a strategy-rule change.
 Current implementation state:
 
 ```yaml
-status: implementation_pending_reaudit
+status: recalculation_authorized
 baseline_commit: 468bacc6fead27020e2dfce5f33368a623492122
-implementation_frozen: false
-implementation_audited: false
-implementation_audit_decision: IMPLEMENTATION_ERROR_FOUND
+implementation_commit: a68770e151238fbf1b8f0050808cc877973dfd13
+implementation_frozen: true
+implementation_audited: true
+implementation_audit_decision: IMPLEMENTATION_AUDIT_PASSED
 remediation_1: completed_pending_reaudit
 reaudit_1: IMPLEMENTATION_ERROR_FOUND
 blocking_finding: COMPARISON_ONLY_INPUT_LEAKED_INTO_INPUT_SNAPSHOT
 remediation_2: completed_pending_reaudit
-full_recalculation_allowed: false
+reaudit_2: IMPLEMENTATION_AUDIT_PASSED
+full_recalculation_allowed: true
 full_recalculation_performed: false
 ```
 

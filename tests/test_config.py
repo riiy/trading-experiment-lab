@@ -24,7 +24,7 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     experiment = registry["Trading_Experiment"]
     archived = registry["setups"]["STOCK_RS_PULLBACK_v1"]
 
-    assert experiment["status"] == "recalculation_implementation_required"
+    assert experiment["status"] == "recalculation_authorized"
     assert experiment["current_setup"] is None
     assert experiment["tradable_setups"] == 0
     assert experiment["trading_allowed"] is False
@@ -56,14 +56,16 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert remediation["sample_audit"]["full_recalculation_performed"] is False
 
     implementation = registry["full_pipeline_recalculation_tasks"]["FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2"]
-    assert implementation["status"] == "implementation_pending_reaudit"
+    assert implementation["status"] == "recalculation_authorized"
     assert implementation["baseline_commit"] == "468bacc6fead27020e2dfce5f33368a623492122"
-    assert implementation["implementation_frozen"] is False
-    assert implementation["implementation_audited"] is False
-    assert implementation["implementation_audit_decision"] == "IMPLEMENTATION_ERROR_FOUND"
+    assert implementation["implementation_commit"] == "a68770e151238fbf1b8f0050808cc877973dfd13"
+    assert implementation["implementation_frozen"] is True
+    assert implementation["implementation_audited"] is True
+    assert implementation["implementation_audit_decision"] == "IMPLEMENTATION_AUDIT_PASSED"
     assert implementation["remediation_1"]["status"] == "completed_pending_reaudit"
     assert implementation["reaudit_1"]["decision"] == "IMPLEMENTATION_ERROR_FOUND"
     assert implementation["remediation_2"]["status"] == "completed_pending_reaudit"
+    assert implementation["reaudit_2"]["decision"] == "IMPLEMENTATION_AUDIT_PASSED"
     assert implementation["contract_defined"] is True
     assert implementation["orchestration_skeleton_ready"] is True
     assert implementation["concrete_stages_implemented"] is True
@@ -79,13 +81,12 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
         "METRICS_REBUILD",
         "DELTA_AND_DECISION",
     ]
-    assert implementation["full_recalculation_allowed"] is False
+    assert implementation["full_recalculation_allowed"] is True
     assert implementation["full_recalculation_performed"] is False
 
 
-def test_full_recalculation_is_blocked_during_v2_implementation():
-    with pytest.raises(SystemExit, match="V2 implementation audit"):
-        _assert_full_recalculation_allowed(ROOT)
+def test_full_recalculation_is_authorized_after_v2_reaudit():
+    _assert_full_recalculation_allowed(ROOT)
 
 
 def test_recalculation_cannot_overwrite_original_paths():
