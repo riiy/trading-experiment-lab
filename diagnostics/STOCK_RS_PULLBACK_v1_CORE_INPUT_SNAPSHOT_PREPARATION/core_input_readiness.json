@@ -1,0 +1,71 @@
+{
+  "task": "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION",
+  "created_at": "2026-07-19T17:52:57+08:00",
+  "timezone": "Asia/Shanghai",
+  "decision": "CORE_INPUT_SNAPSHOT_REQUIRED",
+  "core_input_readiness": {
+    "raw_source_available": true,
+    "canonical_raw_daily_available": false,
+    "qfq_daily_available": true,
+    "raw_qfq_pair_verified": false,
+    "profiles_complete": false,
+    "input_hashes_frozen": false,
+    "formal_manifest_freeze_eligible": false
+  },
+  "blocking_conditions": [
+    {
+      "code": "CANONICAL_RAW_SNAPSHOT_MISSING",
+      "detail": "No independent canonical adj_type=none parquet exists for the V2 raw_daily input."
+    },
+    {
+      "code": "RAW_QFQ_SNAPSHOT_TIME_MISMATCH",
+      "detail": "The existing canonical qfq parquet ends on 2026-07-16; the available paired raw/qfq/hfq source snapshot and remediation evidence end on 2026-07-17."
+    },
+    {
+      "code": "RAW_QFQ_PRIMARY_KEYS_NOT_FROZEN",
+      "detail": "No independent canonical raw/qfq pair has yet passed exact date+code key equality, duplicate, profile, and hash checks."
+    }
+  ],
+  "excluded_candidates": [
+    {
+      "path": "data/processed/a_share_daily_remediation.parquet",
+      "reason": "Combined remediation/audit data with qfq generic prices and raw_* layers; it is not an independent canonical raw snapshot and must not be relabeled as raw_daily."
+    },
+    {
+      "path": "data/processed/a_share_daily.parquet",
+      "reason": "Canonical qfq input; raw prices must not be inferred from adjusted prices."
+    },
+    {
+      "path": "data/raw/tdx",
+      "reason": "Unadjusted TDX .day files exist but end earlier than the current qfq source snapshot and are not a verified matching pair."
+    }
+  ],
+  "legal_preparation_plan": [
+    "Freeze the existing raw.zip and qfq.zip archive hashes as source identities; do not use the remediation parquet as an input.",
+    "From the same frozen TDX raw and qfq source bundle, generate separate canonical parquet outputs with explicit adjustment identities none and qfq.",
+    "Use one paired preparation transaction or fail-closed post-validation so both outputs contain exactly the same date+code primary keys; do not silently accept unmatched keys.",
+    "Validate required columns, positive OHLC policy, duplicate_keys=0, row counts, unique codes, min/max dates, raw_only_keys, qfq_only_keys, and mapping-evaluable ratio.",
+    "Write immutable snapshot metadata containing source archive hashes, extraction/normalization version, output SHA256 values, profiles, and pair-validation results.",
+    "Only when blocking_mismatches=0 and both output hashes are frozen may the explicit --raw-daily and --qfq-daily paths be supplied to the formal Manifest freezer."
+  ],
+  "required_pair_acceptance": {
+    "raw_adjustment": "none",
+    "qfq_adjustment": "qfq",
+    "duplicate_keys_raw": 0,
+    "duplicate_keys_qfq": 0,
+    "raw_only_keys": 0,
+    "qfq_only_keys": 0,
+    "blocking_mismatches": 0,
+    "output_sha256_required": true,
+    "source_archive_sha256_required": true
+  },
+  "actions_not_performed": [
+    "No market data downloaded",
+    "No raw prices inferred from qfq",
+    "No remediation parquet relabeled or copied",
+    "No canonical snapshot generated",
+    "No Manifest frozen",
+    "No formal recalculation run",
+    "No strategy, Registry, or trading permission changed"
+  ]
+}

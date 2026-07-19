@@ -1,0 +1,74 @@
+{
+  "evidence_id": "STOCK_RS_PULLBACK_v1_CORE_INPUT_SOURCE_PAIR_EVIDENCE_20260719T175257+0800",
+  "created_at": "2026-07-19T17:52:57+08:00",
+  "timezone": "Asia/Shanghai",
+  "repository_head_observed": "1b58aa2cfa3185c88ed20c6efa7b5a974ff88e63",
+  "scope": "READ_ONLY_SOURCE_DISCOVERY",
+  "formal_input_generated": false,
+  "source_bundle": {
+    "provider": "tongdaxin_export",
+    "base_path": "data/raw/tdx_text",
+    "raw": {
+      "directory": "data/raw/tdx_text/raw",
+      "archive": "data/raw/tdx_text/raw.zip",
+      "archive_sha256": "22b4260776acf89dcbcd3ebc3859b52ced6f6e7eacbb4cfc358f1d24a2b89529",
+      "archive_bytes": 438859038,
+      "files": 8514,
+      "a_share_candidate_files": 5534,
+      "a_share_candidate_bytes": 911981195,
+      "expected_header": "unadjusted",
+      "header_mode_mismatches": 0
+    },
+    "qfq": {
+      "directory": "data/raw/tdx_text/qfq",
+      "archive": "data/raw/tdx_text/qfq.zip",
+      "archive_sha256": "b3857f916841650c43852e278de145662f51e5840f586d989f8091aea374cebf",
+      "archive_bytes": 431435966,
+      "files": 8514,
+      "a_share_candidate_files": 5534,
+      "a_share_candidate_bytes": 901759706,
+      "expected_header": "qfq",
+      "header_mode_mismatches": 0
+    },
+    "hfq": {
+      "directory": "data/raw/tdx_text/hfq",
+      "archive": "data/raw/tdx_text/hfq.zip",
+      "archive_sha256": "435cc3af86da50d5f583e6e10743e6c58304139b8fabab7578852406fd7da7a2",
+      "archive_bytes": 448362478,
+      "files": 8514,
+      "a_share_candidate_files": 5534,
+      "a_share_candidate_bytes": 943352339,
+      "expected_header": "hfq",
+      "header_mode_mismatches": 0
+    },
+    "file_name_sets_equal": true,
+    "archive_and_extracted_name_sets_equal": true
+  },
+  "historical_pair_ingestion_evidence": {
+    "output": "data/processed/a_share_daily_remediation.parquet",
+    "sha256": "0a7a3ddf717d1cc9bb958657dc2f644d6c86da2433b2cff72ab374b30043b35a",
+    "rows": 15926305,
+    "unique_codes": 5526,
+    "min_date": "1990-12-19",
+    "max_date": "2026-07-17",
+    "source": "tongdaxin_export_paired",
+    "note": "The paired importer requires identical file sets and per-security date sets. This proves a prior paired ingestion completed, but its combined remediation output is not a formal raw input."
+  },
+  "existing_qfq_snapshot": {
+    "path": "data/processed/a_share_daily.parquet",
+    "sha256": "e2ad43e91cb337367c8e4463f275307e4dc313ecfa4bd748bbee7d11c45b216c",
+    "rows": 15930299,
+    "unique_codes": 5526,
+    "min_date": "1990-12-19",
+    "max_date": "2026-07-16",
+    "adjustment": "qfq",
+    "source": "tongdaxin_export"
+  },
+  "formal_pair_assessment": {
+    "canonical_raw_parquet_present": false,
+    "existing_qfq_matches_current_three_layer_source_snapshot": false,
+    "reason": "The existing qfq parquet ends on 2026-07-16 while the paired source/remediation evidence ends on 2026-07-17; no canonical raw parquet with an exact verified key set is present.",
+    "raw_qfq_primary_keys_verified_equal": false,
+    "formal_pair_ready": false
+  }
+}
