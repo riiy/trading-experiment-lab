@@ -737,10 +737,21 @@ def _assert_setup_action_allowed(root: Path, setup_id: str, action: str) -> None
 def _assert_full_recalculation_allowed(root: Path) -> None:
     registry = load_yaml(root / "experiment_registry.yaml")
     experiment_status = str(registry.get("Trading_Experiment", {}).get("status", ""))
-    task = registry.get("engine_remediation_tasks", {}).get("ENGINE_REMEDIATION_A_SHARE_EXECUTION_v1", {})
-    if experiment_status != "recalculation_authorized" or task.get("full_recalculation_allowed") is not True:
+    task = registry.get("full_pipeline_recalculation_tasks", {}).get(
+        "FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2",
+        {},
+    )
+    authorized = (
+        experiment_status == "recalculation_authorized"
+        and task.get("status") == "recalculation_authorized"
+        and task.get("implementation_frozen") is True
+        and task.get("implementation_audited") is True
+        and task.get("implementation_audit_decision") == "IMPLEMENTATION_AUDIT_PASSED"
+        and task.get("full_recalculation_allowed") is True
+    )
+    if not authorized:
         raise SystemExit(
-            "full backtest recalculation blocked until remediation sample audit authorizes recalculation"
+            "full pipeline recalculation blocked until V2 implementation audit passes and a new engine commit is frozen"
         )
 
 

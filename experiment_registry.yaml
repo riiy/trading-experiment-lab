@@ -1,5 +1,5 @@
 Trading_Experiment:
-  status: recalculation_authorized
+  status: recalculation_implementation_required
   capital_limit: 30000
   max_planned_loss_per_trade: 500
   instrument_scope:
@@ -7,11 +7,13 @@ Trading_Experiment:
     - HK_CONNECT_STOCK
   current_setup: null
   trading_allowed: false
+  account_simulation_allowed: false
+  ticket_generation_allowed: false
   tradable_setups: 0
   next_action:
-    - freeze_remediation_engine_commit
-    - freeze_recalculation_input_hashes
-    - run_STOCK_RS_PULLBACK_v1_RECALCULATED
+    - implement_FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2
+    - audit_FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2
+    - freeze_new_engine_commit_after_audit
   allowed:
     - repair_execution_semantics
     - add_raw_price_schema
@@ -61,7 +63,7 @@ setups:
       summary: diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_audit_summary.json
 engine_remediation_tasks:
   ENGINE_REMEDIATION_A_SHARE_EXECUTION_v1:
-    status: REMEDIATION_AUDIT_PASSED_RECALCULATION_AUTHORIZED
+    status: REMEDIATION_AUDIT_PASSED_V1_RECALCULATION_REVOKED
     is_new_setup: false
     baseline_commit: 1cbfa676459e31075c479826cb68dc58b3beeec8
     remediation_audit_commit: 0f639519c4f59c7a0c34ab095738eeff1923e17f
@@ -69,7 +71,8 @@ engine_remediation_tasks:
     tests_passed: 123
     config_check: OK
     preregistration: docs/ENGINE_REMEDIATION_A_SHARE_EXECUTION_v1.md
-    full_recalculation_allowed: true
+    full_recalculation_allowed: false
+    full_recalculation_blocked_reason: FULL_PIPELINE_RECALCULATION_V1_NONCOMPLIANT
     historical_st_remediation_deferred: true
     daily_ratio_fallback_codes:
       - 600114.SH
@@ -120,6 +123,19 @@ engine_remediation_tasks:
           actual_exit_date: "2015-05-29"
       report: diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/REMEDIATION_AUDIT_STOCK_RS_PULLBACK_v1.md
       summary: diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/STOCK_RS_PULLBACK_v1_remediation_summary.json
+full_pipeline_recalculation_tasks:
+  FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2:
+    status: implementation_active
+    contract_id: FULL_PIPELINE_RECALCULATION_V2
+    contract: docs/FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2.md
+    baseline_commit: 468bacc6fead27020e2dfce5f33368a623492122
+    implementation_frozen: false
+    implementation_audited: false
+    implementation_audit_decision: null
+    full_recalculation_allowed: false
+    full_recalculation_performed: false
+    last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
+    strategy_decision_generated: false
 archived_paths:
   - earnings_event
   - major_contract_event

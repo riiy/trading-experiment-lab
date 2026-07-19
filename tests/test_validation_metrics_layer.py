@@ -137,7 +137,7 @@ def test_write_validation_outputs(tmp_path):
     assert loaded["setup_id"] == "STOCK_RS_PULLBACK_v1"
 
 
-def test_validation_report_cli_cannot_overwrite_original_after_authorization(tmp_path):
+def test_validation_report_cli_is_blocked_until_v2_implementation_audit(tmp_path):
     trades = pd.DataFrame([_trade("000001.SZ", "2026-01-10", 0.03)])
     trade_path = tmp_path / "trades.csv"
     metadata_path = tmp_path / "metadata.parquet"
@@ -152,7 +152,7 @@ def test_validation_report_cli_cannot_overwrite_original_after_authorization(tmp
     yearly_path = tmp_path / "yearly.csv"
     industry_path = tmp_path / "industry.csv"
 
-    with pytest.raises(SystemExit, match="must use STOCK_RS_PULLBACK_v1_RECALCULATED"):
+    with pytest.raises(SystemExit, match="V2 implementation audit"):
         main([
             "--root", str(Path(__file__).resolve().parents[1]),
             "report-stock-rs-pullback",
