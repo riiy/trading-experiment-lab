@@ -226,3 +226,44 @@ adj_price = raw_price * adj_factor + adj_offset
 ```
 
 这些不影响第一步字段标准化，但在正式大样本验证前需要逐步补齐。
+
+## 正式 raw/qfq 核心输入候选
+
+正式全流水线需要两个独立 canonical Parquet，而不是 remediation 混合文件。开发态准备命令为：
+
+```bash
+uv run texperiment prepare-stock-rs-pullback-core-input-pair \
+  --raw-input data/raw/tdx_text/raw \
+  --qfq-input data/raw/tdx_text/qfq \
+  --hfq-input data/raw/tdx_text/hfq \
+  --output-root data/processed/formal_snapshots/<snapshot-id>
+```
+
+该命令实施冻结规则 `PAIRED_NON_POSITIVE_OHLC_FILTER_V1`：
+
+```text
+同一 TDX raw/qfq 源文件和日期键
+→ 可选 hfq 层交叉核验
+→ 任一供应层 OHLC 缺失、非有限、为零或为负
+→ raw/qfq 同步删除该键
+→ 不变换其余价格
+```
+
+这不是任意 inner join。源文件集合或源日期键不一致会阻止候选发布；只有由上述预注册价格规则产生的同步排除被允许。输出前必须同时满足：
+
+* raw/qfq `(date, code)` 完全一致且顺序一致；
+* 两层均无重复主键；
+* 成交量逐键一致；
+* 每个共同键可通过仿射映射或通用日度比例 fallback 评估；
+* `adj_type` 分别严格为 `none` 和 `qfq`。
+
+工具先在目标目录同级临时目录写入两个 Parquet，落盘复读并完成上述验证后才原子发布候选目录。失败会删除临时候选；使用 `--diagnostics` 指定的 JSON 保存完整差异画像。`pair_audit.json` 至少记录：
+
+* raw/qfq 源行数、代码数、日期范围和源目录 tree SHA256；
+* common/raw-only/qfq-only 键数；
+* raw-only 的年度、交易所、代码和日期边界分解；
+* 各层非正 OHLC 数、同步排除键数及年度/交易所分解；
+* 输出哈希、重复键、成交量一致性和 mapping evaluable ratio；
+* `price_values_transformed: false`。
+
+发布结果仍只是输入快照候选，不会生成正式 Manifest，不会运行重算，也不会改变交易权限。候选必须经过独立输入审计后才能用于正式冻结。

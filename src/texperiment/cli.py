@@ -26,6 +26,7 @@ from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, read
 from texperiment.data.quality import validate_daily_bars
 from texperiment.data.tdx_export_source import write_tdx_index_parquet
 from texperiment.data.tdx_paired_source import write_tdx_paired_export_parquet
+from texperiment.data.core_input_pair import CoreInputPairError, prepare_tdx_core_input_pair
 from texperiment.indicators.a_share import (
     AShareIndicatorConfig,
     build_a_share_indicators,
@@ -140,6 +141,23 @@ def cmd_ingest_tdx_paired_a_share_daily(args: argparse.Namespace) -> int:
     )
     print(f"ingest-tdx-paired-a-share-daily: OK -> {output_path}")
     print(json.dumps({"quality": json.loads(_quality_report_to_json(quality)), "paired": report.__dict__}, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_prepare_stock_rs_pullback_core_input_pair(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    try:
+        result = prepare_tdx_core_input_pair(
+            _resolve(root, args.raw_input),
+            _resolve(root, args.qfq_input),
+            _resolve(root, args.output_root),
+            hfq_input=_resolve(root, args.hfq_input) if args.hfq_input else None,
+            diagnostics_path=_resolve(root, args.diagnostics),
+        )
+    except CoreInputPairError as exc:
+        raise SystemExit(f"CORE_INPUT_PAIR_VALIDATION_FAILED: {exc}") from exc
+    print(f"prepare-stock-rs-pullback-core-input-pair: OK -> {result.output_root}")
+    print(json.dumps(result.report, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -576,6 +594,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output", default="data/processed/a_share_daily_remediation.parquet")
     p.add_argument("--allow-quality-warnings", action="store_true")
     p.set_defaults(func=cmd_ingest_tdx_paired_a_share_daily)
+
+    p = sub.add_parser(
+        "prepare-stock-rs-pullback-core-input-pair",
+        help="Build an audited canonical raw/qfq candidate pair from frozen TDX exports",
+    )
+    p.add_argument("--raw-input", default="data/raw/tdx_text/raw")
+    p.add_argument("--qfq-input", default="data/raw/tdx_text/qfq")
+    p.add_argument("--hfq-input", default="data/raw/tdx_text/hfq")
+    p.add_argument("--output-root", required=True, help="New candidate directory; must not exist")
+    p.add_argument(
+        "--diagnostics",
+        default="diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_1/pair_validation_failure.json",
+    )
+    p.set_defaults(func=cmd_prepare_stock_rs_pullback_core_input_pair)
 
     p = sub.add_parser("ingest-tdx-export-index-daily", help="Read one TDX index text export")
     p.add_argument("--input", required=True)

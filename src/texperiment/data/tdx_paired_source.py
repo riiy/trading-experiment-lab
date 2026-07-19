@@ -256,8 +256,12 @@ def _read_price_file(path: Path, prefix: str) -> pd.DataFrame:
     frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
     for column in _RAW_COLUMNS[1:]:
         frame[column] = pd.to_numeric(frame[column], errors="coerce")
-    frame = frame.dropna(subset=["date"]).sort_values("date").drop_duplicates("date", keep="last")
-    return frame.rename(columns={column: f"{prefix}_{column}" for column in _RAW_COLUMNS[1:]})
+    frame = frame.dropna(subset=["date"]).sort_values("date")
+    duplicate_dates = int(frame.duplicated("date", keep=False).sum())
+    frame = frame.drop_duplicates("date", keep="last")
+    result = frame.rename(columns={column: f"{prefix}_{column}" for column in _RAW_COLUMNS[1:]})
+    result.attrs["duplicate_source_rows"] = duplicate_dates
+    return result
 
 
 def _fit_affine_rows(raw: np.ndarray, adjusted: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
