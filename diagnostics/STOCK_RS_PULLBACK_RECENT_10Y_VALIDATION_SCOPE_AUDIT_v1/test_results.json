@@ -4,6 +4,7 @@
   "checks": {
     "config_check": "OK",
     "full_test_suite": "PASSED",
+    "focused_scope_tests": "21 passed",
     "git_diff_check": "PASSED"
   },
   "trading_allowed": false
