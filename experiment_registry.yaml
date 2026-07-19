@@ -225,7 +225,7 @@ full_pipeline_recalculation_tasks:
         audit_record_commit: ba442d9cd7f2df5014abd6c540f7c137ac56c26b
         report: diagnostics/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_2/audit_report.md
   STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION:
-    status: CORE_INPUT_PAIR_REMEDIATION_PENDING_REAUDIT
+    status: CORE_INPUT_PAIR_GENERATION_AUTHORIZED
     raw_daily_available: false
     qfq_pairing_verified: false
     profiles_complete: false
@@ -245,11 +245,16 @@ full_pipeline_recalculation_tasks:
         report: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_AUDIT_1/audit_report.md
     remediation_2:
       task: STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_2
-      status: implementation_pending_reaudit
+      status: implementation_audit_passed
       implementation_commit: f90bd7c863b635f942b89fa60e1955ae8a112c9c
       findings_addressed:
         - FILTERED_SOURCE_CLOSE_LEAKS_INTO_RETAINED_RAW_PRE_CLOSE
         - PUBLICATION_FAILURE_DIAGNOSTIC_FALSE_POSITIVE
+      audit:
+        audit_id: STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_REAUDIT_2
+        decision: DATA_PAIR_IMPLEMENTATION_AUDIT_PASSED
+        audit_record_commit: 949215fb6be92e13fb75ac27a06959cf0bfe4cf1
+        report: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_REAUDIT_2/audit_report.md
 archived_paths:
   - earnings_event
   - major_contract_event

@@ -112,7 +112,7 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     core_inputs = registry["full_pipeline_recalculation_tasks"][
         "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION"
     ]
-    assert core_inputs["status"] == "CORE_INPUT_PAIR_REMEDIATION_PENDING_REAUDIT"
+    assert core_inputs["status"] == "CORE_INPUT_PAIR_GENERATION_AUTHORIZED"
     assert core_inputs["raw_daily_available"] is False
     assert core_inputs["qfq_pairing_verified"] is False
     assert core_inputs["input_hashes_frozen"] is False
@@ -120,8 +120,9 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert core_inputs["remediation_1"]["status"] == "implementation_error_found"
     assert core_inputs["remediation_1"]["implementation_commit"] == "84315e86ee48cc302a3c0512a988fb30adb0e7f1"
     assert core_inputs["remediation_1"]["audit"]["decision"] == "DATA_PAIR_IMPLEMENTATION_ERROR_FOUND"
-    assert core_inputs["remediation_2"]["status"] == "implementation_pending_reaudit"
+    assert core_inputs["remediation_2"]["status"] == "implementation_audit_passed"
     assert core_inputs["remediation_2"]["implementation_commit"] == "f90bd7c863b635f942b89fa60e1955ae8a112c9c"
+    assert core_inputs["remediation_2"]["audit"]["decision"] == "DATA_PAIR_IMPLEMENTATION_AUDIT_PASSED"
 
 
 def test_full_recalculation_is_blocked_until_manifest_v2_audit():
