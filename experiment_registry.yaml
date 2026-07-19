@@ -296,6 +296,7 @@ full_pipeline_recalculation_tasks:
     rounding_interval_mapping_v2:
       task: RAW_QFQ_ROUNDING_INTERVAL_MAPPING_V2
       status: implementation_active
+      implementation_commit: "7840726"
       production_changes_allowed: true
       candidate_generation_allowed: false
       implementation_audited: false
@@ -310,6 +311,7 @@ full_pipeline_recalculation_tasks:
         security_specific_hardcodes: 0
       preflight:
         status: completed
+        evidence_commit: d7251c6
         source_diagnostics_commit: 6ba6aec
         target_rows: 3306
         interval_feasible_rows: 3306
