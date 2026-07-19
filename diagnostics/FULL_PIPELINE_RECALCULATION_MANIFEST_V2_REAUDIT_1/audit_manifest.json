@@ -1,0 +1,30 @@
+{
+  "audit": {
+    "audit_id": "FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_1",
+    "contract": "FULL_PIPELINE_RECALCULATION_V2",
+    "decision": "MANIFEST_V2_AUDIT_INCONCLUSIVE",
+    "implementation_commit": "30523f4baec7257e5014b6fd43f852891e31ae11",
+    "runtime_head_commit": "2937eb47bdd444f6512c11dd95e914791864c848",
+    "timezone": "Asia/Shanghai"
+  },
+  "engine_binding": {
+    "implementation_commit": "508ceceafcfc4403bab746051f26d6ff23e78a9c",
+    "audit_record_commit": "62ad290ddb1f7fa30c539426c70395713189b641"
+  },
+  "freeze": {
+    "git_dirty_at_start": false,
+    "production_changes_allowed": false,
+    "formal_manifest_generation_allowed": false,
+    "formal_recalculation_allowed": false
+  },
+  "termination": {
+    "phase": "final_clean_worktree_gate",
+    "reason": "CONCURRENT_EXTERNAL_WORKTREE_DRIFT",
+    "affected_paths": [
+      "src/texperiment/data/core_input_pair.py",
+      "tests/test_core_input_pair.py"
+    ],
+    "change_created_by_audit": false,
+    "tests_may_be_inherited": false
+  }
+}

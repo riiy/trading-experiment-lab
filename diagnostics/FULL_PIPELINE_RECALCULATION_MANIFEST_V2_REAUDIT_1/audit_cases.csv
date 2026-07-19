@@ -1,0 +1,16 @@
+case_id,area,status,evidence,authoritative
+PREFLIGHT_HEAD,preflight,PASSED,"HEAD=2937eb47bdd444f6512c11dd95e914791864c848",true
+PREFLIGHT_CLEAN,preflight,PASSED,"worktree clean at audit start",true
+TOOL_PRODUCTION_HASH,identity,PASSED,"current tool files match commit 30523f4",true
+ENGINE_PRODUCTION_HASH,identity,PASSED,"current engine files match commit 508cece",true
+AUTHORIZATION_CAPABILITY,targeted_tests,PASSED,"tests/test_formal_manifest_v2.py",false
+PUBLICATION_CONTRACT,targeted_tests,PASSED,"six explicit publication flags validated",false
+SELF_HASH,targeted_tests,PASSED,"canonical self-hash mutation cases",false
+COMPARISON_BOUNDARY,targeted_tests,PASSED,"archive references only; Delta-only consumer",false
+CLI_ROUTING,targeted_tests,PASSED,"V1/replay rejected; V2 stage factory has eight stages",false
+EXTERNAL_AUTHORIZATION,targeted_tests,PASSED,"runtime adapter uses deep copy and preserves frozen hash",false
+FAILURE_GATES,targeted_tests,PASSED,"dirty/drift/output conflict/atomic write failure cases",false
+FOCUSED_TESTS,test,PASSED,"23 passed",false
+FULL_TESTS,test,PASSED,"239 passed",false
+CONFIG_CHECK,configuration,PASSED,"config-check: OK; trading_allowed=false; current_setup=null",false
+FINAL_CLEAN_GATE,preflight,INCONCLUSIVE,"unrelated concurrent modifications appeared in core-input production and test files",true
