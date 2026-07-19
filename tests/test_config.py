@@ -112,7 +112,7 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     core_inputs = registry["full_pipeline_recalculation_tasks"][
         "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION"
     ]
-    assert core_inputs["status"] == "CORE_INPUT_MAPPING_VALIDATION_FAILED"
+    assert core_inputs["status"] == "CORE_INPUT_MAPPING_REMEDIATION_REQUIRED"
     assert core_inputs["raw_daily_available"] is False
     assert core_inputs["qfq_pairing_verified"] is False
     assert core_inputs["input_hashes_frozen"] is False
@@ -133,6 +133,14 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert core_inputs["generation_attempt_2"]["source_qfq_only_keys"] == 0
     assert core_inputs["generation_attempt_2"]["unevaluable_mapping_rows"] == 3306
     assert core_inputs["generation_attempt_2"]["formal_input_published"] is False
+    diagnostics = core_inputs["mapping_unevaluable_diagnostics_v1"]
+    assert diagnostics["status"] == "completed"
+    assert diagnostics["decision"] == "MAPPING_DIAGNOSTICS_MIXED_DETERMINISTIC"
+    assert diagnostics["retained_rows"] == 15925710
+    assert diagnostics["unevaluable_rows"] == 3306
+    assert diagnostics["qfq_flat_ohlc_rows"] == 3306
+    assert diagnostics["raw_flat_ohlc_rows"] == 0
+    assert diagnostics["formal_input_published"] is False
 
 
 def test_full_recalculation_is_blocked_until_manifest_v2_audit():
