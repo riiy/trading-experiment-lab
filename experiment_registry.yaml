@@ -124,16 +124,17 @@ engine_remediation_tasks:
       summary: diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/STOCK_RS_PULLBACK_v1_remediation_summary.json
 full_pipeline_recalculation_tasks:
   FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2:
-    status: implementation_pending_reaudit
+    status: recalculation_engine_audited
     contract_id: FULL_PIPELINE_RECALCULATION_V2
     contract: docs/FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2.md
     baseline_commit: 468bacc6fead27020e2dfce5f33368a623492122
-    implementation_commit: a68770e151238fbf1b8f0050808cc877973dfd13
-    implementation_frozen: false
-    implementation_audited: false
-    implementation_audit_decision: null
+    implementation_commit: 508ceceafcfc4403bab746051f26d6ff23e78a9c
+    prior_implementation_commit: a68770e151238fbf1b8f0050808cc877973dfd13
+    implementation_frozen: true
+    implementation_audited: true
+    implementation_audit_decision: IMPLEMENTATION_AUDIT_PASSED
     historical_implementation_audit_decision: IMPLEMENTATION_AUDIT_PASSED
-    engine_full_recalculation_capable: false
+    engine_full_recalculation_capable: true
     formal_recalculation_run_authorized: false
     remediation_1:
       status: completed_pending_reaudit
@@ -155,10 +156,15 @@ full_pipeline_recalculation_tasks:
       report: diagnostics/FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_AUDIT_v2_REAUDIT_2/audit_report.md
     remediation_3:
       task: FULL_PIPELINE_RECALCULATION_ENGINE_REMEDIATION_3
-      status: implementation_pending_reaudit
-      implementation_commit: 508cece
+      status: implementation_audit_passed
+      implementation_commit: 508ceceafcfc4403bab746051f26d6ff23e78a9c
       blocking_error: ATOMIC_PUBLICATION_SEAL_ORDER_INCOMPATIBLE
       required_order: ATOMIC_RENAME_THEN_READ_ONLY_SEAL
+      audit:
+        audit_id: FULL_PIPELINE_RECALCULATION_ENGINE_REAUDIT_3
+        decision: IMPLEMENTATION_AUDIT_PASSED
+        audit_record_commit: 62ad290ddb1f7fa30c539426c70395713189b641
+        report: diagnostics/FULL_PIPELINE_RECALCULATION_ENGINE_REAUDIT_3/audit_report.md
     contract_defined: true
     orchestration_skeleton_ready: true
     concrete_stages_implemented: true
@@ -177,7 +183,7 @@ full_pipeline_recalculation_tasks:
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false
   FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION:
-    status: blocked_by_engine_reaudit
+    status: engine_binding_update_required
     manifest_tool_commit: 616b6cdaf36def3fb85e03d82dc58e9884b7a50d
     manifest_v2_implemented: true
     manifest_v2_audited: false
@@ -208,7 +214,7 @@ full_pipeline_recalculation_tasks:
       blocking_regression: READ_ONLY_BEFORE_ATOMIC_RENAME_EACCES
       evidence: diagnostics/recalculation_attempts/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REMEDIATION_1_20260719T180501/regression_failure.json
   STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION:
-    status: CORE_INPUT_PAIR_REMEDIATION_PENDING_AUDIT
+    status: CORE_INPUT_PAIR_IMPLEMENTATION_ERROR_FOUND
     raw_daily_available: false
     qfq_pairing_verified: false
     profiles_complete: false
@@ -218,9 +224,14 @@ full_pipeline_recalculation_tasks:
     evidence: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION/pair_validation_failure.json
     remediation_1:
       task: STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_1
-      status: implementation_pending_audit
-      implementation_commit: 84315e8
+      status: implementation_error_found
+      implementation_commit: 84315e86ee48cc302a3c0512a988fb30adb0e7f1
       paired_filtering_rule: DROP_KEY_FROM_BOTH_LAYERS_IF_ANY_LAYER_OHLC_NON_POSITIVE
+      audit:
+        audit_id: STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_AUDIT_1
+        decision: DATA_PAIR_IMPLEMENTATION_ERROR_FOUND
+        audit_record_commit: 51106dd325b6785daa7bf66ad7438a0d2e10827d
+        report: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_AUDIT_1/audit_report.md
 archived_paths:
   - earnings_event
   - major_contract_event
