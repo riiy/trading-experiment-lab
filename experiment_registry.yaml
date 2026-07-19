@@ -125,7 +125,7 @@ engine_remediation_tasks:
       summary: diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/STOCK_RS_PULLBACK_v1_remediation_summary.json
 full_pipeline_recalculation_tasks:
   FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2:
-    status: implementation_active
+    status: implementation_pending_audit
     contract_id: FULL_PIPELINE_RECALCULATION_V2
     contract: docs/FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_v2.md
     baseline_commit: 468bacc6fead27020e2dfce5f33368a623492122
@@ -134,13 +134,17 @@ full_pipeline_recalculation_tasks:
     implementation_audit_decision: null
     contract_defined: true
     orchestration_skeleton_ready: true
-    concrete_stages_implemented: false
+    concrete_stages_implemented: true
     upstream_stages_implemented:
       - INPUT_SNAPSHOT
       - MARKET_STATE_REBUILD
       - UNIVERSE_REBUILD
       - INDICATOR_REBUILD
-    downstream_stages_implemented: false
+    downstream_stages_implemented:
+      - SIGNAL_REBUILD
+      - TRADE_REBUILD
+      - METRICS_REBUILD
+      - DELTA_AND_DECISION
     full_recalculation_allowed: false
     full_recalculation_performed: false
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH

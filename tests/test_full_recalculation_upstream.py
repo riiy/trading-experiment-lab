@@ -11,6 +11,12 @@ import yaml
 from texperiment.audit.manifest import profile_table, sha256_file
 from texperiment.full_recalculation.contract import EXPECTED_STAGES, FORBIDDEN_PIPELINE_INPUTS
 from texperiment.full_recalculation.immutability import RecalculationAbort
+from texperiment.full_recalculation.downstream import (
+    DeltaAndDecisionStage,
+    MetricsRebuildStage,
+    SignalRebuildStage,
+    TradeRebuildStage,
+)
 from texperiment.full_recalculation.runner import FullPipelineRunner
 from texperiment.full_recalculation.stages import StageContext, StageId
 from texperiment.full_recalculation.upstream import (
@@ -234,6 +240,65 @@ def test_stage_failure_moves_temporary_work_to_diagnostics(tmp_path):
     assert failure["strategy_decision_generated"] is False
 
 
+def test_all_eight_stages_run_without_publishing_formal_output(tmp_path):
+    fixture = _fixture(tmp_path)
+    _add_archived_comparisons(fixture)
+
+    context, results = _run_all(fixture, "full-development")
+
+    assert [result.stage.value for result in results] == list(EXPECTED_STAGES)
+    assert set(context.artifacts) >= {"signals.rebuilt", "trades.rebuilt", "metrics.rebuilt", "delta.preview"}
+    preview = json.loads(context.artifacts["delta.preview"].path.read_text(encoding="utf-8"))["decision_preview"]
+    assert preview["authoritative"] is False
+    assert preview["published"] is False
+    assert not context.final_root.exists()
+
+
+def test_old_signals_change_only_delta_hash_not_new_pipeline_hashes(tmp_path):
+    fixture = _fixture(tmp_path)
+    archived = _add_archived_comparisons(fixture)
+    first, _ = _run_all(fixture, "isolation-first")
+    archived["signals"].write_text(
+        "signal_id,status,code,pullback_date,trigger_date\nold,triggered_entry_next_open,000001.SZ,2025-01-02,2025-01-03\n",
+        encoding="utf-8",
+    )
+    fixture.manifest["comparison_only_inputs"]["original_signals"]["sha256"] = sha256_file(archived["signals"])
+
+    second, _ = _run_all(fixture, "isolation-second")
+
+    assert first.artifacts["signals.rebuilt"].sha256 == second.artifacts["signals.rebuilt"].sha256
+    assert first.artifacts["trades.rebuilt"].sha256 == second.artifacts["trades.rebuilt"].sha256
+    assert first.artifacts["delta.preview"].sha256 != second.artifacts["delta.preview"].sha256
+
+
+def test_archived_comparison_hash_drift_fails_closed_at_delta(tmp_path):
+    fixture = _fixture(tmp_path)
+    archived = _add_archived_comparisons(fixture)
+    context = _context(fixture, "archive-drift")
+    stages = _all_stages()
+    for stage_id in list(stages)[:-1]:
+        stages[stage_id].run(context)
+    archived["trades"].write_text("changed", encoding="utf-8")
+
+    with pytest.raises(RecalculationAbort) as caught:
+        stages[StageId.DELTA_AND_DECISION].run(context)
+
+    assert caught.value.decision == "RECALCULATION_ABORTED_INPUT_DRIFT"
+
+
+def test_missing_archived_comparisons_fails_closed_at_delta(tmp_path):
+    fixture = _fixture(tmp_path)
+    context = _context(fixture, "archive-missing")
+    stages = _all_stages()
+    for stage_id in list(stages)[:-1]:
+        stages[stage_id].run(context)
+
+    with pytest.raises(RecalculationAbort) as caught:
+        stages[StageId.DELTA_AND_DECISION].run(context)
+
+    assert caught.value.decision == "RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH"
+
+
 @dataclass
 class _Fixture:
     root: Path
@@ -279,6 +344,42 @@ def _run_upstream(fixture: _Fixture, run_id: str):
     }
     results = FullPipelineRunner(stages).run_until(context, StageId.INDICATOR_REBUILD)
     return context, results
+
+
+def _run_all(fixture: _Fixture, run_id: str):
+    context = _context(fixture, run_id)
+    results = FullPipelineRunner(_all_stages()).run_until(context, StageId.DELTA_AND_DECISION)
+    return context, results
+
+
+def _all_stages():
+    return {
+        StageId.INPUT_SNAPSHOT: InputSnapshotStage(repository_state=_clean_repository, batch_size=17),
+        StageId.MARKET_STATE_REBUILD: MarketStateRebuildStage(batch_size=17),
+        StageId.UNIVERSE_REBUILD: UniverseRebuildStage(batch_size=17),
+        StageId.INDICATOR_REBUILD: IndicatorRebuildStage(batch_size=17),
+        StageId.SIGNAL_REBUILD: SignalRebuildStage(batch_size=17),
+        StageId.TRADE_REBUILD: TradeRebuildStage(batch_size=17),
+        StageId.METRICS_REBUILD: MetricsRebuildStage(),
+        StageId.DELTA_AND_DECISION: DeltaAndDecisionStage(),
+    }
+
+
+def _add_archived_comparisons(fixture: _Fixture) -> dict[str, Path]:
+    archive = fixture.root / "archive"
+    archive.mkdir()
+    signals = archive / "signals.csv"
+    trades = archive / "trades.csv"
+    metrics = archive / "metrics.json"
+    signals.write_text("signal_id,status\n", encoding="utf-8")
+    pd.DataFrame(columns=["signal_id", "status", "entry_date", "entry_price", "exit_date", "exit_price", "exit_reason", "holding_days", "net_return"]).to_csv(trades, index=False)
+    metrics.write_text(json.dumps({"overall": {}}), encoding="utf-8")
+    paths = {"signals": signals, "trades": trades, "metrics": metrics}
+    fixture.manifest["comparison_only_inputs"] = {
+        f"original_{name}": {"path": str(path), "sha256": sha256_file(path)}
+        for name, path in paths.items()
+    }
+    return paths
 
 
 def _context(fixture: _Fixture, run_id: str) -> StageContext:

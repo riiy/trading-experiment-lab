@@ -9,7 +9,7 @@ new Setup and not a strategy-rule change.
 Current implementation state:
 
 ```yaml
-status: implementation_active
+status: implementation_pending_audit
 baseline_commit: 468bacc6fead27020e2dfce5f33368a623492122
 implementation_frozen: false
 implementation_audited: false
@@ -25,19 +25,23 @@ upstream_stages_implemented:
   - MARKET_STATE_REBUILD
   - UNIVERSE_REBUILD
   - INDICATOR_REBUILD
-downstream_stages_implemented: false
-concrete_stages_implemented: false
+downstream_stages_implemented:
+  - SIGNAL_REBUILD
+  - TRADE_REBUILD
+  - METRICS_REBUILD
+  - DELTA_AND_DECISION
+concrete_stages_implemented: true
 implementation_audited: false
 full_recalculation_allowed: false
 ```
 
-The upstream stages are development-tested only. `SIGNAL_REBUILD`, `TRADE_REBUILD`,
-`METRICS_REBUILD`, and `DELTA_AND_DECISION` remain unimplemented, so the complete runner
-cannot be audited, frozen, or authorized.
+All eight stages are development-tested. The complete runner remains unaudited and
+cannot be frozen or authorized until the independent implementation audit passes.
 
 Trading, account simulation, and ticket generation remain disabled throughout this
 engineering phase. No strategy decision may be produced before the implementation audit
-passes and a new engine commit is frozen.
+passes and a new engine commit is frozen. Development runs may emit a non-authoritative
+decision preview; they cannot publish it or update the Registry setup decision.
 
 ## 2. Contract
 
