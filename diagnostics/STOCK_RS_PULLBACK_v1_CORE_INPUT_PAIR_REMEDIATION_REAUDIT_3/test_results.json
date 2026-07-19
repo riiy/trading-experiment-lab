@@ -1,0 +1,7 @@
+{
+  "focused": {"command": "uv run pytest tests/test_core_input_pair.py -q", "passed": 12, "failed": 0},
+  "full": {"command": "uv run pytest -q", "passed": 242, "failed": 0},
+  "config_check": "OK",
+  "git_diff_check": "passed",
+  "semantic_probe": "PROBE_PASSED"
+}

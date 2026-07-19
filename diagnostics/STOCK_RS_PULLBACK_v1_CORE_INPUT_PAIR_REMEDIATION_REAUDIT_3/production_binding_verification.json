@@ -1,0 +1,16 @@
+{
+  "decision": "BINDING_VERIFIED",
+  "implementation_commit": "7faf0784eece73021dd7e58ec3de9136658276d4",
+  "runtime_head_commit": "d0c0450bd14f803c4a98a8aea87ddfa2572dc294",
+  "runtime_changes_after_implementation": [
+    "experiment_registry.yaml",
+    "tests/test_config.py"
+  ],
+  "frozen_files": {
+    "src/texperiment/cli.py": "5ca969a2a52261f7c890a1e92dffbd3f01b0cc590ae0e706b38b666e2da69900",
+    "src/texperiment/data/core_input_pair.py": "41201e3e9ffc2d2e5f464b0eda92d817b47bdbb711705cdaa07d27b93b7c0797",
+    "tests/test_core_input_pair.py": "771fb182a1e7ba13768b3c2fd4970b7b3a6ac6db229700691bc67436e88b050d"
+  },
+  "frozen_files_match_implementation": true,
+  "production_drift": false
+}

@@ -1,0 +1,16 @@
+{
+  "decision": "PRIOR_AND_CURRENT_FINDINGS_VERIFIED_FIXED",
+  "findings": {
+    "FILTERED_SOURCE_CLOSE_LEAKS_INTO_RETAINED_RAW_PRE_CLOSE": "VERIFIED_FIXED",
+    "FULLY_FILTERED_SECURITY_EMPTY_SPLIT_INDEX_ERROR": "VERIFIED_FIXED",
+    "PUBLICATION_FAILURE_DIAGNOSTIC_FALSE_POSITIVE": "VERIFIED_FIXED"
+  },
+  "current_remediation_evidence": {
+    "all_input_rows_filtered": "NO_VALID_PAIRED_ROWS",
+    "empty_split_attempted": false,
+    "fully_filtered_code_count_persisted": true,
+    "fully_filtered_codes_persisted": true,
+    "fully_filtered_source_rows_persisted": true,
+    "later_securities_continue": true
+  }
+}

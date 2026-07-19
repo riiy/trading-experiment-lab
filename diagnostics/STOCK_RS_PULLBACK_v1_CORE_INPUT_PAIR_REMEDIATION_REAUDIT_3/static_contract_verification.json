@@ -1,0 +1,18 @@
+{
+  "decision": "STATIC_CONTRACT_VERIFIED",
+  "checks": {
+    "empty_retained_frame_short_circuits_before_split": true,
+    "fully_filtered_security_does_not_break_security_loop": true,
+    "fully_filtered_fields_are_machine_readable": true,
+    "immediate_source_predecessor_policy_unchanged": true,
+    "non_positive_ohlc_filter_applies_to_all_supplied_layers": true,
+    "output_verification_uses_parquet_batches": true,
+    "price_values_are_not_transformed": true,
+    "source_file_and_date_mismatches_fail_closed": true,
+    "temporary_then_atomic_candidate_publication_preserved": true
+  },
+  "policy_ids": {
+    "paired_filter": "PAIRED_NON_POSITIVE_OHLC_FILTER_V1",
+    "pre_close": "IMMEDIATE_SOURCE_PREDECESSOR_V1"
+  }
+}

@@ -1,0 +1,9 @@
+case,status,evidence
+fully_filtered_security_continues_stream,PASS,semantic_probe_results.json
+all_inputs_filtered_stable_failure,PASS,NO_VALID_PAIRED_ROWS
+fully_filtered_breakdown_persisted,PASS,code_count_and_source_rows
+immediate_source_pre_close,PASS,semantic_probe_results.json
+three_layer_sync_filter,PASS,raw_qfq_hfq
+publication_success_and_failure_flags,PASS,semantic_probe_results.json
+streaming_output_verification,PASS,batch_size_1
+permissions_closed,PASS,audit_manifest.json

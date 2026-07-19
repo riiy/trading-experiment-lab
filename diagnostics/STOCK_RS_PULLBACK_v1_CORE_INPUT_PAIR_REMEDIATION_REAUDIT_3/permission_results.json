@@ -1,0 +1,12 @@
+{
+  "decision": "PERMISSION_GATES_PASSED",
+  "account_simulation_allowed": false,
+  "current_setup": null,
+  "formal_input_generated": false,
+  "formal_input_published": false,
+  "formal_manifest_generated": false,
+  "formal_recalculation_performed": false,
+  "registry_changed_during_audit": false,
+  "ticket_generation_allowed": false,
+  "trading_allowed": false
+}
