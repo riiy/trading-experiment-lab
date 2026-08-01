@@ -225,7 +225,7 @@ full_pipeline_recalculation_tasks:
         audit_record_commit: ba442d9cd7f2df5014abd6c540f7c137ac56c26b
         report: diagnostics/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_2/audit_report.md
   STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION:
-    status: RECENT_10Y_SCOPE_FROZEN_PENDING_PAIRED_CANDIDATE
+    status: CORE_INPUT_PAIR_CANDIDATE_PENDING_AUDIT
     raw_daily_available: false
     qfq_pairing_verified: false
     profiles_complete: false
@@ -233,6 +233,18 @@ full_pipeline_recalculation_tasks:
     formal_recalculation_run_authorized: false
     blocking_mismatches: 3306
     evidence: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_GENERATION_2/pair_validation_failure.json
+    generation_attempt_3:
+      status: CORE_INPUT_PAIR_CANDIDATE_ACCEPTED_PENDING_AUDIT
+      candidate_root: data/processed/formal_snapshots/STOCK_RS_PULLBACK_v1_recent_10y_pair_v3
+      pair_audit: data/processed/formal_snapshots/STOCK_RS_PULLBACK_v1_recent_10y_pair_v3/pair_audit.json
+      rows: 10249283
+      unique_codes: 5505
+      min_date: "2016-04-20"
+      max_date: "2026-07-17"
+      raw_sha256: d733c32dccad66e91abe0ed0a1740093cbe20f4f82e56551870ba0b9f0bfc6af
+      qfq_sha256: 8b73a67fc3b4d7f5e86575f3835805f81f66a151b4e940a02c004595ff2ded24
+      unevaluable_mapping_rows: 0
+      formal_input_published: false
     recent_10y_validation_scope_v1:
       status: audit_passed
       implementation_commit: c3e8b68
