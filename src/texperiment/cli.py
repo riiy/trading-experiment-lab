@@ -152,6 +152,7 @@ def cmd_prepare_stock_rs_pullback_core_input_pair(args: argparse.Namespace) -> i
         validation_start_date=str(window["start_date"]),
         validation_end_date=str(window["end_date"]),
         indicator_warmup_trading_days=int(window["indicator_warmup_trading_days"]),
+        indicator_warmup_start_date=str(window["indicator_warmup_start_date"]),
         excluded_codes=frozenset(str(code) for code in setup["universe"]["data_quality_excluded_codes"]),
     )
     try:

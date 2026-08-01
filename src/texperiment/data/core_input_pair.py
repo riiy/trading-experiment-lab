@@ -52,11 +52,14 @@ class CoreInputPairScope:
     validation_start_date: str
     validation_end_date: str
     indicator_warmup_trading_days: int
+    indicator_warmup_start_date: str
     excluded_codes: FrozenSet[str] = frozenset()
 
     def __post_init__(self) -> None:
         if self.start > self.end:
             raise ValueError("validation_start_date must not be after validation_end_date")
+        if self.warmup_start > self.start:
+            raise ValueError("indicator_warmup_start_date must not be after validation_start_date")
         if self.indicator_warmup_trading_days < 0:
             raise ValueError("indicator_warmup_trading_days must be non-negative")
 
@@ -67,6 +70,10 @@ class CoreInputPairScope:
     @property
     def end(self) -> pd.Timestamp:
         return pd.Timestamp(self.validation_end_date)
+
+    @property
+    def warmup_start(self) -> pd.Timestamp:
+        return pd.Timestamp(self.indicator_warmup_start_date)
 
 
 def prepare_tdx_core_input_pair(
@@ -84,8 +91,8 @@ def prepare_tdx_core_input_pair(
     supplied price layer has finite, positive OHLC. Source key mismatches,
     duplicate output keys, volume mismatches, or unevaluable raw/qfq mappings
     prevent candidate publication. When a scope is supplied, only its inclusive
-    validation dates plus the configured number of preceding valid observations
-    per code are published. Whole-code exclusions are applied before parsing;
+    validation dates plus the frozen global warmup date range are published.
+    Whole-code exclusions are applied before parsing;
     out-of-scope source differences remain diagnostic-only.
     """
     raw_root, qfq_root = Path(raw_input), Path(qfq_input)
@@ -451,7 +458,7 @@ def _apply_scope(frame: pd.DataFrame, scope: CoreInputPairScope | None) -> pd.Da
     in_window = frame.loc[dates.between(scope.start, scope.end, inclusive="both")]
     if in_window.empty:
         return in_window.copy()
-    warmup = frame.loc[dates.lt(scope.start)].tail(scope.indicator_warmup_trading_days)
+    warmup = frame.loc[dates.between(scope.warmup_start, scope.start, inclusive="left")]
     return pd.concat([warmup, in_window], ignore_index=True)
 
 
@@ -587,9 +594,10 @@ def _base_report(raw: Path, qfq: Path, hfq: Path | None, scope: CoreInputPairSco
             "validation_start_date": _date_text(scope.start) if scope else None,
             "validation_end_date": _date_text(scope.end) if scope else None,
             "indicator_warmup_trading_days": scope.indicator_warmup_trading_days if scope else 0,
+            "indicator_warmup_start_date": _date_text(scope.warmup_start) if scope else None,
             "excluded_codes": sorted(scope.excluded_codes) if scope else [],
             "selection_rule": (
-                "all in-window dates plus preceding valid observations per code"
+                "all dates from frozen global warmup start through validation end"
                 if scope
                 else "full source range"
             ),

@@ -28,6 +28,7 @@ def main() -> None:
     window = setup["validation_window"]
     start = pd.Timestamp(window["start_date"])
     end = pd.Timestamp(window["end_date"])
+    warmup_start = pd.Timestamp(window["indicator_warmup_start_date"])
     source = pd.read_parquet(DIAGNOSTICS_PATH, columns=["code", "date"])
     source["date"] = pd.to_datetime(source["date"])
     in_window = source.loc[source["date"].between(start, end, inclusive="both")]
@@ -36,6 +37,7 @@ def main() -> None:
     checks = {
         "window_is_fixed": (str(start.date()), str(end.date())) == ("2016-07-17", "2026-07-17"),
         "warmup_is_60": int(window["indicator_warmup_trading_days"]) == 60,
+        "warmup_start_is_frozen": str(warmup_start.date()) == "2016-04-20",
         "recent_ambiguous_rows_is_30": len(in_window) == 30,
         "recent_ambiguous_codes_is_21": len(expected_codes) == 21,
         "configured_exclusion_codes_match_diagnostics": configured_codes == expected_codes,
@@ -54,6 +56,7 @@ def main() -> None:
             "start_date": str(start.date()),
             "end_date": str(end.date()),
             "indicator_warmup_trading_days": int(window["indicator_warmup_trading_days"]),
+            "indicator_warmup_start_date": str(warmup_start.date()),
         },
         "mapping_ambiguity": {
             "rows_in_window": len(in_window),

@@ -241,11 +241,12 @@ uv run texperiment prepare-stock-rs-pullback-core-input-pair \
 
 `prepare-stock-rs-pullback-core-input-pair` reads the frozen
 `STOCK_RS_PULLBACK_v1` setup by default. It publishes only the configured
-validation window, the configured count of preceding valid observations per
-code for indicator warmup, and no rows for configured data-quality-excluded
-codes. This is configuration-driven; the command does not contain code-specific
-runtime branches. Source differences outside that retained scope remain in the
-candidate audit but do not block publication.
+validation window, the frozen global warmup date range, and no rows for
+configured data-quality-excluded codes. It does not select a per-code count of
+valid observations that could cross the warmup date boundary. This is
+configuration-driven; the command does not contain code-specific runtime
+branches. Source differences outside that retained scope remain in the candidate
+audit but do not block publication.
 
 该命令实施冻结规则 `PAIRED_NON_POSITIVE_OHLC_FILTER_V1`：
 

@@ -250,6 +250,7 @@ def test_scope_ignores_out_of_window_mapping_failure_and_keeps_valid_warmup(tmp_
         validation_start_date="2026-01-03",
         validation_end_date="2026-01-03",
         indicator_warmup_trading_days=0,
+        indicator_warmup_start_date="2026-01-03",
     )
 
     result = prepare_tdx_core_input_pair(
@@ -267,7 +268,7 @@ def test_scope_ignores_out_of_window_mapping_failure_and_keeps_valid_warmup(tmp_
         "unevaluable_rows": 0,
         "evaluable_ratio": 1.0,
     }
-    assert result.report["scope"]["selection_rule"] == "all in-window dates plus preceding valid observations per code"
+    assert result.report["scope"]["selection_rule"] == "all dates from frozen global warmup start through validation end"
 
 
 def test_scope_retains_configured_valid_observations_for_warmup(tmp_path):
@@ -276,6 +277,7 @@ def test_scope_retains_configured_valid_observations_for_warmup(tmp_path):
         validation_start_date="2026-01-03",
         validation_end_date="2026-01-03",
         indicator_warmup_trading_days=1,
+        indicator_warmup_start_date="2026-01-02",
     )
 
     result = prepare_tdx_core_input_pair(
@@ -292,6 +294,25 @@ def test_scope_retains_configured_valid_observations_for_warmup(tmp_path):
     ]
 
 
+def test_scope_enforces_global_warmup_boundary_for_sparse_valid_rows():
+    frame = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2011-04-21", "2016-04-19", "2016-04-20", "2016-07-17"]),
+            "value": [1, 2, 3, 4],
+        }
+    )
+    scope = CoreInputPairScope(
+        validation_start_date="2016-07-17",
+        validation_end_date="2016-07-17",
+        indicator_warmup_trading_days=60,
+        indicator_warmup_start_date="2016-04-20",
+    )
+
+    selected = core_input_pair._apply_scope(frame, scope)
+
+    assert selected["date"].tolist() == [pd.Timestamp("2016-04-20"), pd.Timestamp("2016-07-17")]
+
+
 def test_scope_does_not_retain_warmup_for_codes_without_an_in_window_row(tmp_path):
     sources = _write_sources(tmp_path)
     for layer, header in {"raw": "不复权", "qfq": "前复权", "hfq": "后复权"}.items():
@@ -304,6 +325,7 @@ def test_scope_does_not_retain_warmup_for_codes_without_an_in_window_row(tmp_pat
         validation_start_date="2026-01-03",
         validation_end_date="2026-01-03",
         indicator_warmup_trading_days=1,
+        indicator_warmup_start_date="2026-01-02",
     )
 
     result = prepare_tdx_core_input_pair(
@@ -330,6 +352,7 @@ def test_scope_excludes_an_entire_configured_code_before_pair_validation(tmp_pat
         validation_start_date="2026-01-03",
         validation_end_date="2026-01-03",
         indicator_warmup_trading_days=0,
+        indicator_warmup_start_date="2026-01-03",
         excluded_codes=frozenset({"000001.SZ"}),
     )
 

@@ -44,6 +44,7 @@ validation_window:
   start_date: "2016-07-17"
   end_date: "2026-07-17"
   indicator_warmup_trading_days: 60
+  indicator_warmup_start_date: "2016-04-20"
   exclusion_reason: DATA_QUALITY_RAW_QFQ_MAPPING_AMBIGUITY
 
 strength_filter:

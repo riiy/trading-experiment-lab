@@ -244,12 +244,20 @@ full_pipeline_recalculation_tasks:
         start_date: "2016-07-17"
         end_date: "2026-07-17"
         indicator_warmup_trading_days: 60
+        indicator_warmup_start_date: "2016-04-20"
       mapping_ambiguity:
         historical_rows: 3306
         in_window_rows: 30
         excluded_codes: 21
       formal_input_published: false
       report: diagnostics/STOCK_RS_PULLBACK_RECENT_10Y_VALIDATION_SCOPE_AUDIT_v1/audit_report.md
+      global_warmup_boundary_amendment_v1:
+        status: pending_scope_reaudit
+        reason: PER_CODE_VALID_OBSERVATION_WARMUP_CROSSED_FROZEN_GLOBAL_WARMUP_BOUNDARY
+        benchmark_calendar: data/processed/index_daily.parquet
+        benchmark_derived_warmup_start_date: "2016-04-20"
+        rejected_candidate_evidence: diagnostics/STOCK_RS_PULLBACK_v1_RECENT_10Y_CORE_INPUT_PAIR_CANDIDATE_v2/scope_contract_failure.json
+        formal_input_published: false
     remediation_1:
       task: STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_1
       status: implementation_error_found
