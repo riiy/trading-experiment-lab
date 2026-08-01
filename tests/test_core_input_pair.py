@@ -292,6 +292,32 @@ def test_scope_retains_configured_valid_observations_for_warmup(tmp_path):
     ]
 
 
+def test_scope_does_not_retain_warmup_for_codes_without_an_in_window_row(tmp_path):
+    sources = _write_sources(tmp_path)
+    for layer, header in {"raw": "不复权", "qfq": "前复权", "hfq": "后复权"}.items():
+        (sources[layer].parent / "SZ#000001.txt").write_text(
+            f"000001 旧股票 日线 {header}\n日期 开盘 最高 最低 收盘 成交量 成交额\n"
+            "2026-01-02,5.00,5.20,4.90,5.10,800,4000.00\n",
+            encoding="gb18030",
+        )
+    scope = CoreInputPairScope(
+        validation_start_date="2026-01-03",
+        validation_end_date="2026-01-03",
+        indicator_warmup_trading_days=1,
+    )
+
+    result = prepare_tdx_core_input_pair(
+        sources["raw"].parent,
+        sources["qfq"].parent,
+        tmp_path / "candidate",
+        hfq_input=sources["hfq"].parent,
+        scope=scope,
+    )
+
+    assert set(pd.read_parquet(result.raw_daily)["code"]) == {"600000.SH"}
+    assert result.report["scope"]["codes_without_in_window_rows"] == ["000001.SZ"]
+
+
 def test_scope_excludes_an_entire_configured_code_before_pair_validation(tmp_path):
     sources = _write_sources(tmp_path)
     excluded_raw = sources["raw"].parent / "SZ#000001.txt"

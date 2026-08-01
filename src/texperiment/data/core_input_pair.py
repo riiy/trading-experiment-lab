@@ -146,6 +146,7 @@ def prepare_tdx_core_input_pair(
         unsafe_pre_close_rows = 0
         fully_filtered_codes: list[str] = []
         fully_filtered_source_rows = 0
+        codes_without_in_window_rows: list[str] = []
         rows_written = mapping_evaluable = mapping_unknown = volume_mismatches = 0
         raw_source_duplicates = qfq_source_duplicates = hfq_source_duplicates = 0
 
@@ -254,7 +255,12 @@ def prepare_tdx_core_input_pair(
             filtered_year.update(str(date.year) for date in rejected)
             filtered_exchange.update([market.upper()] * len(rejected))
 
-            retained = _apply_scope(merged.loc[valid].copy(), scope)
+            retained = merged.loc[valid].copy()
+            if scope is not None:
+                retained = _apply_scope(retained, scope)
+                if retained.empty:
+                    codes_without_in_window_rows.append(code)
+                    continue
             if retained.empty:
                 fully_filtered_codes.append(code)
                 fully_filtered_source_rows += len(merged)
@@ -318,6 +324,9 @@ def prepare_tdx_core_input_pair(
             "synchronously_dropped_unsafe_pre_close_rows": unsafe_pre_close_rows,
             "fallback_to_earlier_retained_close": False,
         }
+        if scope is not None:
+            report["scope"]["codes_without_in_window_rows"] = sorted(codes_without_in_window_rows)
+            report["scope"]["codes_without_in_window_row_count"] = len(codes_without_in_window_rows)
         report["mapping_validation"] = {
             "method": "AFFINE_THEN_DAILY_RATIO_FALLBACK",
             "evaluable_rows": mapping_evaluable,
@@ -439,8 +448,10 @@ def _apply_scope(frame: pd.DataFrame, scope: CoreInputPairScope | None) -> pd.Da
     if scope is None:
         return frame
     dates = pd.to_datetime(frame["date"])
-    warmup = frame.loc[dates.lt(scope.start)].tail(scope.indicator_warmup_trading_days)
     in_window = frame.loc[dates.between(scope.start, scope.end, inclusive="both")]
+    if in_window.empty:
+        return in_window.copy()
+    warmup = frame.loc[dates.lt(scope.start)].tail(scope.indicator_warmup_trading_days)
     return pd.concat([warmup, in_window], ignore_index=True)
 
 
