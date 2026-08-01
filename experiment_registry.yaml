@@ -252,11 +252,16 @@ full_pipeline_recalculation_tasks:
       formal_input_published: false
       report: diagnostics/STOCK_RS_PULLBACK_RECENT_10Y_VALIDATION_SCOPE_AUDIT_v1/audit_report.md
       global_warmup_boundary_amendment_v1:
-        status: pending_scope_reaudit
+        status: audit_passed
+        implementation_commit: 1dedf1e
+        audit_id: STOCK_RS_PULLBACK_RECENT_10Y_VALIDATION_SCOPE_AUDIT_v2
+        audit_decision: RECENT_10Y_VALIDATION_SCOPE_REAUDIT_PASSED
+        audit_record_commit: 6bd0933
         reason: PER_CODE_VALID_OBSERVATION_WARMUP_CROSSED_FROZEN_GLOBAL_WARMUP_BOUNDARY
         benchmark_calendar: data/processed/index_daily.parquet
         benchmark_derived_warmup_start_date: "2016-04-20"
         rejected_candidate_evidence: diagnostics/STOCK_RS_PULLBACK_v1_RECENT_10Y_CORE_INPUT_PAIR_CANDIDATE_v2/scope_contract_failure.json
+        audit_report: diagnostics/STOCK_RS_PULLBACK_RECENT_10Y_VALIDATION_SCOPE_AUDIT_v2/audit_report.md
         formal_input_published: false
     remediation_1:
       task: STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_1

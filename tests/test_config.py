@@ -143,7 +143,9 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     }
     assert scope["formal_input_published"] is False
     amendment = scope["global_warmup_boundary_amendment_v1"]
-    assert amendment["status"] == "pending_scope_reaudit"
+    assert amendment["status"] == "audit_passed"
+    assert amendment["implementation_commit"] == "1dedf1e"
+    assert amendment["audit_decision"] == "RECENT_10Y_VALIDATION_SCOPE_REAUDIT_PASSED"
     assert amendment["benchmark_derived_warmup_start_date"] == "2016-04-20"
     assert amendment["formal_input_published"] is False
     assert core_inputs["remediation_1"]["status"] == "implementation_error_found"
