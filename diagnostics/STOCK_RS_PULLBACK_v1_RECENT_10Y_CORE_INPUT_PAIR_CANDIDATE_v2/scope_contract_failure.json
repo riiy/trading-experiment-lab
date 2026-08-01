@@ -1,0 +1,14 @@
+{
+  "attempt": "STOCK_RS_PULLBACK_v1_recent_10y_pair_v2",
+  "decision": "CORE_INPUT_PAIR_CANDIDATE_REJECTED_SCOPE_CONTRACT",
+  "reason": "PER_CODE_VALID_OBSERVATION_WARMUP_CROSSED_FROZEN_GLOBAL_WARMUP_BOUNDARY",
+  "observed_output_min_date": "2011-04-21",
+  "required_global_warmup_start_date": "2016-04-20",
+  "example_code": "601919.SH",
+  "example_explanation": "Its most recent 60 valid raw/qfq/hfq observations before 2016-07-17 span back to 2011 because intervening adjusted observations are not valid.",
+  "formal_input_published": false,
+  "formal_manifest_generated": false,
+  "formal_recalculation_performed": false,
+  "strategy_decision_generated": false,
+  "trading_allowed": false
+}
