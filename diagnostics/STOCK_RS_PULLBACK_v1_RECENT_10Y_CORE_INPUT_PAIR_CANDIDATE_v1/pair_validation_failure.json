@@ -1,0 +1,238 @@
+{
+  "blocking_errors": [
+    "OSError"
+  ],
+  "decision": "CORE_INPUT_PAIR_VALIDATION_FAILED",
+  "mapping_validation": {
+    "evaluable_ratio": 1.0,
+    "evaluable_rows": 10265802,
+    "method": "AFFINE_THEN_DAILY_RATIO_FALLBACK",
+    "unevaluable_rows": 0
+  },
+  "outputs": {
+    "qfq_daily": {
+      "adjustment": "qfq",
+      "max_date": "2026-07-17",
+      "min_date": "2011-04-21",
+      "path": "qfq_daily.parquet",
+      "rows": 10265802,
+      "sha256": "70e5590a07c618b05eeb91c7f2b2ac09239c935b6eb97c351b20b2743c949002",
+      "unique_codes": 5505
+    },
+    "raw_daily": {
+      "adjustment": "none",
+      "max_date": "2026-07-17",
+      "min_date": "2011-04-21",
+      "path": "raw_daily.parquet",
+      "rows": 10265802,
+      "sha256": "0e9763b6d046790b351c0ad7bb1a376de8bcd1648412c7585d191ea5ef9f5fc1",
+      "unique_codes": 5505
+    }
+  },
+  "pair_validation": {
+    "accepted": true,
+    "exact_primary_key_equality": true,
+    "hfq_source_duplicate_rows": 0,
+    "qfq_duplicate_keys": 0,
+    "qfq_only_keys": 0,
+    "qfq_source_duplicate_rows": 0,
+    "raw_duplicate_keys": 0,
+    "raw_only_keys": 0,
+    "raw_source_duplicate_rows": 0,
+    "volume_mismatch_rows": 0
+  },
+  "paired_filter": {
+    "dropped_by_exchange": {
+      "SH": 455260,
+      "SZ": 285191
+    },
+    "dropped_by_year": {
+      "1991": 458,
+      "1992": 1592,
+      "1993": 5427,
+      "1994": 20127,
+      "1995": 23088,
+      "1996": 25326,
+      "1997": 29334,
+      "1998": 32654,
+      "1999": 34068,
+      "2000": 28589,
+      "2001": 32047,
+      "2002": 43083,
+      "2003": 55296,
+      "2004": 72091,
+      "2005": 98554,
+      "2006": 66640,
+      "2007": 21549,
+      "2008": 32843,
+      "2009": 23583,
+      "2010": 12896,
+      "2011": 13515,
+      "2012": 22616,
+      "2013": 17378,
+      "2014": 14625,
+      "2015": 3734,
+      "2016": 3531,
+      "2017": 1199,
+      "2018": 1405,
+      "2019": 1540,
+      "2020": 1407,
+      "2021": 231,
+      "2022": 7,
+      "2024": 7,
+      "2026": 11
+    },
+    "fully_filtered_code_count": 8,
+    "fully_filtered_codes": [
+      "920079.BJ",
+      "920176.BJ",
+      "920238.BJ",
+      "603468.SH",
+      "688806.SH",
+      "688825.SH",
+      "001232.SZ",
+      "301677.SZ"
+    ],
+    "fully_filtered_source_rows": 0,
+    "layers": [
+      "raw",
+      "qfq",
+      "hfq"
+    ],
+    "method": "PAIRED_NON_POSITIVE_OHLC_FILTER_V1",
+    "non_positive_or_missing_rows_by_layer": {
+      "hfq": 8981,
+      "qfq": 732452,
+      "raw": 0
+    },
+    "price_values_transformed": false,
+    "rule": "drop key from both outputs when any supplied layer has non-positive or missing OHLC",
+    "synchronously_dropped_keys": 740451
+  },
+  "pre_close_policy": {
+    "fallback_to_earlier_retained_close": false,
+    "first_source_observation_may_have_missing_pre_close": true,
+    "method": "IMMEDIATE_SOURCE_PREDECESSOR_V1",
+    "non_positive_or_missing_source_pre_close_rows_by_layer": {
+      "qfq": 595,
+      "raw": 0
+    },
+    "rule": "use the immediate source predecessor close; never substitute an earlier retained close",
+    "source_pre_close_fields": {
+      "qfq": "adj_close.shift(1)",
+      "raw": "raw_close.shift(1)"
+    },
+    "synchronously_dropped_unsafe_pre_close_rows": 595
+  },
+  "projection": {
+    "dropped_raw_only_rows": 0,
+    "method": "PAIRED_NON_POSITIVE_OHLC_FILTER_V1",
+    "price_values_transformed": false,
+    "projected_raw_rows": 10265802,
+    "qfq_only_keys_after_projection": 0,
+    "raw_only_keys_after_projection": 0,
+    "source_qfq_sha256": "91da5169adb2caa234c3be98183eee5adb4cd84763c1ae539d3bf6abfadeafe1",
+    "source_raw_sha256": "ef35d691c95c92f272903948e505a6ed4bef72a1234c055aac377224756c773a"
+  },
+  "publication": {
+    "atomic_rename_completed": false,
+    "candidate_published": false,
+    "transactional_temporary_output": true
+  },
+  "safety": {
+    "formal_manifest_generated": false,
+    "full_recalculation_performed": false,
+    "hfq_cross_validation_source": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/hfq",
+    "price_values_transformed": false,
+    "qfq_prices_used_to_infer_raw": false,
+    "qfq_source": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/qfq",
+    "raw_source": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/raw",
+    "trading_allowed": false
+  },
+  "scope": {
+    "applied": true,
+    "excluded_codes": [
+      "000564.SZ",
+      "000615.SZ",
+      "000617.SZ",
+      "000981.SZ",
+      "002194.SZ",
+      "002936.SZ",
+      "300348.SZ",
+      "300371.SZ",
+      "300543.SZ",
+      "300587.SZ",
+      "300606.SZ",
+      "300639.SZ",
+      "600126.SH",
+      "601916.SH",
+      "603269.SH",
+      "603283.SH",
+      "603535.SH",
+      "603811.SH",
+      "920245.BJ",
+      "920395.BJ",
+      "920509.BJ"
+    ],
+    "indicator_warmup_trading_days": 60,
+    "selection_rule": "all in-window dates plus preceding valid observations per code",
+    "validation_end_date": "2026-07-17",
+    "validation_start_date": "2016-07-17"
+  },
+  "source_key_diagnostics": {
+    "common_keys": 16597893,
+    "file_sets": {
+      "all_layer_common_files": 5513,
+      "hfq_outside_all_layer_common_files": 21,
+      "qfq_outside_all_layer_common_files": 21,
+      "raw_outside_all_layer_common_files": 21,
+      "raw_qfq_common_files": 5513
+    },
+    "in_scope_qfq_only_keys": 0,
+    "in_scope_raw_only_keys": 0,
+    "qfq_only_keys": 0,
+    "raw_only_breakdown": {
+      "by_exchange": {},
+      "by_year": {},
+      "codes_not_in_qfq": [],
+      "common_codes_extra_dates": [],
+      "dates_after_qfq_max": 0,
+      "dates_before_qfq_min": 0
+    },
+    "raw_only_keys": 0
+  },
+  "source_profiles": {
+    "qfq": {
+      "adjustment": "qfq",
+      "max_date": "2026-07-17",
+      "min_date": "1990-12-19",
+      "rows": 16597893,
+      "unique_codes": 5513
+    },
+    "raw": {
+      "adjustment": "none",
+      "max_date": "2026-07-17",
+      "min_date": "1990-12-19",
+      "rows": 16597893,
+      "unique_codes": 5513
+    }
+  },
+  "source_snapshots": {
+    "hfq": {
+      "files": 5534,
+      "path": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/hfq",
+      "tree_sha256": "f0a055c17cdbc7da6d22c1e2dc0a5c9a41b335d8966968c76aaf6d9450d67919"
+    },
+    "qfq": {
+      "files": 5534,
+      "path": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/qfq",
+      "tree_sha256": "91da5169adb2caa234c3be98183eee5adb4cd84763c1ae539d3bf6abfadeafe1"
+    },
+    "raw": {
+      "files": 5534,
+      "path": "/home/riiy/trading-experiment-lab/data/raw/tdx_text/raw",
+      "tree_sha256": "ef35d691c95c92f272903948e505a6ed4bef72a1234c055aac377224756c773a"
+    }
+  },
+  "task": "STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_2"
+}

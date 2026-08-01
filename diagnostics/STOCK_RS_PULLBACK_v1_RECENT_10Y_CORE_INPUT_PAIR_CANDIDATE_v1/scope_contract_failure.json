@@ -1,0 +1,13 @@
+{
+  "attempt": "STOCK_RS_PULLBACK_v1_recent_10y_pair_v1",
+  "decision": "CORE_INPUT_PAIR_CANDIDATE_REJECTED_SCOPE_CONTRACT",
+  "reason": "CODES_WITHOUT_IN_WINDOW_ROWS_CONTRIBUTED_WARMUP_ROWS",
+  "observed_output_min_date": "2011-04-21",
+  "required_validation_start_date": "2016-07-17",
+  "indicator_warmup_policy": "only codes with at least one in-window row may contribute preceding valid observations",
+  "formal_input_published": false,
+  "formal_manifest_generated": false,
+  "formal_recalculation_performed": false,
+  "strategy_decision_generated": false,
+  "trading_allowed": false
+}
