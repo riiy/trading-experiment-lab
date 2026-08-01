@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from texperiment.cli import build_parser
 from texperiment.data import core_input_pair
 from texperiment.data.core_input_pair import CoreInputPairError, CoreInputPairScope, prepare_tdx_core_input_pair
 
@@ -316,6 +317,20 @@ def test_scope_excludes_an_entire_configured_code_before_pair_validation(tmp_pat
 
     assert set(pd.read_parquet(result.raw_daily)["code"]) == {"600000.SH"}
     assert result.report["scope"]["excluded_codes"] == ["000001.SZ"]
+
+
+def test_scoped_candidate_cli_receives_the_frozen_setup_config_argument():
+    args = build_parser().parse_args(
+        [
+            "prepare-stock-rs-pullback-core-input-pair",
+            "--output-root",
+            "candidate",
+            "--setup-config",
+            "configs/custom.yaml",
+        ]
+    )
+
+    assert args.setup_config == "configs/custom.yaml"
 
 
 def test_duplicate_source_key_is_blocking(tmp_path):

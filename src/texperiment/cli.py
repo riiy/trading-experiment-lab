@@ -600,7 +600,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--qfq-input", default="data/raw/tdx_text/qfq")
     p.add_argument("--raw-input", default="data/raw/tdx_text/raw")
     p.add_argument("--hfq-input", default="data/raw/tdx_text/hfq")
-    p.add_argument("--setup-config", default="configs/setups/STOCK_RS_PULLBACK_v1.yaml")
     p.add_argument("--output", default="data/processed/a_share_daily_remediation.parquet")
     p.add_argument("--allow-quality-warnings", action="store_true")
     p.set_defaults(func=cmd_ingest_tdx_paired_a_share_daily)
@@ -612,6 +611,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--raw-input", default="data/raw/tdx_text/raw")
     p.add_argument("--qfq-input", default="data/raw/tdx_text/qfq")
     p.add_argument("--hfq-input", default="data/raw/tdx_text/hfq")
+    p.add_argument("--setup-config", default="configs/setups/STOCK_RS_PULLBACK_v1.yaml")
     p.add_argument("--output-root", required=True, help="New candidate directory; must not exist")
     p.add_argument(
         "--diagnostics",
