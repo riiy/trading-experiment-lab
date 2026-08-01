@@ -8,7 +8,7 @@ from collections import Counter
 from dataclasses import dataclass
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any
+from typing import Any, FrozenSet
 
 import pandas as pd
 import pyarrow as pa
@@ -45,6 +45,30 @@ class CoreInputPairError(ValueError):
         self.report = report
 
 
+@dataclass(frozen=True)
+class CoreInputPairScope:
+    """Frozen research window applied after paired-source validation."""
+
+    validation_start_date: str
+    validation_end_date: str
+    indicator_warmup_trading_days: int
+    excluded_codes: FrozenSet[str] = frozenset()
+
+    def __post_init__(self) -> None:
+        if self.start > self.end:
+            raise ValueError("validation_start_date must not be after validation_end_date")
+        if self.indicator_warmup_trading_days < 0:
+            raise ValueError("indicator_warmup_trading_days must be non-negative")
+
+    @property
+    def start(self) -> pd.Timestamp:
+        return pd.Timestamp(self.validation_start_date)
+
+    @property
+    def end(self) -> pd.Timestamp:
+        return pd.Timestamp(self.validation_end_date)
+
+
 def prepare_tdx_core_input_pair(
     raw_input: str | Path,
     qfq_input: str | Path,
@@ -52,13 +76,17 @@ def prepare_tdx_core_input_pair(
     *,
     hfq_input: str | Path | None = None,
     diagnostics_path: str | Path | None = None,
+    scope: CoreInputPairScope | None = None,
 ) -> CoreInputPairResult:
     """Build a transactionally published canonical raw/qfq input pair.
 
     Source rows are never price-transformed. A key is retained only when every
     supplied price layer has finite, positive OHLC. Source key mismatches,
     duplicate output keys, volume mismatches, or unevaluable raw/qfq mappings
-    prevent candidate publication.
+    prevent candidate publication. When a scope is supplied, only its inclusive
+    validation dates plus the configured number of preceding valid observations
+    per code are published. Whole-code exclusions are applied before parsing;
+    out-of-scope source differences remain diagnostic-only.
     """
     raw_root, qfq_root = Path(raw_input), Path(qfq_input)
     hfq_root = Path(hfq_input) if hfq_input is not None else None
@@ -70,7 +98,7 @@ def prepare_tdx_core_input_pair(
     if tmp_root.exists():
         shutil.rmtree(tmp_root)
     tmp_root.mkdir(parents=True)
-    report = _base_report(raw_root, qfq_root, hfq_root)
+    report = _base_report(raw_root, qfq_root, hfq_root, scope)
     raw_writer: pq.ParquetWriter | None = None
     qfq_writer: pq.ParquetWriter | None = None
     raw_path = tmp_root / "raw_daily.parquet"
@@ -84,8 +112,13 @@ def prepare_tdx_core_input_pair(
             roots["hfq"] = hfq_root
         files = {layer: _unique_file_map(root) for layer, root in roots.items()}
         _record_source_identities(report, roots, files)
-        common_names = set(files["raw"]) & set(files["qfq"])
-        all_layer_common_names = set.intersection(*(set(layer_files) for layer_files in files.values()))
+        included_names = {
+            name
+            for name in set.union(*(set(layer_files) for layer_files in files.values()))
+            if _code_from_filename(name) not in (scope.excluded_codes if scope else frozenset())
+        }
+        common_names = set(files["raw"]) & set(files["qfq"]) & included_names
+        all_layer_common_names = set.intersection(*(set(layer_files) for layer_files in files.values())) & included_names
         report["source_key_diagnostics"]["file_sets"] = {
             "raw_qfq_common_files": len(common_names),
             "all_layer_common_files": len(all_layer_common_names),
@@ -94,12 +127,13 @@ def prepare_tdx_core_input_pair(
                 for layer, layer_files in files.items()
             },
         }
-        if not common_names or any(set(layer_files) != common_names for layer_files in files.values()):
+        if not common_names or any((set(layer_files) & included_names) != common_names for layer_files in files.values()):
             report["blocking_errors"].append("SOURCE_FILE_SET_MISMATCH")
 
         raw_profile = _empty_profile("none")
         qfq_profile = _empty_profile("qfq")
         source_common = source_raw_only = source_qfq_only = 0
+        scoped_raw_only = scoped_qfq_only = 0
         raw_only_year: Counter[str] = Counter()
         raw_only_exchange: Counter[str] = Counter()
         raw_only_all_dates: list[pd.Timestamp] = []
@@ -116,6 +150,8 @@ def prepare_tdx_core_input_pair(
         raw_source_duplicates = qfq_source_duplicates = hfq_source_duplicates = 0
 
         for name in sorted(set(files["raw"]) - common_names):
+            if name not in included_names:
+                continue
             raw_source = _read_price_file(files["raw"][name], "raw")
             market, raw_code = files["raw"][name].stem.split("#", maxsplit=1)
             code = f"{raw_code}.{market.upper()}"
@@ -128,6 +164,8 @@ def prepare_tdx_core_input_pair(
             raw_only_exchange.update([market.upper()] * len(dates))
             codes_not_in_qfq.add(code)
         for name in sorted(set(files["qfq"]) - common_names):
+            if name not in included_names:
+                continue
             qfq_source = _read_price_file(files["qfq"][name], "adj")
             market, raw_code = files["qfq"][name].stem.split("#", maxsplit=1)
             _update_profile(qfq_profile, qfq_source, f"{raw_code}.{market.upper()}")
@@ -162,7 +200,9 @@ def prepare_tdx_core_input_pair(
                 raw_only_exchange.update([market.upper()] * len(raw_only_dates))
             if not qfq_dates and raw_dates:
                 codes_not_in_qfq.add(code)
-            if raw_only_dates or qfq_only_dates:
+            scoped_raw_only += _in_scope_date_count(raw_only_dates, scope)
+            scoped_qfq_only += _in_scope_date_count(qfq_only_dates, scope)
+            if _has_in_scope_dates(raw_only_dates | qfq_only_dates, scope):
                 report["blocking_errors"].append(f"SOURCE_KEY_MISMATCH:{code}")
                 continue
 
@@ -174,7 +214,8 @@ def prepare_tdx_core_input_pair(
                 _validate_adjustment_mode(hfq_file, "hfq")
                 hfq_source = _read_price_file(hfq_file, "hfq")
                 hfq_source_duplicates += int(hfq_source.attrs.get("duplicate_source_rows", 0))
-                if set(pd.to_datetime(hfq_source["date"])) != raw_dates:
+                hfq_dates = set(pd.to_datetime(hfq_source["date"]))
+                if _has_in_scope_dates(raw_dates.symmetric_difference(hfq_dates), scope):
                     report["blocking_errors"].append(f"HFQ_SOURCE_KEY_MISMATCH:{code}")
                     continue
             else:
@@ -213,7 +254,7 @@ def prepare_tdx_core_input_pair(
             filtered_year.update(str(date.year) for date in rejected)
             filtered_exchange.update([market.upper()] * len(rejected))
 
-            retained = merged.loc[valid].copy()
+            retained = _apply_scope(merged.loc[valid].copy(), scope)
             if retained.empty:
                 fully_filtered_codes.append(code)
                 fully_filtered_source_rows += len(merged)
@@ -240,6 +281,8 @@ def prepare_tdx_core_input_pair(
                 "common_keys": source_common,
                 "raw_only_keys": source_raw_only,
                 "qfq_only_keys": source_qfq_only,
+                "in_scope_raw_only_keys": scoped_raw_only,
+                "in_scope_qfq_only_keys": scoped_qfq_only,
                 "raw_only_breakdown": {
                     "dates_before_qfq_min": _count_before(raw_only_all_dates, qfq_profile["min_date"]),
                     "dates_after_qfq_max": _count_after(raw_only_all_dates, qfq_profile["max_date"]),
@@ -285,7 +328,7 @@ def prepare_tdx_core_input_pair(
         report["pair_validation"]["raw_source_duplicate_rows"] = raw_source_duplicates
         report["pair_validation"]["qfq_source_duplicate_rows"] = qfq_source_duplicates
         report["pair_validation"]["hfq_source_duplicate_rows"] = hfq_source_duplicates
-        if source_raw_only or source_qfq_only:
+        if scoped_raw_only or scoped_qfq_only:
             report["blocking_errors"].append("SOURCE_PRIMARY_KEYS_DIFFER")
         if mapping_unknown:
             report["blocking_errors"].append("RAW_QFQ_MAPPING_NOT_EVALUABLE")
@@ -392,6 +435,28 @@ def _split_canonical_pair(paired: pd.DataFrame, raw_file: Path, qfq_file: Path) 
     )
 
 
+def _apply_scope(frame: pd.DataFrame, scope: CoreInputPairScope | None) -> pd.DataFrame:
+    if scope is None:
+        return frame
+    dates = pd.to_datetime(frame["date"])
+    warmup = frame.loc[dates.lt(scope.start)].tail(scope.indicator_warmup_trading_days)
+    in_window = frame.loc[dates.between(scope.start, scope.end, inclusive="both")]
+    return pd.concat([warmup, in_window], ignore_index=True)
+
+
+def _code_from_filename(name: str) -> str:
+    market, raw_code = Path(name).stem.split("#", maxsplit=1)
+    return f"{raw_code}.{market.upper()}"
+
+
+def _has_in_scope_dates(dates: set[pd.Timestamp], scope: CoreInputPairScope | None) -> bool:
+    return bool(dates) if scope is None else any(scope.start <= date <= scope.end for date in dates)
+
+
+def _in_scope_date_count(dates: set[pd.Timestamp], scope: CoreInputPairScope | None) -> int:
+    return len(dates) if scope is None else sum(scope.start <= date <= scope.end for date in dates)
+
+
 def _evaluate_mapping(raw: pd.DataFrame, qfq: pd.DataFrame) -> pd.DataFrame:
     frame = pd.DataFrame({"code": raw["code"]})
     for field in _PRICE_COLUMNS:
@@ -496,7 +561,7 @@ def _max_optional(left: Any, right: Any) -> Any:
     return right if left is None else max(left, right)
 
 
-def _base_report(raw: Path, qfq: Path, hfq: Path | None) -> dict[str, Any]:
+def _base_report(raw: Path, qfq: Path, hfq: Path | None, scope: CoreInputPairScope | None) -> dict[str, Any]:
     return {
         "task": "STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_2",
         "decision": "CORE_INPUT_PAIR_VALIDATION_IN_PROGRESS",
@@ -506,6 +571,18 @@ def _base_report(raw: Path, qfq: Path, hfq: Path | None) -> dict[str, Any]:
         "paired_filter": {},
         "mapping_validation": {},
         "pair_validation": {"accepted": False},
+        "scope": {
+            "applied": scope is not None,
+            "validation_start_date": _date_text(scope.start) if scope else None,
+            "validation_end_date": _date_text(scope.end) if scope else None,
+            "indicator_warmup_trading_days": scope.indicator_warmup_trading_days if scope else 0,
+            "excluded_codes": sorted(scope.excluded_codes) if scope else [],
+            "selection_rule": (
+                "all in-window dates plus preceding valid observations per code"
+                if scope
+                else "full source range"
+            ),
+        },
         "publication": {
             "transactional_temporary_output": True,
             "atomic_rename_completed": False,

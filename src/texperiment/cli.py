@@ -26,7 +26,7 @@ from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, read
 from texperiment.data.quality import validate_daily_bars
 from texperiment.data.tdx_export_source import write_tdx_index_parquet
 from texperiment.data.tdx_paired_source import write_tdx_paired_export_parquet
-from texperiment.data.core_input_pair import CoreInputPairError, prepare_tdx_core_input_pair
+from texperiment.data.core_input_pair import CoreInputPairError, CoreInputPairScope, prepare_tdx_core_input_pair
 from texperiment.indicators.a_share import (
     AShareIndicatorConfig,
     build_a_share_indicators,
@@ -146,6 +146,14 @@ def cmd_ingest_tdx_paired_a_share_daily(args: argparse.Namespace) -> int:
 
 def cmd_prepare_stock_rs_pullback_core_input_pair(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
+    setup = load_yaml(_resolve(root, args.setup_config))
+    window = setup["validation_window"]
+    scope = CoreInputPairScope(
+        validation_start_date=str(window["start_date"]),
+        validation_end_date=str(window["end_date"]),
+        indicator_warmup_trading_days=int(window["indicator_warmup_trading_days"]),
+        excluded_codes=frozenset(str(code) for code in setup["universe"]["data_quality_excluded_codes"]),
+    )
     try:
         result = prepare_tdx_core_input_pair(
             _resolve(root, args.raw_input),
@@ -153,6 +161,7 @@ def cmd_prepare_stock_rs_pullback_core_input_pair(args: argparse.Namespace) -> i
             _resolve(root, args.output_root),
             hfq_input=_resolve(root, args.hfq_input) if args.hfq_input else None,
             diagnostics_path=_resolve(root, args.diagnostics),
+            scope=scope,
         )
     except CoreInputPairError as exc:
         raise SystemExit(f"CORE_INPUT_PAIR_VALIDATION_FAILED: {exc}") from exc
@@ -591,6 +600,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--qfq-input", default="data/raw/tdx_text/qfq")
     p.add_argument("--raw-input", default="data/raw/tdx_text/raw")
     p.add_argument("--hfq-input", default="data/raw/tdx_text/hfq")
+    p.add_argument("--setup-config", default="configs/setups/STOCK_RS_PULLBACK_v1.yaml")
     p.add_argument("--output", default="data/processed/a_share_daily_remediation.parquet")
     p.add_argument("--allow-quality-warnings", action="store_true")
     p.set_defaults(func=cmd_ingest_tdx_paired_a_share_daily)

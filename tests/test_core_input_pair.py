@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from texperiment.data import core_input_pair
-from texperiment.data.core_input_pair import CoreInputPairError, prepare_tdx_core_input_pair
+from texperiment.data.core_input_pair import CoreInputPairError, CoreInputPairScope, prepare_tdx_core_input_pair
 
 
 def test_pair_synchronously_filters_nonpositive_qfq_without_transforming_prices(tmp_path):
@@ -240,6 +240,82 @@ def test_unevaluable_mapping_is_blocking(tmp_path):
 
     assert caught.value.report["mapping_validation"]["unevaluable_rows"] == 1
     assert "RAW_QFQ_MAPPING_NOT_EVALUABLE" in caught.value.report["blocking_errors"]
+
+
+def test_scope_ignores_out_of_window_mapping_failure_and_keeps_valid_warmup(tmp_path):
+    sources = _write_sources(tmp_path)
+    _replace_row(sources["qfq"], 0, "2026-01-02,6.00,8.00,5.00,9.00,1000,10000.00")
+    scope = CoreInputPairScope(
+        validation_start_date="2026-01-03",
+        validation_end_date="2026-01-03",
+        indicator_warmup_trading_days=0,
+    )
+
+    result = prepare_tdx_core_input_pair(
+        sources["raw"].parent,
+        sources["qfq"].parent,
+        tmp_path / "candidate",
+        hfq_input=sources["hfq"].parent,
+        scope=scope,
+    )
+
+    assert pd.read_parquet(result.raw_daily)["date"].tolist() == [pd.Timestamp("2026-01-03")]
+    assert result.report["mapping_validation"] == {
+        "method": "AFFINE_THEN_DAILY_RATIO_FALLBACK",
+        "evaluable_rows": 1,
+        "unevaluable_rows": 0,
+        "evaluable_ratio": 1.0,
+    }
+    assert result.report["scope"]["selection_rule"] == "all in-window dates plus preceding valid observations per code"
+
+
+def test_scope_retains_configured_valid_observations_for_warmup(tmp_path):
+    sources = _write_sources(tmp_path)
+    scope = CoreInputPairScope(
+        validation_start_date="2026-01-03",
+        validation_end_date="2026-01-03",
+        indicator_warmup_trading_days=1,
+    )
+
+    result = prepare_tdx_core_input_pair(
+        sources["raw"].parent,
+        sources["qfq"].parent,
+        tmp_path / "candidate",
+        hfq_input=sources["hfq"].parent,
+        scope=scope,
+    )
+
+    assert pd.read_parquet(result.raw_daily)["date"].tolist() == [
+        pd.Timestamp("2026-01-02"),
+        pd.Timestamp("2026-01-03"),
+    ]
+
+
+def test_scope_excludes_an_entire_configured_code_before_pair_validation(tmp_path):
+    sources = _write_sources(tmp_path)
+    excluded_raw = sources["raw"].parent / "SZ#000001.txt"
+    excluded_raw.write_text(
+        "000001 排除股 日线 不复权\n日期 开盘 最高 最低 收盘 成交量 成交额\n"
+        "2026-01-03,5.00,5.20,4.90,5.10,800,4000.00\n",
+        encoding="gb18030",
+    )
+    scope = CoreInputPairScope(
+        validation_start_date="2026-01-03",
+        validation_end_date="2026-01-03",
+        indicator_warmup_trading_days=0,
+        excluded_codes=frozenset({"000001.SZ"}),
+    )
+
+    result = prepare_tdx_core_input_pair(
+        sources["raw"].parent,
+        sources["qfq"].parent,
+        tmp_path / "candidate",
+        hfq_input=sources["hfq"].parent,
+        scope=scope,
+    )
+
+    assert set(pd.read_parquet(result.raw_daily)["code"]) == {"600000.SH"}
+    assert result.report["scope"]["excluded_codes"] == ["000001.SZ"]
 
 
 def test_duplicate_source_key_is_blocking(tmp_path):
