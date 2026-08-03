@@ -183,7 +183,7 @@ full_pipeline_recalculation_tasks:
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false
   FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION:
-    status: manifest_freeze_authorized
+    status: manifest_v2_remediation_required_authorization_head_binding
     manifest_tool_commit: 135375972e57676287e167bde6f0e80b8fb90e02
     manifest_tool_audit_record_commit: 965a55137aa8fd0532cc177fc43018634af41453
     manifest_v2_implemented: true
@@ -191,7 +191,7 @@ full_pipeline_recalculation_tasks:
     manifest_v2_audit_decision: MANIFEST_V2_AUDIT_PASSED
     historical_audit_decision: MANIFEST_V2_AUDIT_PASSED
     formal_contract_eligible: true
-    manifest_freeze_authorized: true
+    manifest_freeze_authorized: false
     formal_recalculation_run_authorized: false
     legacy_freezer_run_type: SIGNAL_EXECUTION_REPLAY
     legacy_strategy_validation_decision_allowed: false
@@ -258,6 +258,12 @@ full_pipeline_recalculation_tasks:
       blocking_error: FORMAL_MANIFEST_OUTPUT_CAUSES_DIRTY_WORKTREE
       evidence: diagnostics/STOCK_RS_PULLBACK_v1_FORMAL_MANIFEST_FREEZE_ATTEMPT_20260803_2/failure_record.json
       formal_manifest_generated: false
+      formal_recalculation_performed: false
+    authorization_head_binding_failure:
+      decision: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
+      blocking_error: FORMAL_RUN_AUTHORIZATION_INVALIDATES_EXACT_HEAD_BOUND_MANIFEST
+      evidence: diagnostics/STOCK_RS_PULLBACK_v1_FORMAL_MANIFEST_FREEZE_ATTEMPT_20260803_3/failure_record.json
+      formal_manifest_accepted: true
       formal_recalculation_performed: false
     output_path_remediation_1:
       implementation_commit: 6deb6150fc38f48ed216260b1d98c4b23d78c6fe

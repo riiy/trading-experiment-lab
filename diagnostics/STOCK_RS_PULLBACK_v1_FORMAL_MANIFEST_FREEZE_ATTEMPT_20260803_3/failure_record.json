@@ -1,0 +1,15 @@
+{
+  "attempt_id": "STOCK_RS_PULLBACK_v1_FORMAL_MANIFEST_FREEZE_ATTEMPT_20260803_3",
+  "repository_head": "c1a9ad0d8e5d2a65d358fd99c476361573225121",
+  "decision": "RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH",
+  "blocking_error": "FORMAL_RUN_AUTHORIZATION_INVALIDATES_EXACT_HEAD_BOUND_MANIFEST",
+  "phase": "post_manifest_pre_run_authorization",
+  "manifest": {
+    "path": "diagnostics/STOCK_RS_PULLBACK_v1_FORMAL_MANIFEST_FREEZE_ATTEMPT_20260803_3/accepted_but_unrunnable_manifest_v2.json",
+    "sha256": "162c8541cd4b4778835811698ebaf05b6ef7d3a887668896bf4100057a628282"
+  },
+  "formal_manifest_accepted": true,
+  "formal_recalculation_performed": false,
+  "strategy_decision_generated": false,
+  "trading_allowed": false
+}
