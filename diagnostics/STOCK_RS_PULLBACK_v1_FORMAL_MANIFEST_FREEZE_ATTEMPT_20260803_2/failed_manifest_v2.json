@@ -1,0 +1,264 @@
+{
+  "audit": {
+    "audit_id": "FULL_PIPELINE_RECALCULATION_IMPLEMENTATION_AUDIT_v2_REAUDIT_2",
+    "decision": "IMPLEMENTATION_AUDIT_PASSED",
+    "frozen_sample_count": 50,
+    "material_blockers": 0
+  },
+  "audited_engine": {
+    "audit_record_commit": "62ad290ddb1f7fa30c539426c70395713189b641",
+    "files": {
+      "contract_sha256": "c796b7da529d5436a3b608539d1b407e2ba0ccf2c25c197acadea7b654a0ea07",
+      "downstream_sha256": "d2cd43a5420b66214681809c239db9622fdfee089fe758233a838d324c292ac9",
+      "runner_sha256": "465df40179f2102b35e40be51dca5b66142022747268819475e36d2732eba3c4",
+      "schema_sha256": "1f1548acff247f772da8086b676b8a301e335a9868f615565d308af7dd5abf01",
+      "upstream_sha256": "e07ca69dcd76d530c89ce1f6956892feb38f47907158b990eb0264e554628a5b"
+    },
+    "implementation_commit": "508ceceafcfc4403bab746051f26d6ff23e78a9c"
+  },
+  "audited_manifest_tool": {
+    "audit_record_commit": "965a55137aa8fd0532cc177fc43018634af41453",
+    "files": {
+      "canonicalization_sha256": "bbdc88c5fabefc0cb28e25ef2d28f582b8792c122876afff67139862e87175af",
+      "formal_cli_sha256": "3e30ac01fb31c474ef9d38fb79bed26431d7c8ad27d600d796eabf8968e12fa1",
+      "formal_manifest_sha256": "166bccf1121a23dd033c55a4d68942ca149267346f66346cc05efc0a28e0b1d3",
+      "root_cli_sha256": "dffea3a7b539148059a26f0677a482a2e1f90cd47826dfaad7789a6312a424a3",
+      "validation_sha256": "ce410b9953170ea7eee78396f619ad3e85cc39d484e9dce70a867ae2c7451391"
+    },
+    "implementation_commit": "135375972e57676287e167bde6f0e80b8fb90e02"
+  },
+  "authorization_snapshot": {
+    "account_simulation_allowed": false,
+    "formal_recalculation_run_authorized": false,
+    "manifest_freeze_authorized": true,
+    "ticket_generation_allowed": false,
+    "trading_allowed": false
+  },
+  "comparison_inputs": {
+    "allowed_consumers": [
+      "DELTA_AND_DECISION"
+    ],
+    "archive_manifest": {
+      "expected_sha256": "053ba15f39f020a5590c9100f886e4ba56eb522c4519d2269694bce1568658a5",
+      "path": "diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_comparison_archive_v1.json"
+    },
+    "original_metrics": {
+      "expected_sha256": "151289d38e49cd691eefc1c69a5d8981e7462d8d80d7473293659a78c46e2af6",
+      "path": "data/reports/STOCK_RS_PULLBACK_v1_metrics.json"
+    },
+    "original_signals": {
+      "expected_sha256": "6cb6895305f8f0c7b1fe6e90c9752db4acc203e987b4408b5b1dd9f2d1729d61",
+      "path": "data/signals/STOCK_RS_PULLBACK_v1_signals.csv"
+    },
+    "original_trades": {
+      "expected_sha256": "69dc2498d679bc43bcdd903b6206bde0ee9f6ef8a43c50e851a807032d7746d2",
+      "path": "data/trades/STOCK_RS_PULLBACK_v1_backtest_trades.csv"
+    },
+    "runtime_verification_stage": "DELTA_AND_DECISION",
+    "source": "frozen_archive_manifest"
+  },
+  "comparison_only_inputs": {
+    "original_metrics": {
+      "path": "data/reports/STOCK_RS_PULLBACK_v1_metrics.json",
+      "sha256": "151289d38e49cd691eefc1c69a5d8981e7462d8d80d7473293659a78c46e2af6"
+    },
+    "original_signals": {
+      "path": "data/signals/STOCK_RS_PULLBACK_v1_signals.csv",
+      "sha256": "6cb6895305f8f0c7b1fe6e90c9752db4acc203e987b4408b5b1dd9f2d1729d61"
+    },
+    "original_trades": {
+      "path": "data/trades/STOCK_RS_PULLBACK_v1_backtest_trades.csv",
+      "sha256": "69dc2498d679bc43bcdd903b6206bde0ee9f6ef8a43c50e851a807032d7746d2"
+    }
+  },
+  "contract": {
+    "id": "FULL_PIPELINE_RECALCULATION_V2",
+    "timezone": "Asia/Shanghai"
+  },
+  "core_inputs": {
+    "benchmark": {
+      "adj_type": "none",
+      "adjustment": "none",
+      "codes": 1,
+      "max_date": "2026-07-16",
+      "min_date": "2005-01-04",
+      "path": "data/processed/index_daily.parquet",
+      "rows": 5229,
+      "sha256": "0bbe0cfb1fb2aa301321747755a8ac47b599753f8afd58563af20639e9b35eba",
+      "source": "frozen_formal_input",
+      "unique_codes": 1
+    },
+    "cost_config": {
+      "path": "configs/setups/STOCK_RS_PULLBACK_v1.yaml",
+      "sha256": "223f9008e15887c52704495f0cf4a1c4344d9df072f24da2df41731a47c3a4d2"
+    },
+    "qfq_daily": {
+      "adj_type": "qfq",
+      "adjustment": "qfq",
+      "codes": 5505,
+      "max_date": "2026-07-17",
+      "min_date": "2016-04-20",
+      "path": "data/processed/formal_inputs/STOCK_RS_PULLBACK_v1_recent_10y_v1/qfq_daily.parquet",
+      "rows": 10249283,
+      "sha256": "8b73a67fc3b4d7f5e86575f3835805f81f66a151b4e940a02c004595ff2ded24",
+      "source": "frozen_formal_input",
+      "unique_codes": 5505
+    },
+    "raw_daily": {
+      "adj_type": "none",
+      "adjustment": "none",
+      "codes": 5505,
+      "max_date": "2026-07-17",
+      "min_date": "2016-04-20",
+      "path": "data/processed/formal_inputs/STOCK_RS_PULLBACK_v1_recent_10y_v1/raw_daily.parquet",
+      "rows": 10249283,
+      "sha256": "d733c32dccad66e91abe0ed0a1740093cbe20f4f82e56551870ba0b9f0bfc6af",
+      "source": "frozen_formal_input",
+      "unique_codes": 5505
+    },
+    "setup_config": {
+      "path": "configs/setups/STOCK_RS_PULLBACK_v1.yaml",
+      "sha256": "223f9008e15887c52704495f0cf4a1c4344d9df072f24da2df41731a47c3a4d2"
+    },
+    "st_overrides": {
+      "path": "diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/STOCK_RS_PULLBACK_v1_remediation_manifest.json",
+      "sha256": "10d0574ae3da4dd3b2fdeb490622fc66f7011dcc25d08ebdf73d8d12da7928c1"
+    }
+  },
+  "expected_stages": [
+    "INPUT_SNAPSHOT",
+    "MARKET_STATE_REBUILD",
+    "UNIVERSE_REBUILD",
+    "INDICATOR_REBUILD",
+    "SIGNAL_REBUILD",
+    "TRADE_REBUILD",
+    "METRICS_REBUILD",
+    "DELTA_AND_DECISION"
+  ],
+  "forbidden_inputs": [
+    "data/signals/STOCK_RS_PULLBACK_v1_signals.csv",
+    "data/trades/STOCK_RS_PULLBACK_v1_backtest_trades.csv",
+    "data/reports/STOCK_RS_PULLBACK_v1_metrics.json"
+  ],
+  "inputs": {
+    "benchmark": {
+      "adj_type": "none",
+      "adjustment": "none",
+      "codes": 1,
+      "max_date": "2026-07-16",
+      "min_date": "2005-01-04",
+      "path": "data/processed/index_daily.parquet",
+      "rows": 5229,
+      "sha256": "0bbe0cfb1fb2aa301321747755a8ac47b599753f8afd58563af20639e9b35eba",
+      "source": "frozen_formal_input",
+      "unique_codes": 1
+    },
+    "cost_config": {
+      "path": "configs/setups/STOCK_RS_PULLBACK_v1.yaml",
+      "sha256": "223f9008e15887c52704495f0cf4a1c4344d9df072f24da2df41731a47c3a4d2"
+    },
+    "qfq_daily": {
+      "adj_type": "qfq",
+      "adjustment": "qfq",
+      "codes": 5505,
+      "max_date": "2026-07-17",
+      "min_date": "2016-04-20",
+      "path": "data/processed/formal_inputs/STOCK_RS_PULLBACK_v1_recent_10y_v1/qfq_daily.parquet",
+      "rows": 10249283,
+      "sha256": "8b73a67fc3b4d7f5e86575f3835805f81f66a151b4e940a02c004595ff2ded24",
+      "source": "frozen_formal_input",
+      "unique_codes": 5505
+    },
+    "raw_daily": {
+      "adj_type": "none",
+      "adjustment": "none",
+      "codes": 5505,
+      "max_date": "2026-07-17",
+      "min_date": "2016-04-20",
+      "path": "data/processed/formal_inputs/STOCK_RS_PULLBACK_v1_recent_10y_v1/raw_daily.parquet",
+      "rows": 10249283,
+      "sha256": "d733c32dccad66e91abe0ed0a1740093cbe20f4f82e56551870ba0b9f0bfc6af",
+      "source": "frozen_formal_input",
+      "unique_codes": 5505
+    },
+    "setup_config": {
+      "path": "configs/setups/STOCK_RS_PULLBACK_v1.yaml",
+      "sha256": "223f9008e15887c52704495f0cf4a1c4344d9df072f24da2df41731a47c3a4d2"
+    },
+    "st_overrides": {
+      "path": "diagnostics/STOCK_RS_PULLBACK_v1/remediation_v5_passed/STOCK_RS_PULLBACK_v1_remediation_manifest.json",
+      "sha256": "10d0574ae3da4dd3b2fdeb490622fc66f7011dcc25d08ebdf73d8d12da7928c1"
+    }
+  },
+  "integrity": {
+    "canonicalization_version": "MANIFEST_CANONICAL_JSON_V1",
+    "hash_algorithm": "SHA256",
+    "manifest_self_sha256": "947d0cd8c75ee76c5c64533f011e1eebd0ddeee9b0e346ae47dca45c8d9c1ba0"
+  },
+  "manifest": {
+    "contract_id": "FULL_PIPELINE_RECALCULATION_V2",
+    "created_at": "2026-08-03T16:36:23.411192+08:00",
+    "run_id": "STOCK_RS_PULLBACK_v1_RECALCULATED_20260803",
+    "run_type": "FULL_PIPELINE_RECALCULATION",
+    "schema": "FULL_PIPELINE_RECALCULATION_MANIFEST_V2",
+    "timezone": "Asia/Shanghai"
+  },
+  "outputs": {
+    "artifact_hash_chain_required": true,
+    "atomic_publication_required": true,
+    "atomic_rename_required": true,
+    "completion_record_required": true,
+    "final_root": "data/recalculations/STOCK_RS_PULLBACK_v1_RECALCULATED/STOCK_RS_PULLBACK_v1_RECALCULATED_20260803",
+    "final_root_must_not_exist": true,
+    "fsync_required": true,
+    "read_only_after_publication": true,
+    "temporary_root": "data/recalculations/.tmp/STOCK_RS_PULLBACK_v1_RECALCULATED_20260803"
+  },
+  "permissions": {
+    "account_simulation_allowed": false,
+    "full_recalculation_allowed": false,
+    "strategy_validation_decision_allowed": false,
+    "ticket_generation_allowed": false,
+    "trading_allowed": false
+  },
+  "policies": {
+    "close_limit_carry_forward_version": "CLOSE_LIMIT_CARRY_FORWARD_V1",
+    "cost_model_version": "ROUND_TRIP_COST_V1",
+    "execution_model_version": "A_SHARE_EXECUTION_V2_CONSERVATIVE_LIMIT_EXITS",
+    "price_limit_rule_version": "A_SHARE_PRICE_LIMIT_V1_BRANCH_INVARIANT",
+    "raw_qfq_mapping_version": "AFFINE_WITH_GENERIC_DAILY_RATIO_FALLBACK_V1",
+    "st_branch_policy_version": "HISTORICAL_ST_BRANCH_V1"
+  },
+  "publication": {
+    "artifact_hash_chain_required": true,
+    "atomic_rename_required": true,
+    "completion_record_required": true,
+    "final_root": "data/recalculations/STOCK_RS_PULLBACK_v1_RECALCULATED/STOCK_RS_PULLBACK_v1_RECALCULATED_20260803",
+    "final_root_must_not_exist": true,
+    "fsync_required": true,
+    "read_only_after_publication": true,
+    "temporary_root": "data/recalculations/.tmp/STOCK_RS_PULLBACK_v1_RECALCULATED_20260803"
+  },
+  "repository": {
+    "audited_engine_commit": "508ceceafcfc4403bab746051f26d6ff23e78a9c",
+    "commit": "c9276a3bfbc7241cc688ec6652472d3147d18bc9",
+    "engine_audit_record_commit": "62ad290ddb1f7fa30c539426c70395713189b641",
+    "git_dirty": false,
+    "head_commit": "c9276a3bfbc7241cc688ec6652472d3147d18bc9",
+    "manifest_tool_commit": "135375972e57676287e167bde6f0e80b8fb90e02",
+    "runtime_head_commit": "c9276a3bfbc7241cc688ec6652472d3147d18bc9"
+  },
+  "run_capabilities": {
+    "account_simulation_output": false,
+    "strategy_validation_classification_output": true,
+    "ticket_generation_output": false,
+    "trading_output": false
+  },
+  "strategy": {
+    "config_sha256": "223f9008e15887c52704495f0cf4a1c4344d9df072f24da2df41731a47c3a4d2",
+    "output_setup": "STOCK_RS_PULLBACK_v1_RECALCULATED",
+    "rules_changed": false,
+    "source_setup": "STOCK_RS_PULLBACK_v1",
+    "validation_thresholds_sha256": "eeb5aa124554acdecfbccf3289ff6dcb99c6a938ed7f66c120d851adfbca2dc0"
+  }
+}
