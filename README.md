@@ -23,7 +23,7 @@ trading_allowed = false
 live_trading = forbidden
 ```
 
-`STOCK_RS_PULLBACK_v1` 已因核心验证指标失败归档，禁止账户仿真和交易票生成。当前只允许完整性审计，不定义或实现新 Setup。归档清单：`archive/setups/STOCK_RS_PULLBACK_v1/ARCHIVE_MANIFEST.md`。
+`STOCK_RS_PULLBACK_v1` 已因核心验证指标失败归档，禁止账户仿真和交易票生成。独立的 `VOLATILITY_CONTRACTION_BREAKOUT_v1` 因冻结输入缺少可靠的逐日 ST 历史数据已停止研究；所有交易、账户仿真许可和交易票生成仍关闭。详见 `diagnostics/VOLATILITY_CONTRACTION_BREAKOUT_v1/DATA_AVAILABILITY_ASSESSMENT.md`。
 
 ## Quick start
 

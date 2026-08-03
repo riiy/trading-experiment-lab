@@ -54,6 +54,33 @@ setups:
       closed_at: "2026-07-17T10:13:39Z"
       report: diagnostics/STOCK_RS_PULLBACK_v1/AUDIT_STOCK_RS_PULLBACK_v1.md
       summary: diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_audit_summary.json
+  VOLATILITY_CONTRACTION_BREAKOUT_v1:
+    lifecycle_status: RESEARCH_STOPPED_DATA_UNEVALUABLE
+    validation_status: NOT_EVALUABLE_MISSING_HISTORICAL_ST
+    market_scope: A_SHARE_ONLY
+    trading_allowed: false
+    account_simulation_allowed: false
+    ticket_generation_allowed: false
+    final_validation:
+      development_window: ["2016-07-17", "2022-07-15"]
+      final_window: ["2022-07-18", "2026-07-17"]
+      one_time_only: true
+      benchmark: 000300.SH
+      benchmark_return_basis: price_index
+      status: NOT_RUN
+      not_run_reason: ALL_FROZEN_ROWS_HAVE_UNKNOWN_HISTORICAL_ST_STATUS
+    preregistration: docs/PRE_REGISTRATION_VOLATILITY_CONTRACTION_BREAKOUT_v1.md
+    data_availability_assessment:
+      decision: NO_FURTHER_RESEARCH_WITH_CURRENT_FROZEN_DATA
+      severity: CRITICAL
+      evidence:
+        frozen_rows: 10249283
+        historical_st_status_unknown_rows: 10249283
+        eligible_universe_rows: 0
+      report: diagnostics/VOLATILITY_CONTRACTION_BREAKOUT_v1/DATA_AVAILABILITY_ASSESSMENT.md
+    stopped:
+      reason: USER_DIRECTED_STOP_AFTER_DATA_UNEVALUABILITY_ASSESSMENT
+      preserves_frozen_inputs_and_diagnostics: true
 engine_remediation_tasks:
   ENGINE_REMEDIATION_A_SHARE_EXECUTION_v1:
     status: REMEDIATION_AUDIT_PASSED_V1_RECALCULATION_REVOKED

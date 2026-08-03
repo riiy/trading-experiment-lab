@@ -54,6 +54,25 @@ from texperiment.setups.stock_rs_pullback_v1.signal import (
     validate_universe_coverage,
     write_signals,
 )
+from texperiment.setups.volatility_contraction_breakout_v1.rules import (
+    build_volatility_contraction_breakout_signals,
+)
+from texperiment.setups.volatility_contraction_breakout_v1.backtest import (
+    run_volatility_contraction_breakout_backtest,
+)
+from texperiment.setups.volatility_contraction_breakout_v1.universe import (
+    write_volatility_contraction_breakout_universe_from_parquet,
+)
+from texperiment.setups.volatility_contraction_breakout_v1.validation import (
+    DEVELOPMENT_END,
+    DEVELOPMENT_START,
+    FINAL_END,
+    FINAL_START,
+    assert_final_window,
+    build_final_validation_artifacts,
+    write_final_validation_outputs,
+)
+from texperiment.account.daily_equity import run_daily_account_equity
 from texperiment.universe.a_share import (
     AShareUniverseConfig,
     build_a_share_universe,
@@ -179,6 +198,18 @@ def cmd_freeze_stock_rs_pullback_core_input_pair(args: argparse.Namespace) -> in
         _resolve(root, args.output_root),
     )
     print(f"freeze-stock-rs-pullback-core-input-pair: OK -> {result.final_root}")
+    return 0
+
+
+def cmd_freeze_volatility_contraction_breakout_inputs(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    result = freeze_audited_core_input_pair(
+        _resolve(root, args.candidate_root),
+        _resolve(root, args.output_root),
+        benchmark_path=_resolve(root, args.benchmark_input),
+        benchmark_code="000300.SH",
+    )
+    print(f"freeze-volatility-contraction-breakout-inputs: OK -> {result.final_root}")
     return 0
 
 
@@ -382,6 +413,82 @@ def cmd_backtest_stock_rs_pullback(args: argparse.Namespace) -> int:
     write_trades(trades, output_path)
     print(f"backtest-stock-rs-pullback: OK -> {output_path}")
     print(json.dumps(summarize_backtest_trades(trades), ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_generate_volatility_contraction_breakout_signals(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    setup = load_yaml(root / "configs" / "setups" / f"{args.setup}.yaml")
+    daily = read_table(_resolve(root, args.daily_input))
+    universe = read_table(_resolve(root, args.universe_input))
+    signals = build_volatility_contraction_breakout_signals(
+        daily, universe=universe, setup_config=setup, include_candidates=args.include_candidates
+    )
+    if signals.empty and not args.allow_empty:
+        raise SystemExit("generate-volatility-contraction-breakout-signals produced 0 rows")
+    output = _resolve(root, args.output)
+    write_signals(signals, output)
+    print(f"generate-volatility-contraction-breakout-signals: OK -> {output}")
+    return 0
+
+
+def cmd_build_volatility_contraction_breakout_universe(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    setup = load_yaml(root / "configs" / "setups" / f"{args.setup}.yaml")
+    rows, eligible = write_volatility_contraction_breakout_universe_from_parquet(
+        _resolve(root, args.daily_input), _resolve(root, args.output), setup_config=setup, batch_size=args.batch_size
+    )
+    print(json.dumps({"rows_written": rows, "eligible_rows": eligible, "setup": args.setup}, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_backtest_volatility_contraction_breakout(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    setup = load_yaml(root / "configs" / "setups" / f"{args.setup}.yaml")
+    signals = read_table(_resolve(root, args.signal_input))
+    daily = read_table(_resolve(root, args.daily_input))
+    trades = run_volatility_contraction_breakout_backtest(signals, daily, setup_config=setup)
+    if trades.empty and not args.allow_empty:
+        raise SystemExit("backtest-volatility-contraction-breakout produced 0 trades")
+    output = _resolve(root, args.output)
+    write_trades(trades, output)
+    print(f"backtest-volatility-contraction-breakout: OK -> {output}")
+    return 0
+
+
+def cmd_validate_volatility_contraction_breakout(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    setup = load_yaml(root / "configs" / "setups" / f"{args.setup}.yaml")
+    account = load_yaml(root / "configs" / "global_account.yaml")
+    start, end = (DEVELOPMENT_START, DEVELOPMENT_END) if args.phase == "development" else (FINAL_START, FINAL_END)
+    trades = read_table(_resolve(root, args.trade_input))
+    daily = read_table(_resolve(root, args.daily_input))
+    benchmark = read_table(_resolve(root, args.benchmark_input))
+    result = run_daily_account_equity(trades, daily, start_date=start, end_date=end, account_config=account, setup_config=setup)
+    curve = result["equity_curve"]
+    if args.phase == "final":
+        assert_final_window(curve)
+        run_record = _resolve(root, args.run_record)
+        if run_record.exists():
+            raise SystemExit(f"final validation is one-time-only; run record already exists: {run_record}")
+        outputs = [_resolve(root, args.metrics_output), _resolve(root, args.report_output), _resolve(root, args.equity_output)]
+        existing = [str(path) for path in outputs if path.exists()]
+        if existing:
+            raise SystemExit(f"final validation is one-time-only; output already exists: {existing}")
+        artifacts = build_final_validation_artifacts(trades, curve, benchmark, setup_config=setup)
+        paths = write_final_validation_outputs(artifacts, metrics_path=outputs[0], report_path=outputs[1], equity_path=outputs[2], equity_curve=curve)
+        run_record.parent.mkdir(parents=True, exist_ok=True)
+        run_record.write_text(json.dumps({"setup_id": setup["setup_id"], "phase": "final", "window": {"start_date": FINAL_START, "end_date": FINAL_END}, "decision": artifacts["metrics"]["decision"], "outputs": {key: str(value) for key, value in paths.items()}}, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(json.dumps({"decision": artifacts["metrics"]["decision"], "outputs": {key: str(value) for key, value in paths.items()}}, ensure_ascii=False, indent=2))
+        return 0
+    # Development output intentionally has no pass/fail classification.
+    payload = {"setup_id": setup["setup_id"], "decision": "DEVELOPMENT_DIAGNOSTIC_NO_PASS_CONCLUSION", "window": {"start_date": start, "end_date": end}, "account": result["summary"]}
+    metric_path, report_path, equity_path = _resolve(root, args.metrics_output), _resolve(root, args.report_output), _resolve(root, args.equity_output)
+    metric_path.parent.mkdir(parents=True, exist_ok=True); report_path.parent.mkdir(parents=True, exist_ok=True); equity_path.parent.mkdir(parents=True, exist_ok=True)
+    metric_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
+    report_path.write_text("# VCB 开发期诊断\n\n此输出不构成通过结论，也不得用于调参后声明最终验证通过。\n", encoding="utf-8")
+    curve.to_parquet(equity_path, index=False)
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -636,6 +743,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output-root", required=True, help="New formal input directory; must not exist")
     p.set_defaults(func=cmd_freeze_stock_rs_pullback_core_input_pair)
 
+    p = sub.add_parser("freeze-volatility-contraction-breakout-inputs", help="Atomically freeze VCB raw/qfq inputs and 000300 price index")
+    p.add_argument("--candidate-root", required=True)
+    p.add_argument("--benchmark-input", required=True)
+    p.add_argument("--output-root", required=True, help="New formal input directory; must not exist")
+    p.set_defaults(func=cmd_freeze_volatility_contraction_breakout_inputs)
+
     p = sub.add_parser("ingest-tdx-export-index-daily", help="Read one TDX index text export")
     p.add_argument("--input", required=True)
     p.add_argument("--output", default="data/processed/index_daily.parquet")
@@ -687,6 +800,51 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--allow-empty", action="store_true")
     p.add_argument("--batch-size", type=_positive_int, default=250_000, help="Parquet rows per batch")
     p.set_defaults(func=cmd_backtest_stock_rs_pullback)
+
+    p = sub.add_parser(
+        "generate-volatility-contraction-breakout-signals",
+        help="Generate research-only VCB qfq contraction/breakout signals",
+    )
+    p.add_argument("--daily-input", required=True)
+    p.add_argument("--universe-input", required=True)
+    p.add_argument("--output", required=True)
+    p.add_argument("--setup", default="VOLATILITY_CONTRACTION_BREAKOUT_v1")
+    p.add_argument("--include-candidates", action="store_true")
+    p.add_argument("--allow-empty", action="store_true")
+    p.set_defaults(func=cmd_generate_volatility_contraction_breakout_signals)
+
+    p = sub.add_parser("build-volatility-contraction-breakout-universe", help="Build the compact VCB signal universe from frozen daily bars")
+    p.add_argument("--daily-input", required=True)
+    p.add_argument("--output", required=True)
+    p.add_argument("--setup", default="VOLATILITY_CONTRACTION_BREAKOUT_v1")
+    p.add_argument("--batch-size", type=_positive_int, default=100_000)
+    p.set_defaults(func=cmd_build_volatility_contraction_breakout_universe)
+
+    p = sub.add_parser(
+        "backtest-volatility-contraction-breakout",
+        help="Backtest VCB with audited raw/qfq execution semantics",
+    )
+    p.add_argument("--signal-input", required=True)
+    p.add_argument("--daily-input", required=True)
+    p.add_argument("--output", required=True)
+    p.add_argument("--setup", default="VOLATILITY_CONTRACTION_BREAKOUT_v1")
+    p.add_argument("--allow-empty", action="store_true")
+    p.set_defaults(func=cmd_backtest_volatility_contraction_breakout)
+
+    p = sub.add_parser(
+        "validate-volatility-contraction-breakout",
+        help="Run fixed development diagnostics or one-time final VCB validation",
+    )
+    p.add_argument("--phase", required=True, choices=["development", "final"])
+    p.add_argument("--trade-input", required=True)
+    p.add_argument("--daily-input", required=True)
+    p.add_argument("--benchmark-input", required=True)
+    p.add_argument("--metrics-output", required=True)
+    p.add_argument("--report-output", required=True)
+    p.add_argument("--equity-output", required=True)
+    p.add_argument("--run-record", default="diagnostics/VOLATILITY_CONTRACTION_BREAKOUT_v1/final_validation_run.json")
+    p.add_argument("--setup", default="VOLATILITY_CONTRACTION_BREAKOUT_v1")
+    p.set_defaults(func=cmd_validate_volatility_contraction_breakout)
 
     p = sub.add_parser(
         "report-stock-rs-pullback",

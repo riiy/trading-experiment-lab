@@ -23,7 +23,13 @@ class FormalInputFreezeError(ValueError):
     pass
 
 
-def freeze_audited_core_input_pair(candidate_root: str | Path, final_root: str | Path) -> FormalInputFreezeResult:
+def freeze_audited_core_input_pair(
+    candidate_root: str | Path,
+    final_root: str | Path,
+    *,
+    benchmark_path: str | Path | None = None,
+    benchmark_code: str = "000300.SH",
+) -> FormalInputFreezeResult:
     candidate, final = Path(candidate_root), Path(final_root)
     if final.exists():
         raise FileExistsError(f"formal input output already exists: {final}")
@@ -33,6 +39,9 @@ def freeze_audited_core_input_pair(candidate_root: str | Path, final_root: str |
         raise FormalInputFreezeError("candidate is missing a required pair artifact")
     audit = json.loads(audit_path.read_text(encoding="utf-8"))
     _validate_candidate(audit, raw_path, qfq_path)
+    benchmark = Path(benchmark_path) if benchmark_path is not None else None
+    if benchmark is not None and not benchmark.is_file():
+        raise FormalInputFreezeError("benchmark input is missing")
 
     tmp = final.parent / f".{final.name}.{os.getpid()}.tmp"
     if tmp.exists():
@@ -43,14 +52,24 @@ def freeze_audited_core_input_pair(candidate_root: str | Path, final_root: str |
         raw_target, qfq_target = tmp / raw_path.name, tmp / qfq_path.name
         os.link(raw_path, raw_target)
         os.link(qfq_path, qfq_target)
+        outputs: dict[str, Any] = {
+            "raw_daily": {"path": raw_target.name, "sha256": _sha256(raw_target), "adj_type": "none"},
+            "qfq_daily": {"path": qfq_target.name, "sha256": _sha256(qfq_target), "adj_type": "qfq"},
+        }
+        if benchmark is not None:
+            benchmark_target = tmp / "benchmark_daily.parquet"
+            os.link(benchmark, benchmark_target)
+            outputs["benchmark"] = {
+                "path": benchmark_target.name,
+                "sha256": _sha256(benchmark_target),
+                "code": benchmark_code,
+                "return_basis": "price_index",
+            }
         manifest = {
             "contract_id": "FORMAL_CORE_INPUT_FREEZE_V1",
             "source_candidate": str(candidate),
             "source_pair_audit_sha256": _sha256(audit_path),
-            "outputs": {
-                "raw_daily": {"path": raw_target.name, "sha256": _sha256(raw_target), "adj_type": "none"},
-                "qfq_daily": {"path": qfq_target.name, "sha256": _sha256(qfq_target), "adj_type": "qfq"},
-            },
+            "outputs": outputs,
             "pair_validation": audit["pair_validation"],
             "mapping_validation": audit["mapping_validation"],
             "scope": audit["scope"],
@@ -66,6 +85,8 @@ def freeze_audited_core_input_pair(candidate_root: str | Path, final_root: str |
         manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         _fsync_path(raw_target)
         _fsync_path(qfq_target)
+        if benchmark is not None:
+            _fsync_path(tmp / "benchmark_daily.parquet")
         _fsync_path(manifest_path)
         _fsync_dir(tmp)
         os.replace(tmp, final)

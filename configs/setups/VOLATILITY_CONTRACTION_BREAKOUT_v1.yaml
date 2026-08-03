@@ -1,0 +1,97 @@
+setup_id: VOLATILITY_CONTRACTION_BREAKOUT_v1
+name: 波动收缩突破
+status: research_stopped_data_unevaluable
+trading_allowed: false
+
+market_scope:
+  include: [A_SHARE]
+  exclude: [HK_CONNECT]
+
+universe:
+  exclude_st: true
+  exclude_new_listing_days_lt: 180
+  exclude_suspended: true
+  exclude_limit_up_down: true
+  min_avg_amount_20d: 300000000
+  max_one_lot_value: 15000
+  lot_size: 100
+  data_quality_excluded_codes:
+    - 000564.SZ
+    - 000615.SZ
+    - 000617.SZ
+    - 000981.SZ
+    - 002194.SZ
+    - 002936.SZ
+    - 300348.SZ
+    - 300371.SZ
+    - 300543.SZ
+    - 300587.SZ
+    - 300606.SZ
+    - 300639.SZ
+    - 600126.SH
+    - 601916.SH
+    - 603269.SH
+    - 603283.SH
+    - 603535.SH
+    - 603811.SH
+    - 920245.BJ
+    - 920395.BJ
+    - 920509.BJ
+
+development_window:
+  start_date: "2016-07-17"
+  end_date: "2022-07-15"
+final_validation_window:
+  start_date: "2022-07-18"
+  end_date: "2026-07-17"
+  one_time_only: true
+  indicator_warmup_start_date: "2016-04-20"
+
+signal:
+  atr_window: 10
+  atr_median_window: 60
+  amplitude_window: 10
+  breakout_window: 20
+  volume_ratio_window: 10
+
+entry:
+  execution: next_day_open
+exit:
+  initial_stop_atr_multiple: 2
+  close_break_low_window: 10
+  max_holding_days: 20
+  intraday_priority: stop_first
+
+account_cost:
+  commission_rate: 0.0003
+  minimum_commission: 5
+  sell_stamp_duty_rate: 0.0005
+  slippage_rate: 0.0005
+
+benchmark:
+  code: 000300.SH
+  return_basis: price_index
+
+validation_threshold:
+  min_valid_trades: 80
+  mean_net_return_gt: 0
+  median_net_return_gte: 0
+  profit_factor_gt: 1.20
+  best_3_removed_mean_gte: 0
+  top3_contribution_ratio_lte: 1.0
+  min_positive_years_or_regimes: 2
+  account_cagr_floor: 0.07
+  benchmark_cagr_spread: 0.03
+  account_max_drawdown_lte: 0.10
+
+account_constraints:
+  capital_limit: 30000
+  max_planned_loss_per_trade: 500
+  max_monthly_loss: 1500
+  max_total_drawdown: 3000
+  max_positions: 1
+
+decision:
+  pass: FINAL_VALIDATION_PASSED_RESEARCH_ONLY
+  fail: FINAL_VALIDATION_FAILED
+  no_ticket_generation: true
