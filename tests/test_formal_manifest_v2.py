@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 import pandas as pd
@@ -161,6 +162,20 @@ def test_cli_routes_are_explicit_and_legacy_commands_refuse_formal_path():
         cmd_freeze_stock_rs_pullback_recalculation(None)
     with pytest.raises(SystemExit, match="SIGNAL_EXECUTION_REPLAY"):
         cmd_run_stock_rs_pullback_recalculation(None)
+
+
+def test_formal_manifest_and_recalculation_roots_are_gitignored():
+    for path in (
+        "data/recalculations/manifests/STOCK_RS_PULLBACK_v1_RECALCULATED_manifest_v2.json",
+        "data/recalculations/.tmp/run-id",
+        "data/recalculations/STOCK_RS_PULLBACK_v1_RECALCULATED/run-id",
+    ):
+        result = subprocess.run(
+            ["git", "check-ignore", "-q", path],
+            cwd=Path(__file__).resolve().parents[1],
+            check=False,
+        )
+        assert result.returncode == 0, path
 
 
 def test_formal_stage_factory_binds_all_eight_real_stages(tmp_path):
