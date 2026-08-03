@@ -183,7 +183,7 @@ full_pipeline_recalculation_tasks:
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false
   FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION:
-    status: manifest_freeze_authorized
+    status: manifest_freeze_blocked_archive_comparison_incomplete
     manifest_tool_commit: 135375972e57676287e167bde6f0e80b8fb90e02
     manifest_tool_audit_record_commit: 965a55137aa8fd0532cc177fc43018634af41453
     manifest_v2_implemented: true
@@ -191,7 +191,7 @@ full_pipeline_recalculation_tasks:
     manifest_v2_audit_decision: MANIFEST_V2_AUDIT_PASSED
     historical_audit_decision: MANIFEST_V2_AUDIT_PASSED
     formal_contract_eligible: true
-    manifest_freeze_authorized: true
+    manifest_freeze_authorized: false
     formal_recalculation_run_authorized: false
     legacy_freezer_run_type: SIGNAL_EXECUTION_REPLAY
     legacy_strategy_validation_decision_allowed: false
@@ -229,8 +229,15 @@ full_pipeline_recalculation_tasks:
         decision: MANIFEST_V2_AUDIT_PASSED
         audit_record_commit: 965a551
         report: diagnostics/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_3/audit_report.md
+    last_freeze_attempt:
+      decision: RECALCULATION_ABORTED_MANIFEST_VALIDATION_FAILURE
+      blocking_error: ARCHIVE_MANIFEST_MISSING_COMPARISON_REFERENCE:original_metrics
+      evidence_commit: ef8be86
+      evidence: diagnostics/STOCK_RS_PULLBACK_v1_FORMAL_MANIFEST_FREEZE_ATTEMPT_20260803/failure_record.json
+      formal_manifest_generated: false
+      formal_recalculation_performed: false
   STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION:
-    status: FORMAL_INPUT_FROZEN_PENDING_FORMAL_MANIFEST_FREEZE
+    status: FORMAL_INPUT_FROZEN_PENDING_ARCHIVE_COMPARISON_FREEZE
     raw_daily_available: true
     qfq_pairing_verified: true
     profiles_complete: true
