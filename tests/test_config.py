@@ -104,15 +104,15 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert implementation["full_recalculation_performed"] is False
 
     manifest_task = registry["full_pipeline_recalculation_tasks"]["FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION"]
-    assert manifest_task["status"] == "manifest_v2_remediation_required_authorization_head_binding"
-    assert manifest_task["manifest_tool_commit"] == "135375972e57676287e167bde6f0e80b8fb90e02"
-    assert manifest_task["manifest_tool_audit_record_commit"] == "965a55137aa8fd0532cc177fc43018634af41453"
+    assert manifest_task["status"] == "manifest_freeze_authorized"
+    assert manifest_task["manifest_tool_commit"] == "b25fe28c9f57d1ae65f9c3990a9480e55eac454c"
+    assert manifest_task["manifest_tool_audit_record_commit"] == "58027cee8a554568730f6840c2e0f760b64fe8e1"
     assert manifest_task["manifest_v2_implemented"] is True
     assert manifest_task["manifest_v2_audited"] is True
     assert manifest_task["manifest_v2_audit_decision"] == "MANIFEST_V2_AUDIT_PASSED"
     assert manifest_task["historical_audit_decision"] == "MANIFEST_V2_AUDIT_PASSED"
     assert manifest_task["formal_contract_eligible"] is True
-    assert manifest_task["manifest_freeze_authorized"] is False
+    assert manifest_task["manifest_freeze_authorized"] is True
     assert manifest_task["formal_recalculation_run_authorized"] is False
     assert manifest_task["legacy_freezer_run_type"] == "SIGNAL_EXECUTION_REPLAY"
     assert manifest_task["remediation_1"]["implementation_commit"] == "30523f4"
