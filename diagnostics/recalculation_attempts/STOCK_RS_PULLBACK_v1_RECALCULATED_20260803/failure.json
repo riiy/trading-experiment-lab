@@ -1,0 +1,6 @@
+{
+  "decision": "RECALCULATION_ABORTED_STAGE_FAILURE",
+  "failed_stage": "INPUT_SNAPSHOT",
+  "completed_stages": [],
+  "strategy_decision_generated": false
+}
