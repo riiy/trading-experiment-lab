@@ -1,0 +1,199 @@
+{
+  "archive": {
+    "path": "diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_comparison_archive_v1.json",
+    "self_hash_valid": true,
+    "sha256": "053ba15f39f020a5590c9100f886e4ba56eb522c4519d2269694bce1568658a5"
+  },
+  "artifact_hashes": {
+    "original_metrics": "151289d38e49cd691eefc1c69a5d8981e7462d8d80d7473293659a78c46e2af6",
+    "original_signals": "6cb6895305f8f0c7b1fe6e90c9752db4acc203e987b4408b5b1dd9f2d1729d61",
+    "original_trades": "69dc2498d679bc43bcdd903b6206bde0ee9f6ef8a43c50e851a807032d7746d2"
+  },
+  "audit_id": "STOCK_RS_PULLBACK_v1_ORIGINAL_METRICS_ARCHIVE_AUDIT_v1",
+  "decision": "ORIGINAL_METRICS_ARCHIVE_AUDIT_PASSED",
+  "formal_recalculation_performed": false,
+  "historical_audit_manifest": {
+    "path": "diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_audit_manifest.json",
+    "sha256": "8e06b78abf024f7968d3bcb7f9eea10e9f57db8e967171b294daad0c040eb485"
+  },
+  "metrics_profile": {
+    "overall_rows": 18202,
+    "recorded_decision": "FAILED_ARCHIVED",
+    "setup_id": "STOCK_RS_PULLBACK_v1",
+    "yearly_rows": 21
+  },
+  "overall_checks": {
+    "best_3_removed_mean": {
+      "matched": true,
+      "recomputed": -0.009165734358491913,
+      "recorded": -0.009165734358491917
+    },
+    "invalid_trades": {
+      "matched": true,
+      "recomputed": 808,
+      "recorded": 808
+    },
+    "max_gain": {
+      "matched": true,
+      "recomputed": 0.6938021851638874,
+      "recorded": 0.6938021851638874
+    },
+    "max_loss": {
+      "matched": true,
+      "recomputed": -0.425611111111111,
+      "recorded": -0.425611111111111
+    },
+    "mean_net_return": {
+      "matched": true,
+      "recomputed": -0.009062371405666583,
+      "recorded": -0.009062371405666583
+    },
+    "median_net_return": {
+      "matched": true,
+      "recomputed": -0.0362411160431198,
+      "recorded": -0.0362411160431198
+    },
+    "net_return_sum": {
+      "matched": true,
+      "recomputed": -157.63088823016454,
+      "recorded": -157.63088823016454
+    },
+    "profit_factor": {
+      "matched": true,
+      "recomputed": 0.7729116162242076,
+      "recorded": 0.7729116162242073
+    },
+    "rows": {
+      "matched": true,
+      "recomputed": 18202,
+      "recorded": 18202
+    },
+    "top3_contribution_ratio": {
+      "matched": true,
+      "recomputed": Infinity,
+      "recorded": "inf"
+    },
+    "top3_contribution_sum": {
+      "matched": true,
+      "recomputed": 1.7703979983683962,
+      "recorded": 1.7703979983683962
+    },
+    "valid_trades": {
+      "matched": true,
+      "recomputed": 17394,
+      "recorded": 17394
+    },
+    "win_rate": {
+      "matched": true,
+      "recomputed": 0.3420719788432793,
+      "recorded": 0.3420719788432793
+    }
+  },
+  "permissions": {
+    "account_simulation_allowed": false,
+    "formal_recalculation_run_authorized": false,
+    "ticket_generation_allowed": false,
+    "trading_allowed": false
+  },
+  "scope": "ARCHIVE_COMPLETENESS_AND_HISTORICAL_METRICS_CONSISTENCY_ONLY",
+  "signal_trade_lineage": {
+    "duplicate_signal_ids": 0,
+    "duplicate_trade_signal_ids": 0,
+    "matched": true,
+    "missing_signal_references": 0,
+    "signal_rows": 18202,
+    "trade_rows": 18202
+  },
+  "strategy_decision_generated": false,
+  "yearly_checks": {
+    "details": [
+      {
+        "matched": true,
+        "year": 2006
+      },
+      {
+        "matched": true,
+        "year": 2007
+      },
+      {
+        "matched": true,
+        "year": 2008
+      },
+      {
+        "matched": true,
+        "year": 2009
+      },
+      {
+        "matched": true,
+        "year": 2010
+      },
+      {
+        "matched": true,
+        "year": 2011
+      },
+      {
+        "matched": true,
+        "year": 2012
+      },
+      {
+        "matched": true,
+        "year": 2013
+      },
+      {
+        "matched": true,
+        "year": 2014
+      },
+      {
+        "matched": true,
+        "year": 2015
+      },
+      {
+        "matched": true,
+        "year": 2016
+      },
+      {
+        "matched": true,
+        "year": 2017
+      },
+      {
+        "matched": true,
+        "year": 2018
+      },
+      {
+        "matched": true,
+        "year": 2019
+      },
+      {
+        "matched": true,
+        "year": 2020
+      },
+      {
+        "matched": true,
+        "year": 2021
+      },
+      {
+        "matched": true,
+        "year": 2022
+      },
+      {
+        "matched": true,
+        "year": 2023
+      },
+      {
+        "matched": true,
+        "year": 2024
+      },
+      {
+        "matched": true,
+        "year": 2025
+      },
+      {
+        "matched": true,
+        "year": 2026
+      }
+    ],
+    "expected_years": 21,
+    "matched": true,
+    "recorded_years": 21
+  }
+}

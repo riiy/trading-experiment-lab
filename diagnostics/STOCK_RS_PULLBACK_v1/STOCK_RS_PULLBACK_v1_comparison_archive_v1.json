@@ -1,0 +1,82 @@
+{
+  "archive_id": "STOCK_RS_PULLBACK_v1_ORIGINAL_COMPARISON_ARCHIVE_v1",
+  "archive_role": "EXTERNAL_COMPARISON_INPUTS_ONLY",
+  "comparison_boundary": {
+    "allowed_consumers": [
+      "DELTA_AND_DECISION"
+    ],
+    "runtime_verification_stage": "DELTA_AND_DECISION"
+  },
+  "created_at": "2026-08-03T16:28:26.864708+08:00",
+  "historical_audit_manifest": {
+    "path": "diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_audit_manifest.json",
+    "sha256": "8e06b78abf024f7968d3bcb7f9eea10e9f57db8e967171b294daad0c040eb485"
+  },
+  "inputs": [
+    {
+      "adj_type_values": [],
+      "code_count": 3348,
+      "columns": 20,
+      "duplicate_check_method": "adjacent_sorted_stream",
+      "duplicate_primary_keys": 0,
+      "max_date": "2026-07-16",
+      "min_date": "2006-07-12",
+      "missing_columns": [],
+      "missing_critical_fields": {
+        "code": 0,
+        "signal_date": 0,
+        "signal_id": 0,
+        "status": 0
+      },
+      "path": "data/signals/STOCK_RS_PULLBACK_v1_signals.csv",
+      "rows": 18202,
+      "sha256": "6cb6895305f8f0c7b1fe6e90c9752db4acc203e987b4408b5b1dd9f2d1729d61",
+      "source_values": []
+    },
+    {
+      "adj_type_values": [],
+      "code_count": 3348,
+      "columns": 22,
+      "duplicate_check_method": "adjacent_sorted_stream",
+      "duplicate_primary_keys": 0,
+      "max_date": "2026-07-16",
+      "min_date": "2006-07-12",
+      "missing_columns": [],
+      "missing_critical_fields": {
+        "code": 0,
+        "signal_id": 0,
+        "status": 0,
+        "trade_id": 0
+      },
+      "path": "data/trades/STOCK_RS_PULLBACK_v1_backtest_trades.csv",
+      "rows": 18202,
+      "sha256": "69dc2498d679bc43bcdd903b6206bde0ee9f6ef8a43c50e851a807032d7746d2",
+      "source_values": []
+    },
+    {
+      "bytes": 9759,
+      "format": "json",
+      "overall_rows": 18202,
+      "path": "data/reports/STOCK_RS_PULLBACK_v1_metrics.json",
+      "recorded_decision": "FAILED_ARCHIVED",
+      "setup_id": "STOCK_RS_PULLBACK_v1",
+      "sha256": "151289d38e49cd691eefc1c69a5d8981e7462d8d80d7473293659a78c46e2af6",
+      "yearly_rows": 21
+    }
+  ],
+  "integrity": {
+    "canonicalization_version": "MANIFEST_CANONICAL_JSON_V1",
+    "hash_algorithm": "SHA256",
+    "manifest_self_sha256": "c9c1d2dca1d0339032b61ad02d22ea90b3e56f6287281c01f94a7460d5de8998"
+  },
+  "permissions": {
+    "account_simulation_allowed": false,
+    "formal_recalculation_run_authorized": false,
+    "ticket_generation_allowed": false,
+    "trading_allowed": false
+  },
+  "schema": "STOCK_RS_PULLBACK_v1_COMPARISON_ARCHIVE_V1",
+  "source_setup": "STOCK_RS_PULLBACK_v1",
+  "strategy_decision_generated": false,
+  "timezone": "Asia/Shanghai"
+}

@@ -104,7 +104,7 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert implementation["full_recalculation_performed"] is False
 
     manifest_task = registry["full_pipeline_recalculation_tasks"]["FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION"]
-    assert manifest_task["status"] == "manifest_freeze_blocked_archive_comparison_incomplete"
+    assert manifest_task["status"] == "manifest_freeze_pending_explicit_authorization"
     assert manifest_task["manifest_tool_commit"] == "135375972e57676287e167bde6f0e80b8fb90e02"
     assert manifest_task["manifest_tool_audit_record_commit"] == "965a55137aa8fd0532cc177fc43018634af41453"
     assert manifest_task["manifest_v2_implemented"] is True
@@ -121,11 +121,15 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert manifest_task["remediation_1"]["reaudit_2"]["decision"] == "MANIFEST_V2_AUDIT_PASSED"
     assert manifest_task["remediation_1"]["reaudit_3"]["decision"] == "MANIFEST_V2_AUDIT_PASSED"
     assert manifest_task["last_freeze_attempt"]["formal_manifest_generated"] is False
+    comparison_archive = manifest_task["comparison_archive_completion_v1"]
+    assert comparison_archive["decision"] == "ORIGINAL_METRICS_ARCHIVE_AUDIT_PASSED"
+    assert comparison_archive["strategy_decision_generated"] is False
+    assert comparison_archive["formal_recalculation_performed"] is False
 
     core_inputs = registry["full_pipeline_recalculation_tasks"][
         "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION"
     ]
-    assert core_inputs["status"] == "FORMAL_INPUT_FROZEN_PENDING_ARCHIVE_COMPARISON_FREEZE"
+    assert core_inputs["status"] == "FORMAL_INPUT_FROZEN_PENDING_FORMAL_MANIFEST_FREEZE"
     assert core_inputs["raw_daily_available"] is True
     assert core_inputs["qfq_pairing_verified"] is True
     assert core_inputs["input_hashes_frozen"] is True

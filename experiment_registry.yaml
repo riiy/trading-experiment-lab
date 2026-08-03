@@ -183,7 +183,7 @@ full_pipeline_recalculation_tasks:
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false
   FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION:
-    status: manifest_freeze_blocked_archive_comparison_incomplete
+    status: manifest_freeze_pending_explicit_authorization
     manifest_tool_commit: 135375972e57676287e167bde6f0e80b8fb90e02
     manifest_tool_audit_record_commit: 965a55137aa8fd0532cc177fc43018634af41453
     manifest_v2_implemented: true
@@ -236,8 +236,19 @@ full_pipeline_recalculation_tasks:
       evidence: diagnostics/STOCK_RS_PULLBACK_v1_FORMAL_MANIFEST_FREEZE_ATTEMPT_20260803/failure_record.json
       formal_manifest_generated: false
       formal_recalculation_performed: false
+    comparison_archive_completion_v1:
+      task: STOCK_RS_PULLBACK_v1_ORIGINAL_METRICS_ARCHIVE_AUDIT_v1
+      implementation_commit: 0665537900b3ffbbfb2a5971ec94d32d032d8383
+      decision: ORIGINAL_METRICS_ARCHIVE_AUDIT_PASSED
+      scope: ARCHIVE_COMPLETENESS_AND_HISTORICAL_METRICS_CONSISTENCY_ONLY
+      archive: diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_comparison_archive_v1.json
+      archive_sha256: 053ba15f39f020a5590c9100f886e4ba56eb522c4519d2269694bce1568658a5
+      original_metrics_sha256: 151289d38e49cd691eefc1c69a5d8981e7462d8d80d7473293659a78c46e2af6
+      audit_report: diagnostics/STOCK_RS_PULLBACK_v1_ORIGINAL_METRICS_ARCHIVE_AUDIT_v1/audit_report.md
+      strategy_decision_generated: false
+      formal_recalculation_performed: false
   STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION:
-    status: FORMAL_INPUT_FROZEN_PENDING_ARCHIVE_COMPARISON_FREEZE
+    status: FORMAL_INPUT_FROZEN_PENDING_FORMAL_MANIFEST_FREEZE
     raw_daily_available: true
     qfq_pairing_verified: true
     profiles_complete: true
