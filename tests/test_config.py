@@ -123,13 +123,13 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     core_inputs = registry["full_pipeline_recalculation_tasks"][
         "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION"
     ]
-    assert core_inputs["status"] == "FORMAL_CORE_INPUT_FREEZE_AUTHORIZED"
-    assert core_inputs["raw_daily_available"] is False
-    assert core_inputs["qfq_pairing_verified"] is False
-    assert core_inputs["input_hashes_frozen"] is False
+    assert core_inputs["status"] == "FORMAL_INPUT_FROZEN_PENDING_FORMAL_MANIFEST_FREEZE"
+    assert core_inputs["raw_daily_available"] is True
+    assert core_inputs["qfq_pairing_verified"] is True
+    assert core_inputs["input_hashes_frozen"] is True
     assert core_inputs["blocking_mismatches"] == 3306
     candidate = core_inputs["generation_attempt_3"]
-    assert candidate["status"] == "CORE_INPUT_PAIR_AUDIT_PASSED_PENDING_FORMAL_INPUT_FREEZE"
+    assert candidate["status"] == "FORMAL_INPUT_FROZEN_PENDING_FORMAL_MANIFEST_FREEZE"
     assert candidate["rows"] == 10249283
     assert candidate["min_date"] == "2016-04-20"
     assert candidate["max_date"] == "2026-07-17"
@@ -140,6 +140,7 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert freezer["audit_decision"] == "FORMAL_CORE_INPUT_FREEZE_AUDIT_PASSED"
     assert freezer["formal_input_freeze_authorized"] is True
     assert freezer["formal_recalculation_run_authorized"] is False
+    assert freezer["formal_input_published"] is True
     scope = core_inputs["recent_10y_validation_scope_v1"]
     assert scope["status"] == "audit_passed"
     assert scope["audit_decision"] == "RECENT_10Y_VALIDATION_SCOPE_AUDIT_PASSED"

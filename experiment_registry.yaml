@@ -225,16 +225,16 @@ full_pipeline_recalculation_tasks:
         audit_record_commit: ba442d9cd7f2df5014abd6c540f7c137ac56c26b
         report: diagnostics/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_2/audit_report.md
   STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION:
-    status: FORMAL_CORE_INPUT_FREEZE_AUTHORIZED
-    raw_daily_available: false
-    qfq_pairing_verified: false
-    profiles_complete: false
-    input_hashes_frozen: false
+    status: FORMAL_INPUT_FROZEN_PENDING_FORMAL_MANIFEST_FREEZE
+    raw_daily_available: true
+    qfq_pairing_verified: true
+    profiles_complete: true
+    input_hashes_frozen: true
     formal_recalculation_run_authorized: false
     blocking_mismatches: 3306
     evidence: diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_GENERATION_2/pair_validation_failure.json
     generation_attempt_3:
-      status: CORE_INPUT_PAIR_AUDIT_PASSED_PENDING_FORMAL_INPUT_FREEZE
+      status: FORMAL_INPUT_FROZEN_PENDING_FORMAL_MANIFEST_FREEZE
       candidate_root: data/processed/formal_snapshots/STOCK_RS_PULLBACK_v1_recent_10y_pair_v3
       pair_audit: data/processed/formal_snapshots/STOCK_RS_PULLBACK_v1_recent_10y_pair_v3/pair_audit.json
       rows: 10249283
@@ -258,6 +258,9 @@ full_pipeline_recalculation_tasks:
       formal_input_freeze_authorized: true
       formal_recalculation_run_authorized: false
       report: diagnostics/STOCK_RS_PULLBACK_v1_FORMAL_CORE_INPUT_FREEZE_AUDIT_v1/audit_report.md
+      frozen_input_root: data/processed/formal_inputs/STOCK_RS_PULLBACK_v1_recent_10y_v1
+      frozen_input_manifest: data/processed/formal_inputs/STOCK_RS_PULLBACK_v1_recent_10y_v1/formal_input_manifest.json
+      formal_input_published: true
     recent_10y_validation_scope_v1:
       status: audit_passed
       implementation_commit: c3e8b68
