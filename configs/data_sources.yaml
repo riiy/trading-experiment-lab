@@ -19,3 +19,21 @@ a_share_daily:
     - "STOCK_RS_PULLBACK_v1 uses qfq/前复权 prices for historical research."
     - "Execution-level live tickets must use current unadjusted quoted prices later."
     - "Provider raw exports must be saved under data/raw/market/a_share_daily before ingestion."
+
+a_share_historical_st:
+  authoritative_source: tushare.stock_st
+  alternate_authoritative_sources:
+    - CSMAR.TRD_Dalyr.Trdsta
+    - QMT.xtdata.download_his_st_data
+  source_start_date: "2016-01-01"
+  raw_evidence_format: jsonl
+  target_grain: [date, code]
+  allowed_status_values: ["TRUE", "FALSE"]
+  token_environment_variable: TUSHARE_TOKEN
+  notes:
+    - "Fetch one stock_st response for every trading date represented by the target daily bars."
+    - "Expand the ST membership complement only against the target daily-bar pairs; no UNKNOWN or name-based inference is permitted."
+    - "Preserve raw JSONL response evidence and hash it in the derived status parquet metadata."
+    - "QMT raw evidence is SH_XXXXXX_2011_86400000.csv plus its capture manifest; flags 1, 2, and 3 mean ST, *ST, and PT."
+    - "QMT conversion expands event intervals to the target daily-bar pairs and hashes both source and target daily input."
+    - "QMT acquisition requires a logged-in authorized QMT data center, or a user-center interface token for standalone xtquant."

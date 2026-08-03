@@ -28,6 +28,13 @@ from texperiment.data.tdx_export_source import write_tdx_index_parquet
 from texperiment.data.tdx_paired_source import write_tdx_paired_export_parquet
 from texperiment.data.core_input_pair import CoreInputPairError, CoreInputPairScope, prepare_tdx_core_input_pair
 from texperiment.data.formal_input_freeze import freeze_audited_core_input_pair
+from texperiment.data.historical_st import (
+    HistoricalSTError,
+    fetch_tushare_stock_st_raw,
+    write_historical_st_status_from_tushare_raw,
+)
+from texperiment.data.csmar_historical_st import write_historical_st_status_from_csmar
+from texperiment.data.qmt_historical_st import write_historical_st_status_from_qmt
 from texperiment.indicators.a_share import (
     AShareIndicatorConfig,
     build_a_share_indicators,
@@ -161,6 +168,78 @@ def cmd_ingest_tdx_paired_a_share_daily(args: argparse.Namespace) -> int:
     )
     print(f"ingest-tdx-paired-a-share-daily: OK -> {output_path}")
     print(json.dumps({"quality": json.loads(_quality_report_to_json(quality)), "paired": report.__dict__}, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_fetch_tushare_historical_st(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    try:
+        report = fetch_tushare_stock_st_raw(
+            _resolve(root, args.daily_input),
+            _resolve(root, args.raw_output),
+            start_date=args.start_date,
+            end_date=args.end_date,
+            token_env=args.token_env,
+            timeout_seconds=args.timeout_seconds,
+        )
+    except (FileExistsError, HistoricalSTError) as exc:
+        raise SystemExit(str(exc)) from exc
+    print(f"fetch-tushare-historical-st: OK -> {report.raw_output}")
+    print(json.dumps(report.__dict__, ensure_ascii=False, indent=2, default=str))
+    return 0
+
+
+def cmd_build_historical_st_status(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    try:
+        report = write_historical_st_status_from_tushare_raw(
+            _resolve(root, args.daily_input),
+            _resolve(root, args.raw_input),
+            _resolve(root, args.output),
+            start_date=args.start_date,
+            end_date=args.end_date,
+            batch_size=args.batch_size,
+        )
+    except (FileExistsError, HistoricalSTError) as exc:
+        raise SystemExit(str(exc)) from exc
+    print(f"build-historical-st-status: OK -> {report.output}")
+    print(json.dumps(report.__dict__, ensure_ascii=False, indent=2, default=str))
+    return 0
+
+
+def cmd_build_historical_st_status_from_csmar(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    try:
+        report = write_historical_st_status_from_csmar(
+            _resolve(root, args.daily_input),
+            _resolve(root, args.csmar_input),
+            _resolve(root, args.output),
+            start_date=args.start_date,
+            end_date=args.end_date,
+            batch_size=args.batch_size,
+        )
+    except (FileExistsError, HistoricalSTError) as exc:
+        raise SystemExit(str(exc)) from exc
+    print(f"build-historical-st-status-from-csmar: OK -> {report.output}")
+    print(json.dumps(report.__dict__, ensure_ascii=False, indent=2, default=str))
+    return 0
+
+
+def cmd_build_historical_st_status_from_qmt(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    try:
+        report = write_historical_st_status_from_qmt(
+            _resolve(root, args.daily_input),
+            _resolve(root, args.qmt_input),
+            _resolve(root, args.output),
+            start_date=args.start_date,
+            end_date=args.end_date,
+            batch_size=args.batch_size,
+        )
+    except (FileExistsError, HistoricalSTError) as exc:
+        raise SystemExit(str(exc)) from exc
+    print(f"build-historical-st-status-from-qmt: OK -> {report.output}")
+    print(json.dumps(report.__dict__, ensure_ascii=False, indent=2, default=str))
     return 0
 
 
@@ -722,6 +801,54 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output", default="data/processed/a_share_daily_remediation.parquet")
     p.add_argument("--allow-quality-warnings", action="store_true")
     p.set_defaults(func=cmd_ingest_tdx_paired_a_share_daily)
+
+    p = sub.add_parser(
+        "fetch-tushare-historical-st",
+        help="Fetch auditable daily historical ST memberships from Tushare stock_st",
+    )
+    p.add_argument("--daily-input", required=True, help="Daily bars defining the required (date, code) coverage")
+    p.add_argument("--raw-output", required=True, help="New JSONL evidence output; must not already exist")
+    p.add_argument("--start-date", required=True, help="Inclusive ISO date, YYYY-MM-DD")
+    p.add_argument("--end-date", required=True, help="Inclusive ISO date, YYYY-MM-DD")
+    p.add_argument("--token-env", default="TUSHARE_TOKEN", help="Environment variable containing the Tushare token")
+    p.add_argument("--timeout-seconds", type=_positive_int, default=30)
+    p.set_defaults(func=cmd_fetch_tushare_historical_st)
+
+    p = sub.add_parser(
+        "build-historical-st-status",
+        help="Expand Tushare ST memberships to exact daily-bar (date, code) TRUE/FALSE coverage",
+    )
+    p.add_argument("--daily-input", required=True, help="Daily bars defining the required (date, code) coverage")
+    p.add_argument("--raw-input", required=True, help="Raw JSONL created by fetch-tushare-historical-st")
+    p.add_argument("--output", required=True, help="New parquet status output; must not already exist")
+    p.add_argument("--start-date", required=True, help="Inclusive ISO date, YYYY-MM-DD")
+    p.add_argument("--end-date", required=True, help="Inclusive ISO date, YYYY-MM-DD")
+    p.add_argument("--batch-size", type=_positive_int, default=100_000)
+    p.set_defaults(func=cmd_build_historical_st_status)
+
+    p = sub.add_parser(
+        "build-historical-st-status-from-csmar",
+        help="Build exact daily-bar TRUE/FALSE ST status from licensed CSMAR Trdsta data",
+    )
+    p.add_argument("--daily-input", required=True, help="Daily bars defining the required (date, code) coverage")
+    p.add_argument("--csmar-input", required=True, help="CSV or Parquet export containing Stkcd, Trddt, Trdsta")
+    p.add_argument("--output", required=True, help="New parquet status output; must not already exist")
+    p.add_argument("--start-date", required=True, help="Inclusive ISO date, YYYY-MM-DD")
+    p.add_argument("--end-date", required=True, help="Inclusive ISO date, YYYY-MM-DD")
+    p.add_argument("--batch-size", type=_positive_int, default=100_000)
+    p.set_defaults(func=cmd_build_historical_st_status_from_csmar)
+
+    p = sub.add_parser(
+        "build-historical-st-status-from-qmt",
+        help="Expand QMT historical ST/PT events to exact daily-bar TRUE/FALSE status",
+    )
+    p.add_argument("--daily-input", required=True, help="Daily bars defining the required (date, code) coverage")
+    p.add_argument("--qmt-input", required=True, help="QMT SH_XXXXXX_2011_86400000.csv downloaded by xtdata")
+    p.add_argument("--output", required=True, help="New parquet status output; must not already exist")
+    p.add_argument("--start-date", required=True, help="Inclusive ISO date, YYYY-MM-DD")
+    p.add_argument("--end-date", required=True, help="Inclusive ISO date, YYYY-MM-DD")
+    p.add_argument("--batch-size", type=_positive_int, default=100_000)
+    p.set_defaults(func=cmd_build_historical_st_status_from_qmt)
 
     p = sub.add_parser(
         "prepare-stock-rs-pullback-core-input-pair",
