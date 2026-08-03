@@ -183,15 +183,15 @@ full_pipeline_recalculation_tasks:
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false
   FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION:
-    status: manifest_tool_audited_core_inputs_blocked
-    manifest_tool_commit: 30523f4baec7257e5014b6fd43f852891e31ae11
-    manifest_tool_audit_record_commit: ba442d9cd7f2df5014abd6c540f7c137ac56c26b
+    status: manifest_freeze_authorized
+    manifest_tool_commit: 135375972e57676287e167bde6f0e80b8fb90e02
+    manifest_tool_audit_record_commit: 965a55137aa8fd0532cc177fc43018634af41453
     manifest_v2_implemented: true
     manifest_v2_audited: true
     manifest_v2_audit_decision: MANIFEST_V2_AUDIT_PASSED
     historical_audit_decision: MANIFEST_V2_AUDIT_PASSED
     formal_contract_eligible: true
-    manifest_freeze_authorized: false
+    manifest_freeze_authorized: true
     formal_recalculation_run_authorized: false
     legacy_freezer_run_type: SIGNAL_EXECUTION_REPLAY
     legacy_strategy_validation_decision_allowed: false
@@ -224,6 +224,11 @@ full_pipeline_recalculation_tasks:
         decision: MANIFEST_V2_AUDIT_PASSED
         audit_record_commit: ba442d9cd7f2df5014abd6c540f7c137ac56c26b
         report: diagnostics/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_2/audit_report.md
+      reaudit_3:
+        audit_id: FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_3
+        decision: MANIFEST_V2_AUDIT_PASSED
+        audit_record_commit: 965a551
+        report: diagnostics/FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_3/audit_report.md
   STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION:
     status: FORMAL_INPUT_FROZEN_PENDING_FORMAL_MANIFEST_FREEZE
     raw_daily_available: true
