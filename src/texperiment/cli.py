@@ -27,6 +27,7 @@ from texperiment.data.quality import validate_daily_bars
 from texperiment.data.tdx_export_source import write_tdx_index_parquet
 from texperiment.data.tdx_paired_source import write_tdx_paired_export_parquet
 from texperiment.data.core_input_pair import CoreInputPairError, CoreInputPairScope, prepare_tdx_core_input_pair
+from texperiment.data.formal_input_freeze import freeze_audited_core_input_pair
 from texperiment.indicators.a_share import (
     AShareIndicatorConfig,
     build_a_share_indicators,
@@ -168,6 +169,16 @@ def cmd_prepare_stock_rs_pullback_core_input_pair(args: argparse.Namespace) -> i
         raise SystemExit(f"CORE_INPUT_PAIR_VALIDATION_FAILED: {exc}") from exc
     print(f"prepare-stock-rs-pullback-core-input-pair: OK -> {result.output_root}")
     print(json.dumps(result.report, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_freeze_stock_rs_pullback_core_input_pair(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    result = freeze_audited_core_input_pair(
+        _resolve(root, args.candidate_root),
+        _resolve(root, args.output_root),
+    )
+    print(f"freeze-stock-rs-pullback-core-input-pair: OK -> {result.final_root}")
     return 0
 
 
@@ -619,6 +630,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="diagnostics/STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_REMEDIATION_1/pair_validation_failure.json",
     )
     p.set_defaults(func=cmd_prepare_stock_rs_pullback_core_input_pair)
+
+    p = sub.add_parser("freeze-stock-rs-pullback-core-input-pair", help="Atomically freeze an audited raw/qfq candidate")
+    p.add_argument("--candidate-root", required=True)
+    p.add_argument("--output-root", required=True, help="New formal input directory; must not exist")
+    p.set_defaults(func=cmd_freeze_stock_rs_pullback_core_input_pair)
 
     p = sub.add_parser("ingest-tdx-export-index-daily", help="Read one TDX index text export")
     p.add_argument("--input", required=True)
