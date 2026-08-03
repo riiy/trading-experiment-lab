@@ -1,5 +1,5 @@
 Trading_Experiment:
-  status: manifest_v2_remediation_and_core_input_preparation
+  status: new_strategy_discovery_active_no_trade
   capital_limit: 30000
   max_planned_loss_per_trade: 500
   instrument_scope:
@@ -11,19 +11,13 @@ Trading_Experiment:
   ticket_generation_allowed: false
   tradable_setups: 0
   next_action:
-    - remediate_and_reaudit_formal_manifest_v2
-    - prepare_and_verify_core_input_snapshot
+    - conduct_next_strategy_hypothesis_discovery
   allowed:
-    - repair_execution_semantics
-    - add_raw_price_schema
-    - add_price_limit_rules
-    - add_historical_status_interface
-    - add_regression_tests
-    - rerun_locked_50_sample_audit
-    - full_backtest_recalculation_to_RECALCULATED_paths
+    - hypothesis_discovery
+    - research_design
+    - data_availability_assessment
   forbidden:
-    - failure_diagnostics
-    - new_setup_definition
+    - new_setup_pre_registration_without_promotion_gate
     - account_simulation
     - ticket_generation
     - live_trading

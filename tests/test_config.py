@@ -24,7 +24,7 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     experiment = registry["Trading_Experiment"]
     archived = registry["setups"]["STOCK_RS_PULLBACK_v1"]
 
-    assert experiment["status"] == "manifest_v2_remediation_and_core_input_preparation"
+    assert experiment["status"] == "new_strategy_discovery_active_no_trade"
     assert experiment["current_setup"] is None
     assert experiment["tradable_setups"] == 0
     assert experiment["trading_allowed"] is False
