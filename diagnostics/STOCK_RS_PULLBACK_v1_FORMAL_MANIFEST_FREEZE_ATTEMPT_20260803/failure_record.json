@@ -1,0 +1,11 @@
+{
+  "attempt_id": "STOCK_RS_PULLBACK_v1_FORMAL_MANIFEST_FREEZE_ATTEMPT_20260803",
+  "decision": "RECALCULATION_ABORTED_MANIFEST_VALIDATION_FAILURE",
+  "blocking_error": "ARCHIVE_MANIFEST_MISSING_COMPARISON_REFERENCE:original_metrics",
+  "phase": "pre_manifest",
+  "formal_manifest_generated": false,
+  "formal_input_published": true,
+  "formal_recalculation_performed": false,
+  "strategy_decision_generated": false,
+  "trading_allowed": false
+}
