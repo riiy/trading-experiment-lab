@@ -1,0 +1,43 @@
+{
+  "audit_id": "STOCK_RS_PULLBACK_v1_CORE_INPUT_PAIR_AUDIT_v1",
+  "candidate_audit_sha256": "c258144dd50616708ffeaed993ed3dc4e818d5b53294e7e21a532b75bfac0f7f",
+  "candidate_root": "data/processed/formal_snapshots/STOCK_RS_PULLBACK_v1_recent_10y_pair_v3",
+  "checks": {
+    "adjustment_types_match": true,
+    "benchmark_derives_warmup_start": true,
+    "candidate_audit_accepted": true,
+    "candidate_published_atomically": true,
+    "configured_excluded_codes_absent": true,
+    "dates_within_global_scope": true,
+    "formal_recalculation_not_performed": true,
+    "mapping_fully_evaluable": true,
+    "ohlc_is_finite_positive": true,
+    "pre_close_is_positive_when_present": true,
+    "primary_keys_and_order_match": true,
+    "qfq_sha256_matches_candidate_audit": true,
+    "raw_sha256_matches_candidate_audit": true,
+    "row_count_matches_candidate_audit": true,
+    "trading_disabled": true,
+    "unique_codes_match_candidate_audit": true,
+    "volume_matches": true
+  },
+  "decision": "CORE_INPUT_PAIR_AUDIT_PASSED",
+  "formal_input_published": false,
+  "formal_recalculation_run_authorized": false,
+  "profile": {
+    "max_date": "2026-07-17",
+    "min_date": "2016-04-20",
+    "rows": 10249283,
+    "unique_codes": 5505
+  },
+  "trading_allowed": false,
+  "violations": {
+    "adjustment": 0,
+    "date": 0,
+    "excluded": 0,
+    "key_order": 0,
+    "ohlc": 0,
+    "pre_close": 0,
+    "volume": 0
+  }
+}
