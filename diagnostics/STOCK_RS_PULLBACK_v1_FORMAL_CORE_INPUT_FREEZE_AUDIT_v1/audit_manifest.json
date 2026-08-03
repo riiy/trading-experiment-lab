@@ -1,0 +1,21 @@
+{
+  "audit_id": "STOCK_RS_PULLBACK_v1_FORMAL_CORE_INPUT_FREEZE_AUDIT_v1",
+  "implementation_commit": "1353759",
+  "checks": {
+    "candidate_hash_drift_rejected": true,
+    "existing_final_root_rejected": true,
+    "atomic_publication_tested": true,
+    "published_tree_read_only": true,
+    "formal_recalculation_run_authorized": false,
+    "trading_allowed": false
+  },
+  "test_results": {
+    "focused": "26 passed",
+    "full_regression": "PASSED",
+    "config_check": "OK"
+  },
+  "decision": "FORMAL_CORE_INPUT_FREEZE_AUDIT_PASSED",
+  "formal_input_frozen": false,
+  "formal_recalculation_run_authorized": false,
+  "trading_allowed": false
+}
