@@ -33,6 +33,7 @@ def test_builder_emits_complete_self_hashed_v2_manifest_without_opening_comparis
         "runner_sha256", "upstream_sha256", "downstream_sha256", "contract_sha256", "schema_sha256"
     }
     assert manifest["repository"]["runtime_head_commit"] == "c" * 40
+    assert manifest["repository"]["freeze_head_commit"] == "c" * 40
     assert manifest["audited_engine"]["implementation_commit"].startswith("508cece")
     assert manifest["audited_engine"]["audit_record_commit"].startswith("62ad290")
     assert manifest["audited_manifest_tool"]["implementation_commit"] == "d" * 40
@@ -200,6 +201,16 @@ def test_external_authorization_adapter_does_not_mutate_frozen_manifest(tmp_path
     assert runtime["permissions"]["strategy_validation_decision_allowed"] is False
 
 
+def test_manifest_accepts_clean_descendant_head_without_engine_or_input_drift(tmp_path, monkeypatch):
+    root, spec = _fixture(tmp_path)
+    _identity(monkeypatch)
+    manifest = build_formal_manifest_v2(root, spec)
+    monkeypatch.setattr("texperiment.full_recalculation.manifest_validation.repository_state", lambda root: ("f" * 40, False))
+    monkeypatch.setattr("texperiment.full_recalculation.manifest_validation._is_ancestor", lambda root, ancestor, descendant: True)
+
+    validate_formal_manifest_v2(root, manifest, require_clean_repository=True, require_manifest_tool_audited=False)
+
+
 @pytest.mark.parametrize(
     ("section", "field", "value"),
     [
@@ -262,6 +273,7 @@ def _identity(monkeypatch):
     monkeypatch.setattr("texperiment.full_recalculation.formal_manifest.manifest_tool_hashes_at_commit", lambda root, commit: tool_hashes)
     monkeypatch.setattr("texperiment.full_recalculation.formal_manifest.current_manifest_tool_hashes", lambda root: tool_hashes)
     monkeypatch.setattr("texperiment.full_recalculation.manifest_validation.repository_state", lambda root: ("c" * 40, False))
+    monkeypatch.setattr("texperiment.full_recalculation.manifest_validation._is_ancestor", lambda root, ancestor, descendant: True)
     monkeypatch.setattr("texperiment.full_recalculation.manifest_validation.current_engine_hashes", lambda root: hashes)
     monkeypatch.setattr("texperiment.full_recalculation.manifest_validation.current_manifest_tool_hashes", lambda root: tool_hashes)
 

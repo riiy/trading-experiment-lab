@@ -112,6 +112,7 @@ def build_formal_manifest_v2(project_root: str | Path, spec: FormalManifestSpec)
             "commit": head,
             "head_commit": head,
             "runtime_head_commit": head,
+            "freeze_head_commit": head,
             "audited_engine_commit": AUDITED_ENGINE_COMMIT,
             "engine_audit_record_commit": ENGINE_AUDIT_RECORD_COMMIT,
             "manifest_tool_commit": spec.manifest_tool_commit,

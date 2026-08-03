@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -48,13 +49,15 @@ def validate_formal_manifest_v2(
         repository.get("commit")
         == repository.get("head_commit")
         == repository.get("runtime_head_commit")
+        == repository.get("freeze_head_commit")
+        and _sha1(repository.get("freeze_head_commit"))
     ):
         raise ValueError("runtime repository commit alias mismatch")
     head, dirty = repository_state(root)
     if require_clean_repository and dirty:
         raise ValueError("Git worktree must be clean")
-    if head != repository.get("head_commit"):
-        raise ValueError("Manifest HEAD does not match runtime HEAD")
+    if not _is_ancestor(root, str(repository["freeze_head_commit"]), head):
+        raise ValueError("runtime HEAD is not a descendant of the Manifest freeze HEAD")
 
     audited = _mapping(manifest.get("audited_engine"), "audited_engine")
     if audited.get("implementation_commit") != AUDITED_ENGINE_COMMIT:
@@ -192,6 +195,17 @@ def _mapping(value: Any, name: str) -> Mapping[str, Any]:
 def _sha256(value: Any) -> bool:
     text = str(value)
     return len(text) == 64 and all(character in "0123456789abcdef" for character in text.lower())
+
+
+
+
+def _is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
+    return subprocess.run(
+        ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+        cwd=root,
+        check=False,
+        capture_output=True,
+    ).returncode == 0
 
 
 def _sha1(value: Any) -> bool:
