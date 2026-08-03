@@ -183,7 +183,7 @@ full_pipeline_recalculation_tasks:
     last_attempt_status: RECALCULATION_ABORTED_PIPELINE_CONTRACT_MISMATCH
     strategy_decision_generated: false
   FULL_PIPELINE_RECALCULATION_MANIFEST_V2_IMPLEMENTATION:
-    status: manifest_freeze_authorized
+    status: formal_run_authorized
     manifest_tool_commit: b25fe28c9f57d1ae65f9c3990a9480e55eac454c
     manifest_tool_audit_record_commit: 58027cee8a554568730f6840c2e0f760b64fe8e1
     manifest_v2_implemented: true
@@ -192,7 +192,7 @@ full_pipeline_recalculation_tasks:
     historical_audit_decision: MANIFEST_V2_AUDIT_PASSED
     formal_contract_eligible: true
     manifest_freeze_authorized: true
-    formal_recalculation_run_authorized: false
+    formal_recalculation_run_authorized: true
     legacy_freezer_run_type: SIGNAL_EXECUTION_REPLAY
     legacy_strategy_validation_decision_allowed: false
     commands:
@@ -275,7 +275,12 @@ full_pipeline_recalculation_tasks:
       audit_id: FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_4
       audit_decision: MANIFEST_V2_AUDIT_PASSED
       audit_record_commit: 58027cee8a554568730f6840c2e0f760b64fe8e1
-      formal_recalculation_run_authorized: false
+      formal_recalculation_run_authorized: true
+    formal_manifest_v2:
+      status: FORMAL_RECALCULATION_MANIFEST_ACCEPTED
+      path: data/recalculations/manifests/STOCK_RS_PULLBACK_v1_RECALCULATED_20260803_manifest_v2.json
+      formal_recalculation_run_authorized: true
+      trading_allowed: false
   STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION:
     status: FORMAL_INPUT_FROZEN_PENDING_FORMAL_MANIFEST_FREEZE
     raw_daily_available: true
