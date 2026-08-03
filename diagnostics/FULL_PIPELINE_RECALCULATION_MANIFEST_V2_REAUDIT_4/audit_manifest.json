@@ -1,0 +1,13 @@
+{
+  "audit_id": "FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_4",
+  "implementation_commit": "b25fe28c9f57d1ae65f9c3990a9480e55eac454c",
+  "prior_failure_commit": "8aced64784e5f9a8f7b4b0c2bfcf87857ef15848",
+  "scope": "AUTHORISATION_HEAD_BINDING_REMEDIATION",
+  "production_changes_allowed": false,
+  "formal_recalculation_allowed": false,
+  "git_dirty_at_start": false,
+  "tool_hashes": {
+    "formal_manifest_sha256": "090a3073bfedf8df7016af670eb72a8f87a3968840cb5ac49847bd2b0f3e5ddc",
+    "manifest_validation_sha256": "109a5acaa54cf4b34ec3fc24473f394d7dbeadadd4fd53633832d36cffd3a393"
+  }
+}
