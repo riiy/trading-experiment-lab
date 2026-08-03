@@ -123,17 +123,18 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     core_inputs = registry["full_pipeline_recalculation_tasks"][
         "STOCK_RS_PULLBACK_v1_CORE_INPUT_SNAPSHOT_PREPARATION"
     ]
-    assert core_inputs["status"] == "CORE_INPUT_PAIR_CANDIDATE_PENDING_AUDIT"
+    assert core_inputs["status"] == "CORE_INPUT_PAIR_AUDIT_PASSED_PENDING_FORMAL_INPUT_FREEZE"
     assert core_inputs["raw_daily_available"] is False
     assert core_inputs["qfq_pairing_verified"] is False
     assert core_inputs["input_hashes_frozen"] is False
     assert core_inputs["blocking_mismatches"] == 3306
     candidate = core_inputs["generation_attempt_3"]
-    assert candidate["status"] == "CORE_INPUT_PAIR_CANDIDATE_ACCEPTED_PENDING_AUDIT"
+    assert candidate["status"] == "CORE_INPUT_PAIR_AUDIT_PASSED_PENDING_FORMAL_INPUT_FREEZE"
     assert candidate["rows"] == 10249283
     assert candidate["min_date"] == "2016-04-20"
     assert candidate["max_date"] == "2026-07-17"
     assert candidate["unevaluable_mapping_rows"] == 0
+    assert candidate["audit"]["decision"] == "CORE_INPUT_PAIR_AUDIT_PASSED"
     assert candidate["formal_input_published"] is False
     scope = core_inputs["recent_10y_validation_scope_v1"]
     assert scope["status"] == "audit_passed"
