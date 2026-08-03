@@ -1,0 +1,24 @@
+{
+  "audit_id": "FULL_PIPELINE_RECALCULATION_MANIFEST_V2_REAUDIT_3",
+  "manifest_tool_commit": "135375972e57676287e167bde6f0e80b8fb90e02",
+  "prior_manifest_tool_commit": "30523f4baec7257e5014b6fd43f852891e31ae11",
+  "trigger": "ROOT_CLI_SHA256_DRIFT_FROM_FORMAL_CORE_INPUT_FREEZE_COMMAND",
+  "checks": {
+    "audited_engine_hashes_unchanged": true,
+    "formal_manifest_modules_unchanged": true,
+    "root_cli_v2_routes_remain_explicit": true,
+    "legacy_replay_path_remains_rejected": true,
+    "formal_input_freeze_route_is_separate": true,
+    "formal_recalculation_run_authorized": false,
+    "trading_allowed": false
+  },
+  "test_results": {
+    "focused": "31 passed",
+    "full_regression": "PASSED",
+    "config_check": "OK"
+  },
+  "decision": "MANIFEST_V2_AUDIT_PASSED",
+  "formal_manifest_generated": false,
+  "formal_recalculation_run_authorized": false,
+  "trading_allowed": false
+}
