@@ -26,6 +26,7 @@ from texperiment.data.loaders import ingest_a_share_daily, read_daily_bars, read
 from texperiment.data.quality import validate_daily_bars
 from texperiment.data.tdx_export_source import write_tdx_index_parquet
 from texperiment.data.tdx_paired_source import write_tdx_paired_export_parquet
+from texperiment.data.etf_tdx_source import write_tdx_paired_exchange_etf_parquet
 from texperiment.data.core_input_pair import CoreInputPairError, CoreInputPairScope, prepare_tdx_core_input_pair
 from texperiment.data.formal_input_freeze import freeze_audited_core_input_pair
 from texperiment.data.historical_st import (
@@ -63,6 +64,7 @@ from texperiment.setups.stock_rs_pullback_v1.signal import (
 )
 from texperiment.setups.volatility_contraction_breakout_v1.rules import (
     build_volatility_contraction_breakout_signals,
+    write_volatility_contraction_breakout_signals_from_parquet,
 )
 from texperiment.setups.volatility_contraction_breakout_v1.backtest import (
     run_volatility_contraction_breakout_backtest,
@@ -70,6 +72,8 @@ from texperiment.setups.volatility_contraction_breakout_v1.backtest import (
 from texperiment.setups.volatility_contraction_breakout_v1.universe import (
     write_volatility_contraction_breakout_universe_from_parquet,
 )
+from texperiment.setups.volatility_contraction_breakout_v1.paired_input import write_vcb_paired_input
+from texperiment.setups.volatility_contraction_breakout_v1.development_input import write_development_backtest_bars
 from texperiment.setups.volatility_contraction_breakout_v1.validation import (
     DEVELOPMENT_END,
     DEVELOPMENT_START,
@@ -167,6 +171,23 @@ def cmd_ingest_tdx_paired_a_share_daily(args: argparse.Namespace) -> int:
         strict=not args.allow_quality_warnings,
     )
     print(f"ingest-tdx-paired-a-share-daily: OK -> {output_path}")
+    print(json.dumps({"quality": json.loads(_quality_report_to_json(quality)), "paired": report.__dict__}, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_ingest_tdx_paired_exchange_etf_daily(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    output_path = _resolve(root, args.output)
+    quality, report = write_tdx_paired_exchange_etf_parquet(
+        _resolve(root, args.qfq_input),
+        _resolve(root, args.raw_input),
+        _resolve(root, args.hfq_input),
+        output_path,
+        strict=not args.allow_quality_warnings,
+        market=args.market,
+        code_prefixes=tuple(args.code_prefix) if args.code_prefix else None,
+    )
+    print(f"ingest-tdx-paired-exchange-etf-daily: OK -> {output_path}")
     print(json.dumps({"quality": json.loads(_quality_report_to_json(quality)), "paired": report.__dict__}, ensure_ascii=False, indent=2))
     return 0
 
@@ -498,14 +519,21 @@ def cmd_backtest_stock_rs_pullback(args: argparse.Namespace) -> int:
 def cmd_generate_volatility_contraction_breakout_signals(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     setup = load_yaml(root / "configs" / "setups" / f"{args.setup}.yaml")
-    daily = read_table(_resolve(root, args.daily_input))
-    universe = read_table(_resolve(root, args.universe_input))
-    signals = build_volatility_contraction_breakout_signals(
-        daily, universe=universe, setup_config=setup, include_candidates=args.include_candidates
-    )
+    output = _resolve(root, args.output)
+    daily_path, universe_path = _resolve(root, args.daily_input), _resolve(root, args.universe_input)
+    if daily_path.suffix.lower() == ".parquet" and universe_path.suffix.lower() == ".parquet" and not args.include_candidates:
+        count = write_volatility_contraction_breakout_signals_from_parquet(
+            daily_path, universe_path, output, setup_config=setup, batch_size=args.batch_size
+        )
+        if count == 0 and not args.allow_empty:
+            raise SystemExit("generate-volatility-contraction-breakout-signals produced 0 rows")
+        print(f"generate-volatility-contraction-breakout-signals: OK -> {output}")
+        return 0
+    daily = read_table(daily_path)
+    universe = read_table(universe_path)
+    signals = build_volatility_contraction_breakout_signals(daily, universe=universe, setup_config=setup, include_candidates=args.include_candidates)
     if signals.empty and not args.allow_empty:
         raise SystemExit("generate-volatility-contraction-breakout-signals produced 0 rows")
-    output = _resolve(root, args.output)
     write_signals(signals, output)
     print(f"generate-volatility-contraction-breakout-signals: OK -> {output}")
     return 0
@@ -521,6 +549,18 @@ def cmd_build_volatility_contraction_breakout_universe(args: argparse.Namespace)
     return 0
 
 
+def cmd_build_volatility_contraction_breakout_paired_input(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    report = write_vcb_paired_input(
+        _resolve(root, args.raw_input),
+        _resolve(root, args.qfq_input),
+        _resolve(root, args.output),
+        batch_size=args.batch_size,
+    )
+    print(json.dumps({"rows": report.rows, "mapping_evaluable_rows": report.mapping_evaluable_rows, "mapping_unknown_rows": report.mapping_unknown_rows}, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_backtest_volatility_contraction_breakout(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     setup = load_yaml(root / "configs" / "setups" / f"{args.setup}.yaml")
@@ -532,6 +572,20 @@ def cmd_backtest_volatility_contraction_breakout(args: argparse.Namespace) -> in
     output = _resolve(root, args.output)
     write_trades(trades, output)
     print(f"backtest-volatility-contraction-breakout: OK -> {output}")
+    return 0
+
+
+def cmd_build_volatility_contraction_breakout_development_bars(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    report = write_development_backtest_bars(
+        _resolve(root, args.daily_input),
+        _resolve(root, args.signal_input),
+        _resolve(root, args.output),
+        batch_size=args.batch_size,
+        lookback_days=args.lookback_days,
+        forward_days=args.forward_days,
+    )
+    print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -802,6 +856,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--allow-quality-warnings", action="store_true")
     p.set_defaults(func=cmd_ingest_tdx_paired_a_share_daily)
 
+    p = sub.add_parser("ingest-tdx-paired-exchange-etf-daily", help="Join the designated local ETF qfq/raw/hfq exports")
+    p.add_argument("--qfq-input", default="data/raw/etf/qfq")
+    p.add_argument("--raw-input", default="data/raw/etf/raw")
+    p.add_argument("--hfq-input", default="data/raw/etf/hfq")
+    p.add_argument("--output", default="data/processed/exchange_etf_daily_exploration.parquet")
+    p.add_argument("--market", choices=["SH", "SZ"], help="Optional exchange chunk for long local imports")
+    p.add_argument("--code-prefix", action="append", help="Optional numeric ticker prefix; repeat to form an import chunk")
+    p.add_argument("--allow-quality-warnings", action="store_true")
+    p.set_defaults(func=cmd_ingest_tdx_paired_exchange_etf_daily)
+
     p = sub.add_parser(
         "fetch-tushare-historical-st",
         help="Fetch auditable daily historical ST memberships from Tushare stock_st",
@@ -938,6 +1002,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--setup", default="VOLATILITY_CONTRACTION_BREAKOUT_v1")
     p.add_argument("--include-candidates", action="store_true")
     p.add_argument("--allow-empty", action="store_true")
+    p.add_argument("--batch-size", type=_positive_int, default=250_000)
     p.set_defaults(func=cmd_generate_volatility_contraction_breakout_signals)
 
     p = sub.add_parser("build-volatility-contraction-breakout-universe", help="Build the compact VCB signal universe from frozen daily bars")
@@ -946,6 +1011,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--setup", default="VOLATILITY_CONTRACTION_BREAKOUT_v1")
     p.add_argument("--batch-size", type=_positive_int, default=100_000)
     p.set_defaults(func=cmd_build_volatility_contraction_breakout_universe)
+
+    p = sub.add_parser("build-volatility-contraction-breakout-paired-input", help="Join frozen raw/qfq snapshots for VCB research")
+    p.add_argument("--raw-input", required=True)
+    p.add_argument("--qfq-input", required=True)
+    p.add_argument("--output", required=True)
+    p.add_argument("--batch-size", type=_positive_int, default=250_000)
+    p.set_defaults(func=cmd_build_volatility_contraction_breakout_paired_input)
 
     p = sub.add_parser(
         "backtest-volatility-contraction-breakout",
@@ -957,6 +1029,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--setup", default="VOLATILITY_CONTRACTION_BREAKOUT_v1")
     p.add_argument("--allow-empty", action="store_true")
     p.set_defaults(func=cmd_backtest_volatility_contraction_breakout)
+
+    p = sub.add_parser(
+        "build-volatility-contraction-breakout-development-bars",
+        help="Materialize bounded-memory bars for development-period VCB trades",
+    )
+    p.add_argument("--daily-input", required=True)
+    p.add_argument("--signal-input", required=True)
+    p.add_argument("--output", required=True)
+    p.add_argument("--batch-size", type=_positive_int, default=250_000)
+    p.add_argument("--lookback-days", type=_positive_int, default=15)
+    p.add_argument("--forward-days", type=_positive_int, default=30)
+    p.set_defaults(func=cmd_build_volatility_contraction_breakout_development_bars)
 
     p = sub.add_parser(
         "validate-volatility-contraction-breakout",

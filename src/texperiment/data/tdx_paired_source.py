@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from collections.abc import Callable, Iterable
 
 import numpy as np
 import pandas as pd
@@ -35,6 +36,8 @@ def read_tdx_paired_export_files(
     qfq_path: str | Path,
     raw_path: str | Path,
     hfq_path: str | Path,
+    *,
+    market_scope: str = "A_SHARE",
 ) -> pd.DataFrame:
     qfq_file, raw_file, hfq_file = Path(qfq_path), Path(raw_path), Path(hfq_path)
     if not (qfq_file.name == raw_file.name == hfq_file.name):
@@ -81,9 +84,18 @@ def read_tdx_paired_export_files(
     frame["amount_layer_match"] = frame["raw_amount"].eq(frame["adj_amount"]) & frame["raw_amount"].eq(frame["hfq_amount"])
     frame["trade_status"] = np.where((frame["volume"] > 0) & (frame["amount"] > 0), "1", "0")
     frame["is_suspended"] = frame["trade_status"].eq("0")
-    frame["historical_st_status"] = "UNKNOWN"
-    frame["limit_rule_status"] = "UNKNOWN_MISSING_HISTORICAL_ST"
-    frame["limit_rule_reason"] = "TDX exports do not provide point-in-time historical ST status"
+    if market_scope == "A_SHARE":
+        frame["historical_st_status"] = "UNKNOWN"
+        frame["limit_rule_status"] = "UNKNOWN_MISSING_HISTORICAL_ST"
+        frame["limit_rule_reason"] = "TDX exports do not provide point-in-time historical ST status"
+    elif market_scope == "EXCHANGE_ETF":
+        # ST/PT is a stock-status regime and is not applicable to exchange-traded funds.
+        # ETF price-limit and fill semantics remain explicitly unevaluated.
+        frame["historical_st_status"] = "NOT_APPLICABLE_ETF"
+        frame["limit_rule_status"] = "ETF_LIMIT_RULE_PENDING"
+        frame["limit_rule_reason"] = "ETF price-limit and executability policy has not been evaluated"
+    else:
+        raise ValueError(f"unsupported paired TDX market scope: {market_scope}")
     frame["listing_date"] = frame["date"].min()
     frame["listing_date_status"] = "INFERRED_FIRST_OBSERVATION"
     frame["listing_days"] = (frame["date"] - frame["date"].min()).dt.days + 1
@@ -106,9 +118,11 @@ def write_tdx_paired_export_parquet(
     output_path: str | Path,
     *,
     strict: bool = True,
+    file_iterator: Callable[[Path], Iterable[Path]] = iter_tdx_export_files,
+    market_scope: str = "A_SHARE",
 ) -> tuple[DataQualityReport, TdxPairedReport]:
     roots = {"qfq": Path(qfq_path), "raw": Path(raw_path), "hfq": Path(hfq_path)}
-    files = {key: _unique_file_map(root) for key, root in roots.items()}
+    files = {key: _unique_file_map(root, file_iterator) for key, root in roots.items()}
     names = set(files["qfq"])
     if not names or names != set(files["raw"]) or names != set(files["hfq"]):
         raise ValueError("qfq/raw/hfq TDX file sets must be non-empty and identical")
@@ -122,7 +136,9 @@ def write_tdx_paired_export_parquet(
     ingested = 0
     try:
         for name in sorted(names):
-            frame = read_tdx_paired_export_files(files["qfq"][name], files["raw"][name], files["hfq"][name])
+            frame = read_tdx_paired_export_files(
+                files["qfq"][name], files["raw"][name], files["hfq"][name], market_scope=market_scope
+            )
             if frame.empty:
                 continue
             report = validate_daily_bars(frame, strict=False)
@@ -139,7 +155,7 @@ def write_tdx_paired_export_parquet(
             amount_mismatch += int((~frame["amount_layer_match"]).sum())
             ingested += 1
         if writer is None:
-            raise ValueError("paired TDX exports contained no valid A-share rows")
+            raise ValueError(f"paired TDX exports contained no valid {market_scope} rows")
         quality = _combine_quality_reports(reports)
         if strict and not quality.ok:
             raise ValueError(f"paired daily bars quality check failed: {quality}")
@@ -292,9 +308,9 @@ def _validate_adjustment_mode(path: Path, expected: str) -> None:
         raise ValueError(f"TDX adjustment mode mismatch for {path}: expected {expected}, got {actual}")
 
 
-def _unique_file_map(root: Path) -> dict[str, Path]:
+def _unique_file_map(root: Path, file_iterator: Callable[[Path], Iterable[Path]] = iter_tdx_export_files) -> dict[str, Path]:
     result: dict[str, Path] = {}
-    for path in iter_tdx_export_files(root):
+    for path in file_iterator(root):
         if path.name in result:
             raise ValueError(f"duplicate TDX ticker filename under {root}: {path.name}")
         result[path.name] = path

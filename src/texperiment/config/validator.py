@@ -73,6 +73,10 @@ def _validate_volatility_contraction_breakout(config: dict) -> None:
         raise ConfigError(f"VCB validation_threshold missing keys: {missing}")
     if float(thresholds["account_cagr_floor"]) != 0.07 or float(thresholds["benchmark_cagr_spread"]) != 0.03 or float(thresholds["account_max_drawdown_lte"]) != 0.10:
         raise ConfigError("VCB account thresholds must remain fixed")
+    if config.get("universe", {}).get("exclude_st") is not False:
+        raise ConfigError("VCB must ignore historical ST in the universe")
+    if config.get("execution", {}).get("historical_st_policy") != "IGNORE_HISTORICAL_ST_ORDINARY_LIMITS_V1":
+        raise ConfigError("VCB must ignore historical ST in execution")
     excluded = config.get("universe", {}).get("data_quality_excluded_codes", [])
     if len(excluded) != 21 or len(set(excluded)) != 21:
         raise ConfigError("universe.data_quality_excluded_codes must contain 21 unique codes")

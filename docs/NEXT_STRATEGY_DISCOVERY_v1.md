@@ -2,14 +2,16 @@
 
 ## Scope
 
-This is a no-trade hypothesis-discovery phase, separate from
-`STOCK_RS_PULLBACK_v1`. It may inspect the frozen recent-ten-year input pair,
-but it may not change the archived setup, generate tickets, run account
-simulation, or claim a validation result.
+This A-share hypothesis-discovery phase has been explicitly reauthorized by
+user direction. It may continue the pre-registered
+`VOLATILITY_CONTRACTION_BREAKOUT_v1` has been closed as a research failure.
+Its development trade-level edge was too weak before account costs and the
+final validation window was never run. It remains no-trade and must not
+generate tickets or enable trading.
 
 ## Research Question
 
-Which simple, execution-aware A-share daily-bar hypothesis merits a single
+Which simple, execution-aware next-market hypothesis merits a single
 pre-registered validation attempt on the frozen recent-ten-year data set?
 
 ## Candidate Families
@@ -22,6 +24,9 @@ Candidates must be economically distinct from relative-strength pullback:
 3. Liquid-stock mean reversion after a broad-market dislocation, with market
    regime and execution filters defined before testing.
 
+The next research track is `ETF_SETUP_DISCOVERY_CYCLE_2`. No new A-share setup
+is active after the VCB research failure unless separately reauthorized.
+
 The event-based family is unavailable until a survivorship-safe, timestamped
 event data source is frozen. It must not be approximated from price movement.
 
@@ -31,8 +36,9 @@ event data source is frozen. It must not be approximated from price movement.
   validation. Reserve an earlier development subperiod before choosing one
   hypothesis.
 - Keep raw execution prices and qfq structural prices separate.
-- Apply the existing ST, suspension, price-limit, T+1, cost and delayed-exit
-  semantics.
+- Do not use historical ST status in the VCB data, universe, or execution
+  path. Retain ordinary A-share price-limit, suspension, T+1, cost and
+  delayed-exit semantics.
 - Use no more than one chosen hypothesis per pre-registration cycle.
 - Do not tune thresholds against the final validation period.
 

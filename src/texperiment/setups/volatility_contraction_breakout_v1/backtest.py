@@ -7,6 +7,10 @@ import pandas as pd
 
 from texperiment.backtest.execution_model import can_buy_at_open, can_sell_on_bar, has_valid_adjusted_ohlc, has_valid_ohlc, price_transform
 from texperiment.backtest.trade_builder import TRADE_OUTPUT_COLUMNS
+from texperiment.setups.volatility_contraction_breakout_v1.execution import (
+    ST_IGNORED_EXECUTION_POLICY,
+    rebuild_execution_without_historical_st,
+)
 
 
 @dataclass(frozen=True)
@@ -16,6 +20,7 @@ class VolatilityContractionBreakoutBacktestConfig:
     low_exit_window: int = 10
     max_holding_days: int = 20
     intraday_priority: str = "stop_first"
+    historical_st_policy: str = ST_IGNORED_EXECUTION_POLICY
 
     @classmethod
     def from_setup_config(cls, setup_config: dict[str, Any] | None = None) -> "VolatilityContractionBreakoutBacktestConfig":
@@ -27,6 +32,7 @@ class VolatilityContractionBreakoutBacktestConfig:
             low_exit_window=int(exit_cfg.get("close_break_low_window", 10)),
             max_holding_days=int(exit_cfg.get("max_holding_days", 20)),
             intraday_priority=str(exit_cfg.get("intraday_priority", "stop_first")),
+            historical_st_policy=str(cfg.get("execution", {}).get("historical_st_policy", ST_IGNORED_EXECUTION_POLICY)),
         )
 
 
@@ -39,7 +45,9 @@ def run_volatility_contraction_breakout_backtest(
     actual commission, stamp duty, and slippage exactly once.
     """
     cfg = VolatilityContractionBreakoutBacktestConfig.from_setup_config(setup_config)
-    bars = _prepare_bars(daily_bars)
+    if cfg.historical_st_policy != ST_IGNORED_EXECUTION_POLICY:
+        raise ValueError("VCB requires IGNORE_HISTORICAL_ST_ORDINARY_LIMITS_V1 execution policy")
+    bars = _prepare_bars(daily_bars, rebuild_execution=True)
     signals = _prepare_signals(signals)
     by_code = {code: frame.reset_index(drop=True) for code, frame in bars.groupby("code", sort=False)}
     rows = [_backtest_one(signal._asdict(), by_code.get(signal.code), cfg) for signal in signals.itertuples(index=False)]
@@ -140,14 +148,15 @@ def _prepare_signals(signals: pd.DataFrame) -> pd.DataFrame:
     return out.dropna(subset=["signal_date"]).drop_duplicates("signal_id", keep="last")
 
 
-def _prepare_bars(daily_bars: pd.DataFrame) -> pd.DataFrame:
-    required = {"date", "code", "raw_open", "raw_high", "raw_low", "raw_close", "adj_open", "adj_high", "adj_low", "adj_close", "adj_factor", "adj_offset", "is_suspended", "can_buy_at_open", "can_sell_at_open", "can_sell_intraday", "can_sell_at_close"}
+def _prepare_bars(daily_bars: pd.DataFrame, *, rebuild_execution: bool) -> pd.DataFrame:
+    required = {"date", "code", "raw_open", "raw_high", "raw_low", "raw_close", "adj_open", "adj_high", "adj_low", "adj_close", "adj_factor", "adj_offset", "is_suspended"}
     missing = sorted(required - set(daily_bars.columns))
     if missing:
         raise ValueError(f"daily_bars missing required columns: {missing}")
     out = daily_bars.copy(); out["date"] = pd.to_datetime(out["date"], errors="coerce").dt.normalize(); out["code"] = out["code"].astype(str)
     for col in [c for c in required if c.startswith("raw_") or c.startswith("adj_")]: out[col] = pd.to_numeric(out[col], errors="coerce")
-    return out.drop_duplicates(["date", "code"], keep="last").sort_values(["code", "date"]).reset_index(drop=True)
+    out = out.drop_duplicates(["date", "code"], keep="last").sort_values(["code", "date"]).reset_index(drop=True)
+    return rebuild_execution_without_historical_st(out) if rebuild_execution else out
 
 
 def _base(signal: dict[str, Any], cfg: VolatilityContractionBreakoutBacktestConfig) -> dict[str, Any]:

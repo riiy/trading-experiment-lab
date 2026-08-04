@@ -13,9 +13,9 @@ Trading Experiment 是 30,000 元股票实验账户，用于验证股票交易 S
 ## 当前状态
 
 ```yaml
-status: research_active_no_trade
+status: A_SHARE_AND_ETF_RESEARCH_ACTIVE_NO_TRADE
 trading_allowed: false
-current_setup: STOCK_RS_PULLBACK_v1
+current_setup: null
 ```
 
 ## 风险红线

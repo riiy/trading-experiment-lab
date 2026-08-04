@@ -1,5 +1,5 @@
 Trading_Experiment:
-  status: new_strategy_discovery_active_no_trade
+  status: A_SHARE_AND_ETF_RESEARCH_ACTIVE_NO_TRADE
   capital_limit: 30000
   max_planned_loss_per_trade: 500
   instrument_scope:
@@ -11,16 +11,45 @@ Trading_Experiment:
   ticket_generation_allowed: false
   tradable_setups: 0
   next_action:
-    - conduct_next_strategy_hypothesis_discovery
+    - conduct_etf_strategy_hypothesis_discovery
   allowed:
-    - hypothesis_discovery
-    - research_design
-    - data_availability_assessment
+    - etf_hypothesis_discovery
+    - etf_research_design
+    - etf_data_availability_assessment
   forbidden:
+    - new_a_share_setup_pre_registration_without_promotion_gate
     - new_setup_pre_registration_without_promotion_gate
     - account_simulation
     - ticket_generation
     - live_trading
+  prior_termination:
+    decision: SUPERSEDED_BY_USER_ETF_RESEARCH_REAUTHORIZATION
+    scope: A_SHARE_RESEARCH_WAS_TERMINATED
+    preserves_existing_audits_and_frozen_inputs: true
+    superseded_by: USER_EXPLICIT_A_SHARE_RESEARCH_REAUTHORIZATION
+  a_share_research_authorization:
+    status: CLOSED_RESEARCH_FAILED
+    scope: VOLATILITY_CONTRACTION_BREAKOUT_v1_ONLY
+    authorization: USER_EXPLICIT_REAUTHORIZATION
+    historical_st_policy: IGNORE_HISTORICAL_ST_ORDINARY_LIMITS_V1
+    account_simulation_allowed: false
+    ticket_generation_allowed: false
+    trading_allowed: false
+  etf_research_authorization:
+    status: ACTIVE_NO_TRADE
+    active_discovery_cycle: ETF_SETUP_DISCOVERY_CYCLE_2
+    discovery_protocol: docs/ETF_SETUP_DISCOVERY_CYCLE_2.md
+    permitted_price_inputs:
+      - data/raw/etf/raw
+      - data/raw/etf/qfq
+      - data/raw/etf/hfq
+    permitted_benchmark_input: data/raw/SH#000300.txt
+    prohibited_local_price_inputs:
+      - data/raw/tdx
+      - data/raw/tdx_text
+    account_simulation_allowed: false
+    ticket_generation_allowed: false
+    trading_allowed: false
 
 setups:
   STOCK_RS_PULLBACK_v1:
@@ -55,8 +84,8 @@ setups:
       report: diagnostics/STOCK_RS_PULLBACK_v1/AUDIT_STOCK_RS_PULLBACK_v1.md
       summary: diagnostics/STOCK_RS_PULLBACK_v1/STOCK_RS_PULLBACK_v1_audit_summary.json
   VOLATILITY_CONTRACTION_BREAKOUT_v1:
-    lifecycle_status: RESEARCH_STOPPED_DATA_UNEVALUABLE
-    validation_status: NOT_EVALUABLE_MISSING_HISTORICAL_ST
+    lifecycle_status: RESEARCH_FAILED_ARCHIVED
+    validation_status: FAILED_DEVELOPMENT_DIAGNOSTIC
     market_scope: A_SHARE_ONLY
     trading_allowed: false
     account_simulation_allowed: false
@@ -68,18 +97,39 @@ setups:
       benchmark: 000300.SH
       benchmark_return_basis: price_index
       status: NOT_RUN
-      not_run_reason: ALL_FROZEN_ROWS_HAVE_UNKNOWN_HISTORICAL_ST_STATUS
+      not_run_reason: DEVELOPMENT_DIAGNOSTIC_FAILED_BEFORE_FINAL_VALIDATION
+    research_failure:
+      decision: RESEARCH_FAILED
+      scope: DEVELOPMENT_TRADE_LEVEL_DIAGNOSTIC
+      signals: 1725
+      valid_trades: 1723
+      invalid_trades: 2
+      mean_return_pre_account_costs: 0.005688314575377811
+      median_return_pre_account_costs: -0.039493297458300325
+      win_rate: 0.3691236215902496
+      profit_factor: 1.1300577952304032
+      max_loss_pre_account_costs: -0.5339034819792303
+      account_simulation_run: false
+      authoritative_strategy_decision: false
+      metrics: diagnostics/VOLATILITY_CONTRACTION_BREAKOUT_v1/development_st_ignored_v1/development_trade_metrics.json
+      trades: diagnostics/VOLATILITY_CONTRACTION_BREAKOUT_v1/development_st_ignored_v1/development_trades.parquet
+      reason: PRE_COST_EDGE_TOO_WEAK_FOR_30000_ACCOUNT_AND_10_PERCENT_DRAWDOWN_GATE
     preregistration: docs/PRE_REGISTRATION_VOLATILITY_CONTRACTION_BREAKOUT_v1.md
     data_availability_assessment:
-      decision: NO_FURTHER_RESEARCH_WITH_CURRENT_FROZEN_DATA
-      severity: CRITICAL
+      decision: HISTORICAL_ST_NOT_REQUIRED_BY_VCB_POLICY
+      severity: INFORMATIONAL
       evidence:
         frozen_rows: 10249283
         historical_st_status_unknown_rows: 10249283
-        eligible_universe_rows: 0
+        eligible_universe_rows: NOT_RECOMPUTED
       report: diagnostics/VOLATILITY_CONTRACTION_BREAKOUT_v1/DATA_AVAILABILITY_ASSESSMENT.md
-    stopped:
+    historical_st_policy:
+      universe: IGNORE_HISTORICAL_ST
+      execution: IGNORE_HISTORICAL_ST_ORDINARY_LIMITS_V1
+      source_status_not_read: true
+    prior_stop:
       reason: USER_DIRECTED_STOP_AFTER_DATA_UNEVALUABILITY_ASSESSMENT
+      superseded_by: USER_EXPLICIT_A_SHARE_RESEARCH_REAUTHORIZATION
       preserves_frozen_inputs_and_diagnostics: true
 engine_remediation_tasks:
   ENGINE_REMEDIATION_A_SHARE_EXECUTION_v1:

@@ -17,6 +17,8 @@ def test_global_account_config_valid():
 def test_setup_config_valid():
     config = load_yaml(ROOT / "configs" / "setups" / "STOCK_RS_PULLBACK_v1.yaml")
     validate_setup_config(config)
+    vcb = load_yaml(ROOT / "configs" / "setups" / "VOLATILITY_CONTRACTION_BREAKOUT_v1.yaml")
+    validate_setup_config(vcb)
 
 
 def test_registry_requires_full_pipeline_recalculation_v2_implementation():
@@ -24,12 +26,21 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     experiment = registry["Trading_Experiment"]
     archived = registry["setups"]["STOCK_RS_PULLBACK_v1"]
 
-    assert experiment["status"] == "new_strategy_discovery_active_no_trade"
+    assert experiment["status"] == "A_SHARE_AND_ETF_RESEARCH_ACTIVE_NO_TRADE"
     assert experiment["current_setup"] is None
     assert experiment["tradable_setups"] == 0
     assert experiment["trading_allowed"] is False
     assert experiment["account_simulation_allowed"] is False
     assert experiment["ticket_generation_allowed"] is False
+    assert experiment["allowed"] == [
+        "etf_hypothesis_discovery",
+        "etf_research_design",
+        "etf_data_availability_assessment",
+    ]
+    assert experiment["prior_termination"]["decision"] == "SUPERSEDED_BY_USER_ETF_RESEARCH_REAUTHORIZATION"
+    assert experiment["a_share_research_authorization"]["status"] == "CLOSED_RESEARCH_FAILED"
+    assert experiment["a_share_research_authorization"]["scope"] == "VOLATILITY_CONTRACTION_BREAKOUT_v1_ONLY"
+    assert experiment["etf_research_authorization"]["status"] == "ACTIVE_NO_TRADE"
     assert archived["lifecycle_status"] == "ARCHIVED_NON_TRADABLE"
     assert archived["validation_status"] == "INVALIDATED_BY_ENGINE_ERROR"
     assert archived["trading_allowed"] is False
@@ -42,6 +53,14 @@ def test_registry_requires_full_pipeline_recalculation_v2_implementation():
     assert archived["audit"]["locked_commit"] == "1cbfa676459e31075c479826cb68dc58b3beeec8"
     assert archived["audit"]["full_recalculation_performed"] is False
     assert archived["audit"]["new_setup_started"] is False
+
+    vcb = registry["setups"]["VOLATILITY_CONTRACTION_BREAKOUT_v1"]
+    assert vcb["lifecycle_status"] == "RESEARCH_FAILED_ARCHIVED"
+    assert vcb["validation_status"] == "FAILED_DEVELOPMENT_DIAGNOSTIC"
+    assert vcb["trading_allowed"] is False
+    assert vcb["account_simulation_allowed"] is False
+    assert vcb["historical_st_policy"]["universe"] == "IGNORE_HISTORICAL_ST"
+    assert vcb["historical_st_policy"]["execution"] == "IGNORE_HISTORICAL_ST_ORDINARY_LIMITS_V1"
 
     setup = load_yaml(ROOT / "configs" / "setups" / "STOCK_RS_PULLBACK_v1.yaml")
     assert setup["validation_window"] == {

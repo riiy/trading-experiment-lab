@@ -5,7 +5,10 @@ import pytest
 
 from texperiment.account.daily_equity import DailyEquityConfig, run_daily_account_equity, transaction_costs
 from texperiment.setups.volatility_contraction_breakout_v1.backtest import run_volatility_contraction_breakout_backtest
-from texperiment.setups.volatility_contraction_breakout_v1.rules import build_volatility_contraction_breakout_signals
+from texperiment.setups.volatility_contraction_breakout_v1.rules import (
+    build_volatility_contraction_breakout_signals,
+    write_volatility_contraction_breakout_signals_from_parquet,
+)
 from texperiment.setups.volatility_contraction_breakout_v1.universe import write_volatility_contraction_breakout_universe_from_parquet
 from texperiment.setups.volatility_contraction_breakout_v1.validation import benchmark_cagr, build_final_validation_artifacts
 
@@ -56,6 +59,16 @@ def test_signal_requires_contraction_breakout_and_volume_ratio():
     assert signals.iloc[0]["status"] == "triggered_entry_next_open"
 
 
+def test_streamed_signals_match_in_memory_signals(tmp_path):
+    dates = pd.bdate_range("2021-01-01", periods=100)
+    rows = [{"date": date, "code": "600000.SH", "adj_high": 10.0 if i < 99 else 10.3, "adj_low": 8.0 if i < 90 else 9.8, "adj_close": 9.0 if i < 90 else (9.9 if i < 99 else 10.2), "volume": 100.0 if i < 99 else 200.0} for i, date in enumerate(dates)]
+    daily, universe, output = tmp_path / "daily.parquet", tmp_path / "universe.parquet", tmp_path / "signals.parquet"
+    pd.DataFrame(rows).to_parquet(daily, index=False)
+    pd.DataFrame({"date": dates, "code": "600000.SH", "is_tradable_universe": True}).to_parquet(universe, index=False)
+    assert write_volatility_contraction_breakout_signals_from_parquet(daily, universe, output, batch_size=25) == 1
+    assert pd.read_parquet(output)["signal_date"].tolist() == [str(dates[-1].date())]
+
+
 def test_backtest_uses_next_open_two_atr_stop_and_t_plus_one():
     dates = pd.bdate_range("2022-01-03", periods=4)
     bars = pd.DataFrame([
@@ -92,17 +105,34 @@ def test_final_validation_requires_existing_and_account_gates_together():
     assert artifacts["metrics"]["decision"] == "FINAL_VALIDATION_PASSED_RESEARCH_ONLY"
 
 
-def test_compact_universe_fails_closed_when_historical_st_is_unknown(tmp_path):
+def test_compact_universe_and_execution_ignore_historical_st(tmp_path):
     dates = pd.bdate_range("2022-01-03", periods=20)
     source = pd.DataFrame([{"date": date, "code": "600000.SH", "close": 10, "raw_close": 10, "amount": 400_000_000,
-                            "volume": 1_000_000, "historical_st_status": "UNKNOWN", "is_suspended": False,
-                            "trade_status": "1", "one_price_limit_up": "FALSE", "one_price_limit_down": "FALSE", "listing_days": 200}
+                            "raw_open": 10, "raw_high": 10.2, "raw_low": 9.8, "raw_pre_close": 10,
+                            "adj_factor": 1.0, "volume": 1_000_000, "is_suspended": False,
+                            "trade_status": "1", "listing_date": dates[0], "listing_days": 200}
                            for date in dates])
     input_path, output_path = tmp_path / "daily.parquet", tmp_path / "universe.parquet"
     source.to_parquet(input_path, index=False)
     rows, eligible = write_volatility_contraction_breakout_universe_from_parquet(
-        input_path, output_path, setup_config={"universe": {"min_avg_amount_20d": 300_000_000, "max_one_lot_value": 15_000, "lot_size": 100, "exclude_st": True, "exclude_suspended": True, "exclude_limit_up_down": True}}
+        input_path, output_path, setup_config={"execution": {"historical_st_policy": "IGNORE_HISTORICAL_ST_ORDINARY_LIMITS_V1"}, "universe": {"min_avg_amount_20d": 300_000_000, "max_one_lot_value": 15_000, "lot_size": 100, "exclude_st": False, "exclude_suspended": True, "exclude_limit_up_down": True}}
     )
     assert rows == 20
-    assert eligible == 0
-    assert not pd.read_parquet(output_path)["is_tradable_universe"].any()
+    assert eligible == 1
+    assert pd.read_parquet(output_path).iloc[-1]["is_tradable_universe"]
+
+
+def test_backtest_rebuilds_fillability_without_historical_st():
+    dates = pd.bdate_range("2022-01-03", periods=4)
+    bars = pd.DataFrame([
+        _bar(dates[0]),
+        _bar(dates[1]),
+        _bar(dates[2], low=8.9),
+        _bar(dates[3]),
+    ])
+    signals = pd.DataFrame([{"signal_id": "s", "code": "600000.SH", "signal_date": str(dates[0].date()), "status": "triggered_entry_next_open", "atr10": 0.5}])
+    trade = run_volatility_contraction_breakout_backtest(
+        signals, bars, setup_config={"execution": {"historical_st_policy": "IGNORE_HISTORICAL_ST_ORDINARY_LIMITS_V1"}}
+    ).iloc[0]
+    assert trade["status"] == "valid_trade"
+    assert trade["entry_date"] == str(dates[1].date())

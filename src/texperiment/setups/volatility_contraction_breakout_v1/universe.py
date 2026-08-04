@@ -9,12 +9,17 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from texperiment.universe.a_share import AShareUniverseConfig
+from texperiment.setups.volatility_contraction_breakout_v1.execution import (
+    ST_IGNORED_EXECUTION_POLICY,
+    rebuild_execution_without_historical_st,
+)
 
 
 VCB_UNIVERSE_COLUMNS = ["date", "code", "is_tradable_universe"]
 _INPUT_COLUMNS = [
-    "date", "code", "close", "raw_close", "amount", "volume", "historical_st_status",
-    "is_suspended", "trade_status", "one_price_limit_up", "one_price_limit_down", "listing_days", "listing_date",
+    "date", "code", "close", "raw_close", "raw_open", "raw_high", "raw_low", "raw_pre_close",
+    "adj_factor", "amount", "volume", "is_suspended", "trade_status", "listing_days", "listing_date",
+    "listing_trading_day", "board", "opening_auction_fill_status", "closing_auction_fill_status",
 ]
 
 
@@ -45,24 +50,24 @@ def write_volatility_contraction_breakout_universe_from_parquet(
         for batch in source.iter_batches(batch_size=batch_size, columns=columns):
             current = batch.to_pandas()
             current["_is_current"] = True
-            pieces: list[pd.DataFrame] = []
-            for code, group in current.groupby("code", sort=False):
-                group = group.sort_values("date").copy()
-                history = tails.get(str(code))
-                working = pd.concat([history, group], ignore_index=True) if history is not None else group
-                annotated = _annotate_vcb_universe(working, cfg)
-                selected = annotated.loc[annotated["_is_current"].fillna(False), VCB_UNIVERSE_COLUMNS]
-                pieces.append(selected)
-                tails[str(code)] = working.tail(20).assign(_is_current=False)
-            if not pieces:
+            current["_source_order"] = range(len(current))
+            working = pd.concat([*tails.values(), current], ignore_index=True) if tails else current
+            working = working.sort_values(["code", "date"]).reset_index(drop=True)
+            annotated = _annotate_vcb_universe(working, cfg, setup_config=setup_config)
+            result = annotated.loc[annotated["_is_current"].fillna(False), [*VCB_UNIVERSE_COLUMNS, "_source_order"]]
+            if result.empty:
                 continue
-            result = pd.concat(pieces, ignore_index=True)
+            result = result.sort_values("_source_order")[VCB_UNIVERSE_COLUMNS]
             table = pa.Table.from_pandas(result, preserve_index=False)
             if writer is None:
                 writer = pq.ParquetWriter(temp, table.schema, compression="snappy")
             writer.write_table(table)
             written += len(result)
             eligible += int(result["is_tradable_universe"].sum())
+            tails = {
+                str(code): group.tail(20).assign(_is_current=False)
+                for code, group in working.groupby("code", sort=False)
+            }
         if writer is None:
             raise ValueError("daily input contained no rows")
         writer.close()
@@ -76,7 +81,7 @@ def write_volatility_contraction_breakout_universe_from_parquet(
             temp.unlink()
 
 
-def _annotate_vcb_universe(frame: pd.DataFrame, cfg: AShareUniverseConfig) -> pd.DataFrame:
+def _annotate_vcb_universe(frame: pd.DataFrame, cfg: AShareUniverseConfig, *, setup_config: dict[str, Any]) -> pd.DataFrame:
     """Vectorized subset of the shared A-share universe policy for VCB keys."""
     out = frame.copy()
     out["date"] = pd.to_datetime(out["date"], errors="coerce").dt.normalize()
@@ -85,7 +90,10 @@ def _annotate_vcb_universe(frame: pd.DataFrame, cfg: AShareUniverseConfig) -> pd
     amount = pd.to_numeric(out["amount"], errors="coerce")
     volume = pd.to_numeric(out.get("volume"), errors="coerce")
     avg_amount = amount.rolling(window=20, min_periods=20).mean()
-    historical_st = out.get("historical_st_status", pd.Series("UNKNOWN", index=out.index)).astype(str).str.upper()
+    execution_policy = str(setup_config.get("execution", {}).get("historical_st_policy", ""))
+    if execution_policy != ST_IGNORED_EXECUTION_POLICY:
+        raise ValueError("VCB requires IGNORE_HISTORICAL_ST_ORDINARY_LIMITS_V1 execution policy")
+    out = rebuild_execution_without_historical_st(out)
     suspended = _bool(out.get("is_suspended", pd.Series(False, index=out.index)))
     trade_status = out.get("trade_status", pd.Series("", index=out.index)).astype(str).str.strip().str.lower()
     suspended = suspended | trade_status.isin({"0", "停牌", "suspended", "halt", "halted"}) | ((volume.fillna(0) <= 0) & (amount.fillna(0) <= 0))
@@ -95,7 +103,7 @@ def _annotate_vcb_universe(frame: pd.DataFrame, cfg: AShareUniverseConfig) -> pd
     one_price_up = out.get("one_price_limit_up", pd.Series("UNKNOWN", index=out.index)).astype(str).str.upper()
     one_price_down = out.get("one_price_limit_down", pd.Series("UNKNOWN", index=out.index)).astype(str).str.upper()
     eligible = (
-        (historical_st.eq("FALSE") if cfg.exclude_st else True)
+        True
         & (listing_days >= cfg.min_listing_days).fillna(False)
         & ((~suspended) if cfg.exclude_suspended else True)
         & ((one_price_up.eq("FALSE") & one_price_down.eq("FALSE")) if cfg.exclude_limit_up_down else True)

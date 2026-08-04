@@ -102,10 +102,7 @@ def write_tdx_parquet(
 
 def _iter_tdx_frames(files: list[Path], *, adj_type: str):
     for path in files:
-        match = _FILE_RE.fullmatch(path.name)
-        assert match is not None
-        market, digits = match.group(1).upper(), match.group(2)
-        raw = _read_day_file(path, market, digits)
+        raw = read_tdx_day_file(path)
         if raw.empty:
             continue
         yield normalize_daily_bars(
@@ -115,6 +112,15 @@ def _iter_tdx_frames(files: list[Path], *, adj_type: str):
             source="tongdaxin",
             source_file=path,
         ).drop_duplicates(["date", "code"], keep="last")
+
+
+def read_tdx_day_file(path: str | Path) -> pd.DataFrame:
+    """Read one valid TDX ``.day`` file without applying an instrument filter."""
+    file_path = Path(path)
+    match = _FILE_RE.fullmatch(file_path.name)
+    if match is None:
+        raise ValueError(f"invalid TongdaXin .day filename: {file_path}")
+    return _read_day_file(file_path, match.group(1).upper(), match.group(2))
 
 
 def _empty_quality_report() -> DataQualityReport:

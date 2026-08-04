@@ -1,0 +1,29 @@
+{
+  "scope": "development_trade_level_diagnostic_only",
+  "window": {
+    "start": "2016-07-17",
+    "end": "2022-07-15"
+  },
+  "signals": 1725,
+  "valid_trades": 1723,
+  "invalid_trades": 2,
+  "invalid_reasons": {
+    "invalid_open_fillability_unknown": 1,
+    "invalid_limit_up_cannot_buy": 1
+  },
+  "exit_reasons": {
+    "stop_loss": 732,
+    "max_holding_exit": 658,
+    "close_break_10d_low": 333
+  },
+  "mean_net_return_pre_account_costs": 0.005688314575377811,
+  "median_net_return_pre_account_costs": -0.039493297458300325,
+  "win_rate": 0.3691236215902496,
+  "profit_factor": 1.1300577952304032,
+  "best_3_removed_mean_pre_account_costs": 0.004521163262502171,
+  "max_gain": 0.7035087719298247,
+  "max_loss": -0.5339034819792303,
+  "costs_applied": false,
+  "account_simulation_run": false,
+  "authoritative_strategy_decision": false
+}

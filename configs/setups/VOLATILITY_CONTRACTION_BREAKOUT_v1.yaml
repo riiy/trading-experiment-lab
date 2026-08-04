@@ -1,6 +1,6 @@
 setup_id: VOLATILITY_CONTRACTION_BREAKOUT_v1
 name: 波动收缩突破
-status: research_stopped_data_unevaluable
+status: research_failed_no_trade
 trading_allowed: false
 
 market_scope:
@@ -8,7 +8,7 @@ market_scope:
   exclude: [HK_CONNECT]
 
 universe:
-  exclude_st: true
+  exclude_st: false
   exclude_new_listing_days_lt: 180
   exclude_suspended: true
   exclude_limit_up_down: true
@@ -56,6 +56,8 @@ signal:
 
 entry:
   execution: next_day_open
+execution:
+  historical_st_policy: IGNORE_HISTORICAL_ST_ORDINARY_LIMITS_V1
 exit:
   initial_stop_atr_multiple: 2
   close_break_low_window: 10
